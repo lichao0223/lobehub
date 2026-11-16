@@ -29,6 +29,10 @@ import { buildCloudHeteroContext } from '@/server/services/heterogeneousAgent/cl
 import type { UnansweredUserTurn } from '@/server/services/heterogeneousAgent/unansweredUserTurns';
 import { collectUnansweredUserTurns } from '@/server/services/heterogeneousAgent/unansweredUserTurns';
 import { resolveSandboxSessionConfig } from '@/server/services/sandbox/session';
+import {
+  buildTfsCloudAgentContext,
+  usesTfsCloudAgentContext,
+} from '@/server/services/tfs/cloudAgentContext';
 
 import { supportsCloudHeterogeneousSandbox } from '../../helpers/heteroErrors';
 import type { ExecRunContext } from '../../types';
@@ -270,7 +274,7 @@ export const prepareHeteroRun = async (
     traceHeteroStage('system_context', () =>
       Promise.all([
         buildViewedTaskContextPrompt(deps, appContext, operationTaskId),
-        buildHeteroProjectContext(deps, appContext?.projectId, agentConfig.id),
+        buildHeteroProjectContext(deps, appContext?.projectId, agentConfig.id, topicId),
       ]),
     ),
     // Images pasted into the message body ride in the markdown as file links,
@@ -307,7 +311,10 @@ export const prepareHeteroRun = async (
     ),
     prompt,
   );
-  const systemContext = buildCloudHeteroContext({
+  const buildCloudContext = usesTfsCloudAgentContext(sandbox?.initialization?.sources, topicRepos)
+    ? buildTfsCloudAgentContext
+    : buildCloudHeteroContext;
+  const systemContext = buildCloudContext({
     agentSystemContext,
     conversationHistory: resumeSessionId ? undefined : conversationHistory,
     githubToken,
@@ -317,7 +324,7 @@ export const prepareHeteroRun = async (
   });
   const resumeFallbackSystemContext =
     resumeSessionId && conversationHistory
-      ? buildCloudHeteroContext({
+      ? buildCloudContext({
           agentSystemContext,
           conversationHistory,
           githubToken,

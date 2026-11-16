@@ -1,6 +1,6 @@
 import { projectCheckoutDirectory } from '@lobechat/builtin-tool-cloud-sandbox';
 import type { EnvironmentConfiguration } from '@lobechat/types';
-import { parseTfsRepository } from '@lobechat/utils/tfs';
+import { hasTfsGitSource, parseTfsRepository } from '@lobechat/utils/tfs';
 
 import type { SandboxSelection } from './useSandboxPlacement';
 
@@ -73,7 +73,11 @@ export const environmentChipState = ({
  * member's own drive; the public one is every member's.
  */
 export const repositorySelection = (
-  environment: { id: string; name: string },
+  environment: {
+    configuration?: { sources?: { kind: string; url?: string }[] } | null;
+    id: string;
+    name: string;
+  },
   {
     projectId,
     published,
@@ -82,7 +86,9 @@ export const repositorySelection = (
 ): SandboxSelection =>
   projectId
     ? {
-        ...(workspace && { drive: published ? 'public' : 'personal' }),
+        ...(workspace && {
+          drive: published && !hasTfsGitSource(environment.configuration) ? 'public' : 'personal',
+        }),
         environmentId: environment.id,
         workingDirectory: projectCheckoutDirectory(projectId, environment.id),
       }

@@ -1,6 +1,7 @@
 import { projectCheckoutDirectory, type SandboxDrive } from '@lobechat/builtin-tool-cloud-sandbox';
 import type { LobeChatDatabase } from '@lobechat/database';
 import type { ChatTopicMetadata } from '@lobechat/types';
+import { hasTfsGitSource } from '@lobechat/utils/tfs';
 import debug from 'debug';
 
 import { AgentModel } from '@/database/models/agent';
@@ -74,7 +75,10 @@ export const resolveProjectTopicSandbox = async ({
     const environment = await new EnvironmentModel(db, userId, workspaceId).findById(picked.id);
     if (!environment) return {};
 
-    const drive: SandboxDrive = environment.visibility === 'public' ? 'public' : 'personal';
+    const drive: SandboxDrive =
+      hasTfsGitSource(environment.configuration) || environment.visibility !== 'public'
+        ? 'personal'
+        : 'public';
 
     return {
       ...(workspaceId && { sandboxDrive: drive }),
