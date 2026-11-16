@@ -34,6 +34,7 @@ export const RedisKeyNamespace = {
    * shared by every instance that may receive a delivery.
    */
   AGENT_IDENTITY: 'agent-identity',
+  INBOUND_WEBHOOK: 'inbound-webhook',
   /**
    * Bot-wake channel state: when the bot and its owner last spoke, the follow-up window, the
    * silent-wake budget and the per-channel wake scheduler.
@@ -85,6 +86,16 @@ export const RedisKeyNamespace = {
  * ```
  */
 export const RedisKeys = {
+  inboundWebhook: {
+    wake: (id: string) => `wake:v1:${id}`,
+    check: (id: string) => `check:v1:${id}`,
+    maintenance: (id: string) => `maintenance:v1:${id}`,
+    sweep: () => 'sweep:v1:slot',
+    /** Ingress counter of a scope (workspace or personal space) for the current minute, all kinds. */
+    deliveries: (scope: string, minute: number) => `deliveries:v2:${scope}:${minute}`,
+    /** Active member count of a workspace, cached for the per-scope delivery limit. */
+    members: (workspaceId: string) => `members:v1:${workspaceId}`,
+  },
   /**
    * Agent Signal spend bounds — see {@link RedisKeyNamespace.AGENT_SIGNAL}. Per-user
    * counters and quotas that keep background self-iteration work within its limits.
@@ -227,6 +238,18 @@ export const RedisKeys = {
      */
     heteroDeliveries: (operationId: string): string => `hetero_deliveries:v1:${operationId}`,
     /**
+     * Control messages waiting for a heterogeneous run's poller, oldest first.
+     * Each one is popped exactly once, when a poller claims it.
+     * Full key: agentSteer:hetero_control:v1:{operationId}
+     */
+    heteroControl: (operationId: string): string => `hetero_control:v1:${operationId}`,
+    /**
+     * Where each control message of that run stands (field = control id):
+     * pending, claimed, expired, or the result the run reported.
+     * Full key: agentSteer:hetero_control_state:v1:{operationId}
+     */
+    heteroControlState: (operationId: string): string => `hetero_control_state:v1:${operationId}`,
+    /**
      * Marks a sub-agent run whose final queue read came back empty: it ends
      * without reading again, so a steer appended behind it must be taken back.
      * Full key: agentSteer:sealed_run:v1:{operationId}
@@ -263,6 +286,11 @@ export const RedisKeys = {
    * Integrations scope — see {@link RedisKeyNamespace.INTEGRATIONS}.
    */
   integrations: {
+    /**
+     * How one connector OAuth flow ended, read back by the window that started it.
+     * Full key: integrations:connector_oauth_completion:v1:{flowId}
+     */
+    connectorOAuthCompletion: (flowId: string): string => `connector_oauth_completion:v1:${flowId}`,
     /**
      * Single-use state of one "Connect Linear" OAuth hand-off.
      * Full key: integrations:linear_oauth_state:v1:{state}
@@ -334,6 +362,7 @@ export const RedisKeys = {
  * land under another scope's prefix. Every scope must be mapped.
  */
 export const RedisKeyScopeNamespace = {
+  inboundWebhook: RedisKeyNamespace.INBOUND_WEBHOOK,
   agentIdentity: RedisKeyNamespace.AGENT_IDENTITY,
   agentRun: RedisKeyNamespace.AGENT_RUN,
   agentSignal: RedisKeyNamespace.AGENT_SIGNAL,

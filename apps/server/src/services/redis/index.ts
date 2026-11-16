@@ -4,7 +4,10 @@ import { agentRunSlots } from './agentRunSlots';
 import { agentSignal } from './agentSignal';
 import { botReply } from './botReply';
 import { botWake } from './botWake';
+import { connectorOAuth } from './connectorOAuth';
 import { deviceSystemInfo } from './deviceSystemInfo';
+import { heteroControl } from './heteroControl';
+import { inboundWebhook } from './inboundWebhook';
 import { linear } from './linear';
 import { pageCollab } from './pageCollab';
 import { qqPassive } from './qqPassive';
@@ -22,7 +25,10 @@ export const redisService = {
   agentSignal,
   botReply,
   botWake,
+  connectorOAuth,
   deviceSystemInfo,
+  heteroControl,
+  inboundWebhook,
   linear,
   pageCollab,
   qqPassive,

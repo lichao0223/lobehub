@@ -27,6 +27,7 @@ import { deviceGateway } from '@/server/services/deviceGateway';
 import { FileService } from '@/server/services/file';
 
 import { ChannelCoordinator } from './ChannelCoordinator';
+import { notifyChannelDirectMessages } from './directMessage';
 import { notifyChannelMentions } from './mention';
 import { notifyChannel } from './notify';
 import { wakeChannel } from './queue';
@@ -329,6 +330,12 @@ export class ChannelService {
     return channel;
   };
 
+  editMessage = async (channelId: string, messageId: string, content: string) => {
+    const message = await this.repository.editMessage(channelId, messageId, content);
+    await this.changed(channelId);
+    return message;
+  };
+
   addUser = async (channelId: string, userId: string) => {
     const member = await this.repository.addUser(channelId, userId);
     await this.changed(channelId);
@@ -409,7 +416,9 @@ export class ChannelService {
       ...input,
       routing: config ? 'decision' : 'fallback',
     });
-    notifyChannelMentions(this.db, { userId: this.userId, workspaceId: this.workspaceId }, message);
+    const notifyContext = { userId: this.userId, workspaceId: this.workspaceId };
+    notifyChannelMentions(this.db, notifyContext, message);
+    notifyChannelDirectMessages(this.db, notifyContext, message);
     // A human quote without mentions only updates the public feed; it schedules no Agent work.
     if (message.replyToId && message.routingStatus === 'skipped') await this.changed(channelId);
     else await Promise.all([wakeChannel(channelId), this.changed(channelId)]);

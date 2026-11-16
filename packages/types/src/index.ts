@@ -96,6 +96,8 @@ export * from './acceptanceFlow';
 export * from './acceptanceReview';
 export * from './acceptanceReviewRound';
 export * from './agentRuntime';
+export * from './artboard';
+export * from './connector';
 export * from './inboundWebhook';
 export * from './oauthApp';
 export * from './openai/chat';
