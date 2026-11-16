@@ -453,6 +453,11 @@ export interface ChannelAvatarMember {
 export interface ChannelListItem {
   /** The bound Agent of a direct conversation; null for a group. */
   agentId: string | null;
+  /**
+   * Every active Agent member, oldest first, so a page about one Agent can list the Channels it
+   * takes part in; set by the Channel list.
+   */
+  agentIds?: string[];
   /** Server-computed for the current member. */
   canDelete: boolean;
   createdAt: Date;
@@ -598,6 +603,10 @@ export interface ChannelDetail {
   attachments: Array<{ fileType: string; id: string; name: string; size: number; url: string }>;
   channel: ChannelListItem;
   hasMore: boolean;
+  /**
+   * The view's jobs. A main-timeline view also carries its threads' jobs still at work (queued,
+   * running, or holding the writer); filter by `threadId` for one conversation's own.
+   */
   jobs: ChannelPublicJob[];
   members: ChannelPublicMember[];
   messages: ChannelPublicMessage[];

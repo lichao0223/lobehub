@@ -6,7 +6,7 @@ import type {
   ChannelVisibility,
 } from '@lobechat/types';
 import { agentDisplayName } from '@lobechat/types';
-import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 
 import { TrashModel } from '../../models/trash';
 import type { ChannelItem, ChannelJobItem, ChannelMessageItem } from '../../schemas';
@@ -35,6 +35,7 @@ import { lockPeerPair, peerOf, requireMutualContacts } from './peer';
 import { addChannelUser, channelUserCandidates, newChannelUserCandidates } from './people';
 import type { ChannelAgentPostInput } from './post';
 import { postAgentMessage } from './post';
+import { retryJob } from './retry';
 import { retryRouting } from './routing';
 import type { ChannelSendInput } from './send';
 import { sendMessage } from './send';
@@ -50,7 +51,12 @@ export {
   CHANNEL_ROUTING_LEASE_MS,
   ChannelRoutingRepository,
 } from './ChannelRoutingRepository';
-export type { ChannelClaim, ChannelClaimOptions } from './claim';
+export type {
+  ChannelClaim,
+  ChannelClaimOptions,
+  ChannelRoutedDevice,
+  ChannelRoutedDeviceInput,
+} from './claim';
 export type { ChannelErrorCode } from './error';
 export { ChannelError } from './error';
 export { ChannelExecutionRepository } from './execution';
@@ -429,6 +435,7 @@ export class ChannelRepository {
   list = async (): Promise<
     Array<
       ChannelItem & {
+        agentIds: string[];
         canDelete: boolean;
         lastMessage: { content: string; createdAt: Date } | null;
         memberAvatars: ChannelAvatarMember[];
@@ -548,8 +555,35 @@ export class ChannelRepository {
       this.userId,
     );
 
+    // Every active Agent member, so a page about one Agent can list the Channels it takes part in;
+    // the avatars above are capped and leave later members out.
+    const agentMembers = rows.length
+      ? await this.db
+          .select({ agentId: channelMembers.agentId, channelId: channelMembers.channelId })
+          .from(channelMembers)
+          .where(
+            and(
+              inArray(
+                channelMembers.channelId,
+                rows.map(({ channel }) => channel.id),
+              ),
+              eq(channelMembers.actorType, 'agent'),
+              eq(channelMembers.status, 'active'),
+              isNotNull(channelMembers.agentId),
+            ),
+          )
+          .orderBy(channelMembers.createdAt)
+      : [];
+    const agentIdsOf = new Map<string, string[]>();
+    for (const { agentId, channelId } of agentMembers) {
+      const ids = agentIdsOf.get(channelId) ?? [];
+      ids.push(agentId!);
+      agentIdsOf.set(channelId, ids);
+    }
+
     return rows.map(({ agentOwnerId, channel, lastReadSequence, role }) => ({
       ...channel,
+      agentIds: agentIdsOf.get(channel.id) ?? [],
       sharedAgent: !!channel.agentId && !channel.workspaceId && agentOwnerId !== this.userId,
       canDelete: hasRole(role, 'admin'),
       lastMessage: lastMessageOf.get(channel.id) ?? null,
@@ -925,6 +959,23 @@ export class ChannelRepository {
           throw new ChannelError('FORBIDDEN', 'Only the author or an admin can retry routing');
       }
       return retryRouting(tx, channelId, messageId);
+    });
+
+  /**
+   * Queues a reply that could not reach its device again. Like a stop, only its requester or an
+   * admin may retry it.
+   */
+  retryJob = async (channelId: string, jobId: string): Promise<ChannelJobItem> =>
+    this.write(channelId, async (tx, { member }) => {
+      if (!hasRole(member.role, 'admin')) {
+        const [job] = await tx
+          .select({ requesterMemberId: channelJobs.requesterMemberId })
+          .from(channelJobs)
+          .where(and(eq(channelJobs.channelId, channelId), eq(channelJobs.id, jobId)));
+        if (job && job.requesterMemberId !== member.id)
+          throw new ChannelError('FORBIDDEN', 'Only the requester or an admin can retry this job');
+      }
+      return retryJob(tx, channelId, jobId);
     });
 
   private addOwner = async (tx: Transaction, channelId: string) => {
