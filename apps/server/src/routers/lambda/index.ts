@@ -112,6 +112,7 @@ import { shareRouter } from './share';
 import { shareChatRouter } from './shareChat';
 import { taskRouter } from './task';
 import { taskLabelRouter } from './taskLabel';
+import { tfsRouter } from './tfs';
 import { threadRouter } from './thread';
 import { topicRouter } from './topic';
 import { topicCommentRouter } from './topicComment';
@@ -131,6 +132,7 @@ import { workRouter } from './work';
 import { workspaceUserSettingsRouter } from './workspaceUserSettings';
 
 export const lambdaRouter = router({
+  tfs: tfsRouter,
   acceptance: acceptanceRouter,
   acceptanceComment: acceptanceCommentRouter,
   agent: agentRouter,
