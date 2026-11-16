@@ -42,6 +42,7 @@ import { registerSessionGroupCommand } from './commands/session-group';
 import { registerSkillCommand } from './commands/skill';
 import { registerStatusCommand } from './commands/status';
 import { registerTaskCommand } from './commands/task';
+import { registerTfsCommand } from './commands/tfs';
 import { registerThreadCommand } from './commands/thread';
 import { registerTopicCommand } from './commands/topic';
 import { registerTraceCommand } from './commands/trace';
@@ -111,6 +112,7 @@ export function createProgram() {
   registerSessionGroupCommand(program);
   registerTaskCommand(program);
   registerThreadCommand(program);
+  registerTfsCommand(program);
   registerTopicCommand(program);
   registerTraceCommand(program);
   registerMessageCommand(program);
