@@ -71,6 +71,11 @@ const styles = stylex.create({
 type Source = 'existing' | 'github' | 'tfs';
 
 interface AddEnvironmentContentProps {
+  /**
+   * Where the dialog opens. A project's environment list opens it on the
+   * environments already configured, since making one has its own button there.
+   */
+  defaultSource?: Source;
   /** Called with the environment now linked to the project. */
   onAdded?: (environmentId: string) => void;
   projectId: string;
@@ -87,7 +92,12 @@ interface AddEnvironmentContentProps {
  * connected GitHub App can read, or a pasted URL — or an environment the person
  * already has, linked as it is.
  */
-const AddEnvironmentContent = ({ onAdded, projectId, publish }: AddEnvironmentContentProps) => {
+const AddEnvironmentContent = ({
+  defaultSource = 'github',
+  onAdded,
+  projectId,
+  publish,
+}: AddEnvironmentContentProps) => {
   const { t } = useTranslation(['project', 'common']);
   const { close } = useModalContext();
   const navigate = useWorkspaceAwareNavigate();
@@ -99,7 +109,7 @@ const AddEnvironmentContent = ({ onAdded, projectId, publish }: AddEnvironmentCo
   const owned = useProjectEnvironments();
   const reusable = reusableEnvironments(owned, linked, publish);
 
-  const [source, setSource] = useState<Source>('github');
+  const [source, setSource] = useState<Source>(defaultSource);
   const [url, setUrl] = useState('');
   const [defaultBranch, setDefaultBranch] = useState<string>();
   const [existingId, setExistingId] = useState<string>();
