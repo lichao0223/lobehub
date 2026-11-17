@@ -849,6 +849,7 @@ export const prepareOperation = async (
     activeDeviceId,
     agentConfig,
     agentPlugins,
+    autoSkillIds: ctx.autoSkillIds,
     disabledPluginIds,
     executionPlan,
     prompt,
