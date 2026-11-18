@@ -4,6 +4,7 @@ import type {
   ChannelMemberConfig,
   ChannelMemberRole,
   ChannelReplyJob,
+  ChannelThreadMention,
   ChannelVisibility,
 } from '@lobechat/types';
 import { agentDisplayName } from '@lobechat/types';
@@ -34,6 +35,7 @@ import {
 } from './agent';
 import { openAgentPair } from './agentPair';
 import { channelAvatarMembers } from './avatars';
+import { deleteMessage } from './delete';
 import { findThread } from './delivery';
 import { editMessage } from './edit';
 import { ChannelError } from './error';
@@ -58,6 +60,7 @@ import { type ChannelSearchOptions, searchChannelMessages } from './search';
 import { sendMessage } from './send';
 import type { ChannelStopScope } from './stop';
 import { stopScope } from './stop';
+import { channelThreadMentions } from './threadMentions';
 import { audit, lockChannel } from './transaction';
 import type { ChannelAccess, ChannelAgentPairAccess, ChannelWriteOptions } from './types';
 import { createChannelThread, readChannelView } from './view';
@@ -574,6 +577,7 @@ export class ChannelRepository {
         pinnedAt: Date | null;
         replyJobs: ChannelReplyJob[];
         sharedAgentHandle: string | null;
+        threadMentions: ChannelThreadMention[];
         unreadCount: number;
       }
     >
@@ -666,6 +670,12 @@ export class ChannelRepository {
       : [];
     const mentionCountOf = new Map(mentioned.map(({ channelId, count }) => [channelId, count]));
 
+    // Thread mentions outlive the read position, which opening the main conversation moves.
+    const threadMentionsOf = await channelThreadMentions(
+      this.db,
+      rows.map(({ memberId }) => memberId),
+    );
+
     // A group Channel's list avatar pictures its first members; a direct one, its Agent or the
     // other person, which also pictures a shared Agent the caller has no sidebar row for.
     const avatarsOf = await channelAvatarMembers(this.db, previewIds, this.userId);
@@ -711,6 +721,7 @@ export class ChannelRepository {
           peerUserId: peerOf(channel, this.userId),
           pinnedAt,
           replyJobs: replyJobsOf.get(channel.id) ?? [],
+          threadMentions: threadMentionsOf.get(channel.id) ?? [],
           unreadCount: Math.max(0, channel.sequence - (lastReadSequence ?? 0)),
         };
       },
@@ -732,6 +743,7 @@ export class ChannelRepository {
         peerUserId: peerOf(channel, this.userId),
         pinnedAt: null,
         replyJobs: [],
+        threadMentions: [],
         unreadCount: 0,
       })),
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -1100,6 +1112,17 @@ export class ChannelRepository {
   /** Rewrites the text of the caller's own message; see `editMessage`. */
   editMessage = async (channelId: string, messageId: string, content: string) =>
     this.write(channelId, (tx) => editMessage(tx, channelId, this.userId, messageId, content));
+
+  /** Deletes the caller's own message, or any as an admin; see `deleteMessage`. */
+  deleteMessage = async (channelId: string, messageId: string): Promise<ChannelJobItem[]> =>
+    this.write(channelId, (tx, { member }) =>
+      deleteMessage(
+        tx,
+        channelId,
+        { admin: hasRole(member.role, 'admin'), userId: this.userId },
+        messageId,
+      ),
+    );
 
   /** Sends an unassigned message back to the decision model. Its author or an admin may retry. */
   retryRouting = async (channelId: string, messageId: string): Promise<ChannelMessageItem> =>
