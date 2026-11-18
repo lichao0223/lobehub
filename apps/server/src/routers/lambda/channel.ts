@@ -229,6 +229,20 @@ export const channelRouter = router({
       data: await ctx.channelService.detail(input.channelId, input),
       success: true,
     })),
+  /** Messages in a Channel and its Threads containing every word of `query`, newest first. */
+  searchMessages: channelProcedure
+    .input(
+      z.object({
+        before: z.number().int().positive().optional(),
+        channelId,
+        limit: z.number().int().min(1).max(50).optional(),
+        query: z.string().trim().min(1).max(200),
+      }),
+    )
+    .query(async ({ ctx, input: { channelId, ...options } }) => ({
+      data: await ctx.channelService.repository.searchMessages(channelId, options),
+      success: true,
+    })),
   /**
    * The caller's direct conversation with an Agent, opened on first use for Agents that predate
    * direct Channels. Null when the Agent cannot answer in a Channel (no reachable device).
@@ -311,6 +325,12 @@ export const channelRouter = router({
       data: await ctx.channelService.editMessage(input.channelId, input.messageId, input.content),
       success: true,
     })),
+  deleteMessage: channelProcedure
+    .input(z.object({ channelId, messageId: z.uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.channelService.deleteMessage(input.channelId, input.messageId);
+      return { success: true };
+    }),
   /** An admin removes a person or an Agent from a group Channel. */
   removeMember: channelProcedure
     .input(z.object({ channelId, memberId: z.uuid() }))
