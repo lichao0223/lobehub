@@ -1540,6 +1540,13 @@
       "when": 1794890771557,
       "tag": "0219_contacts_external_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 220,
+      "version": "7",
+      "when": 1794920335259,
+      "tag": "0220_nosy_tag",
+      "breakpoints": true
     }
   ],
   "version": "6"
