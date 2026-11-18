@@ -1,6 +1,7 @@
 import type { DeviceGitLinkedPullRequest } from '@lobechat/types';
 import { useCallback, useMemo, useState } from 'react';
 
+import { linkManualPullRequest } from '@/features/TopicPullRequests/linkManualPullRequest';
 import type { TopicPullRequestView } from '@/features/TopicPullRequests/pullRequestView';
 import { useTopicPullRequests } from '@/features/TopicPullRequests/useTopicPullRequests';
 import { workService } from '@/services/work';
@@ -59,13 +60,45 @@ export const useSidebarPullRequests = (params: {
     [params.topicId],
   );
 
+  const topicId = params.topicId;
+  const dismissPullRequest = useCallback(
+    async (view: TopicPullRequestView) => {
+      if (!topicId) return;
+      const { updated } = await workService.setTopicPullRequestDismissed({
+        dismissed: true,
+        identifier: view.identifier,
+        topicId,
+      });
+      // Not saved (lost write race, topic not reachable): the caller reports it.
+      if (!updated) throw new Error(`Could not remove ${view.identifier}`);
+      await refresh();
+    },
+    [refresh, topicId],
+  );
+  /** Link a PR by URL; resolves to its `owner/repo#n`, or throws on a bad URL. */
+  const linkPullRequest = useCallback(
+    async (url: string) => (topicId ? linkManualPullRequest(topicId, url) : undefined),
+    [topicId],
+  );
+
   if (!linked.enabled) {
-    return { ...legacy, pickPullRequest: undefined, probes: [], pullRequests: undefined };
+    return {
+      ...legacy,
+      dismissPullRequest: undefined,
+      linkPullRequest: undefined,
+      pickPullRequest: undefined,
+      probes: [],
+      pullRequests: undefined,
+    };
   }
 
   return {
     confirmError: undefined,
-    confirmed: !!selected?.confirmed,
+    // Mutations need a confirmed read AND a PR the app can vouch for.
+    confirmed: !!selected?.confirmed && !!selected?.vouched,
+    // A new conversation has no topic to keep a link on until its first send.
+    dismissPullRequest: topicId ? dismissPullRequest : undefined,
+    linkPullRequest: topicId ? linkPullRequest : undefined,
     onRetryConfirm: () => void refresh(),
     /** Open a listed PR: in the PR tab when the pane can read it, else on GitHub. */
     pickPullRequest: (view: TopicPullRequestView) => {
