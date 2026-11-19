@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>管理员控制台 · 交互原型</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --border: #e6e8ec;
+        --border-strong: #d5d9e0;
+        --text: #1f2329;
+        --muted: #6b7280;
+        --muted-2: #9098a6;
+        --primary: #1677ff;
+        --primary-weak: #eef4ff;
+        --danger: #d93025;
+        --danger-weak: #fef1f0;
+        --success: #1a7f37;
+        --success-weak: #edf7ef;
+        --warning: #b26a00;
+        --warning-weak: #fff7e6;
+        --radius: 10px;
+        --shadow: 0 8px 30px rgba(20, 28, 45, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        color: var(--text);
+        background: var(--bg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      button, input, select { font: inherit; color: inherit; }
+
+      .app { display: flex; min-height: 100vh; }
+
+      /* ---------- sidebar ---------- */
+      .sidebar {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        width: 232px;
+        height: 100vh;
+        padding: 18px 14px;
+        background: var(--panel);
+        border-right: 1px solid var(--border);
+      }
+
+      .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #1677ff, #4f9dff);
+        color: white;
+        font-weight: 700;
+      }
+
+      .brand-name { font-weight: 650; letter-spacing: 0.2px; }
+      .brand-sub { color: var(--muted-2); font-size: 12px; }
+
+      .nav { display: flex; flex-direction: column; gap: 4px; }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 9px 10px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .nav-item:hover { background: #f2f4f7; color: var(--text); }
+
+      .nav-item.active {
+        background: var(--primary-weak);
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .nav-icon { width: 18px; text-align: center; opacity: 0.9; }
+
+      .sidebar-foot {
+        margin-top: auto;
+        padding: 12px 10px 4px;
+        border-top: 1px solid var(--border);
+        color: var(--muted-2);
+        font-size: 12px;
+      }
+
+      .sidebar-foot strong { display: block; color: var(--text); font-weight: 600; }
+
+      /* ---------- main ---------- */
+      .main { flex: 1; min-width: 0; }
+
+      .topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 26px 34px 18px;
+      }
+
+      .topbar h1 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -0.2px; }
+
+      .topbar p { margin: 4px 0 0; color: var(--muted); }
+
+      .top-actions { display: flex; align-items: center; gap: 10px; padding-top: 4px; }
+
+      .admin-chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px 6px 6px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--panel);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .avatar {
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #e8efff;
+        color: var(--primary);
+        font-weight: 650;
+      }
+
+      .page { display: none; padding: 0 34px 40px; }
+      .page.active { display: block; }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--panel);
+      }
+
+      .card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .card-title { margin: 0; font-size: 15px; font-weight: 650; }
+      .card-desc { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+      .card-body { padding: 18px; }
+
+      /* ---------- metrics ---------- */
+      .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+
+      .metric { padding: 16px 18px; }
+      .metric-label { color: var(--muted); font-size: 12px; }
+      .metric-value { margin-top: 8px; font-size: 28px; font-weight: 650; letter-spacing: -0.5px; }
+      .metric-foot { margin-top: 6px; color: var(--muted-2); font-size: 12px; }
+      .metric-foot.up { color: var(--success); }
+
+      .grid-2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 16px; margin-top: 16px; }
+
+      .summary-list { display: grid; gap: 12px; }
+
+      .summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 11px 12px;
+        border-radius: 8px;
+        background: #f8f9fb;
+      }
+
+      .summary-row span { color: var(--muted); }
+      .summary-row strong { font-weight: 600; }
+
+      .activity { display: grid; gap: 14px; }
+
+      .activity-item { display: flex; gap: 12px; }
+
+      .activity-dot {
+        flex: none;
+        width: 8px;
+        height: 8px;
+        margin-top: 6px;
+        border-radius: 50%;
+        background: var(--primary);
+      }
+
+      .activity-item p { margin: 0; }
+      .activity-item time { color: var(--muted-2); font-size: 12px; }
+
+      /* ---------- toolbar ---------- */
+      .toolbar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+
+      .search {
+        flex: 1;
+        min-width: 200px;
+        max-width: 360px;
+        height: 36px;
+        padding: 0 12px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        background: #fbfcfd;
+        outline: none;
+      }
+
+      .search:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12); }
+
+      .filters { display: flex; gap: 6px; }
+
+      .chip {
+        padding: 6px 11px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--panel);
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .chip.active { border-color: var(--primary); background: var(--primary-weak); color: var(--primary); }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        background: var(--panel);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .btn:hover { border-color: #c3c9d4; background: #fafbfc; }
+
+      .btn-primary { border-color: var(--primary); background: var(--primary); color: white; }
+      .btn-primary:hover { border-color: #0f62d9; background: #0f62d9; }
+      .btn-danger { border-color: #f2c6c2; background: var(--danger-weak); color: var(--danger); }
+      .btn-sm { height: 30px; padding: 0 10px; font-size: 13px; }
+
+      /* ---------- table ---------- */
+      table { width: 100%; border-collapse: collapse; }
+
+      th {
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--border);
+        background: #fafbfc;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      td { padding: 13px 16px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+
+      tbody tr { cursor: pointer; }
+      tbody tr:hover { background: #f8faff; }
+      tbody tr:last-child td { border-bottom: 0; }
+
+      .user-cell { display: flex; align-items: center; gap: 10px; }
+
+      .user-avatar {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background: #eef2f7;
+        color: #4b5563;
+        font-weight: 600;
+      }
+
+      .user-name { font-weight: 600; }
+      .user-mail { color: var(--muted-2); font-size: 12px; }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .badge-neutral { background: #f2f4f7; color: var(--muted); }
+      .badge-success { background: var(--success-weak); color: var(--success); }
+      .badge-warning { background: var(--warning-weak); color: var(--warning); }
+      .badge-danger { background: var(--danger-weak); color: var(--danger); }
+      .badge-primary { background: var(--primary-weak); color: var(--primary); }
+
+      .muted { color: var(--muted); }
+      .tiny { font-size: 12px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+      .table-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        color: var(--muted-2);
+        font-size: 12px;
+      }
+
+      /* ---------- defaults form ---------- */
+      .form-section + .form-section { margin-top: 16px; }
+
+      .form-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 14px 0;
+        border-bottom: 1px solid #f0f2f5;
+      }
+
+      .form-row:last-child { border-bottom: 0; }
+
+      .form-label { font-weight: 550; }
+      .form-desc { margin-top: 3px; color: var(--muted); font-size: 12px; max-width: 620px; }
+
+      .form-control { flex: none; display: flex; align-items: center; gap: 10px; }
+
+      select {
+        height: 36px;
+        min-width: 180px;
+        padding: 0 10px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .switch { position: relative; display: inline-flex; width: 40px; height: 22px; }
+
+      .switch input { position: absolute; opacity: 0; pointer-events: none; }
+
+      .switch span {
+        width: 100%;
+        height: 100%;
+        border-radius: 999px;
+        background: #d7dbe2;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .switch span::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        transition: transform 0.15s ease;
+      }
+
+      .switch input:checked + span { background: var(--primary); }
+      .switch input:checked + span::after { transform: translateX(18px); }
+      .switch input:disabled + span { opacity: 0.45; cursor: not-allowed; }
+
+      .form-footer {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 18px;
+        padding: 14px 18px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(8px);
+      }
+
+      /* ---------- drawer ---------- */
+      .drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        background: rgba(15, 23, 42, 0.28);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.18s ease;
+      }
+
+      .drawer-backdrop.show { opacity: 1; pointer-events: auto; }
+
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        width: min(560px, 96vw);
+        height: 100vh;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+        transform: translateX(104%);
+        transition: transform 0.22s ease;
+      }
+
+      .drawer.show { transform: translateX(0); }
+
+      .drawer-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 20px 22px 0;
+      }
+
+      .drawer-title { margin: 8px 0 0; font-size: 18px; font-weight: 650; }
+      .drawer-sub { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .tabs { display: flex; gap: 4px; padding: 16px 22px 0; border-bottom: 1px solid var(--border); }
+
+      .tab {
+        padding: 8px 10px 10px;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .tab.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 600; }
+
+      .drawer-body { flex: 1; overflow: auto; padding: 18px 22px 28px; }
+
+      .tab-panel { display: none; }
+      .tab-panel.active { display: block; }
+
+      .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+      .info-item { padding: 12px; border-radius: 8px; background: #f8f9fb; }
+      .info-item span { display: block; color: var(--muted-2); font-size: 12px; }
+      .info-item strong { display: block; margin-top: 4px; font-weight: 600; }
+
+      .policy-box {
+        margin-top: 16px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+
+      .policy-box h4 { margin: 0 0 4px; font-size: 13px; }
+      .policy-box p { margin: 0; color: var(--muted); font-size: 12px; }
+
+      .radio-row { display: flex; gap: 16px; margin-top: 10px; }
+      .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+      .lab-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f2f5;
+      }
+
+      .lab-row:last-child { border-bottom: 0; }
+      .lab-name { font-weight: 550; }
+      .lab-meta { color: var(--muted-2); font-size: 12px; }
+      .lab-right { display: flex; align-items: center; gap: 12px; }
+
+      .lock {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .drawer-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-top: 8px;
+      }
+
+      /* ---------- modal ---------- */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: none;
+        place-items: center;
+        padding: 20px;
+        background: rgba(15, 23, 42, 0.32);
+      }
+
+      .modal-backdrop.show { display: grid; }
+
+      .modal {
+        width: min(520px, 100%);
+        border-radius: 12px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .modal-head { padding: 20px 22px 0; }
+      .modal-head h3 { margin: 0; font-size: 17px; }
+      .modal-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+
+      .modal-body { padding: 18px 22px; }
+
+      .option {
+        display: flex;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        cursor: pointer;
+      }
+
+      .option + .option { margin-top: 10px; }
+      .option.selected { border-color: var(--primary); background: var(--primary-weak); }
+      .option strong { display: block; font-weight: 600; }
+      .option span { color: var(--muted); font-size: 12px; }
+
+      .apply-summary {
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #f8f9fb;
+        font-size: 13px;
+      }
+
+      .modal-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 0 22px 20px;
+      }
+
+      /* ---------- toast ---------- */
+      #toast {
+        position: fixed;
+        left: 50%;
+        bottom: 28px;
+        z-index: 80;
+        padding: 10px 16px;
+        border-radius: 9px;
+        background: #1f2329;
+        color: white;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, 8px);
+        transition: all 0.2s ease;
+      }
+
+      #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+      @media (max-width: 1080px) {
+        .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-2 { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 760px) {
+        .sidebar { display: none; }
+        .topbar, .page { padding-left: 18px; padding-right: 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">L</div>
+          <div>
+            <div class="brand-name">管理员控制台</div>
+            <div class="brand-sub">LobeHub · 交互原型</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item active" data-page="overview"><span class="nav-icon">◎</span>总览</button>
+          <button class="nav-item" data-page="users"><span class="nav-icon">☷</span>用户</button>
+          <button class="nav-item" data-page="defaults"><span class="nav-icon">⚙</span>默认配置</button>
+          <button class="nav-item" data-page="audit"><span class="nav-icon">⌁</span>审计日志 <span class="badge badge-neutral" style="margin-left:auto">P2</span></button>
+        </nav>
+        <div class="sidebar-foot">
+          <strong>A000001 · 系统管理员</strong>
+          统一认证平台 · SSO_TICKET
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1 id="pageTitle">总览</h1>
+            <p id="pageDesc">部署用户、默认配置与权限策略的集中管理入口。</p>
+          </div>
+          <div class="top-actions">
+            <span class="badge badge-primary">管理员</span>
+            <div class="admin-chip"><span class="avatar">张</span>张伟</div>
+          </div>
+        </header>
+
+        <!-- ================= overview ================= -->
+        <section class="page active" id="page-overview">
+          <div class="metrics">
+            <div class="card metric">
+              <div class="metric-label">用户总数</div>
+              <div class="metric-value">1,284</div>
+              <div class="metric-foot up">近 7 天 +37</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-label">近 7 天活跃</div>
+              <div class="metric-value">612</div>
+              <div class="metric-foot">47.7% 的账号</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-label">实验室默认开启</div>
+              <div class="metric-value">4 / 12</div>
+              <div class="metric-foot">自我学习、项目、目标、OAuth 应用</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-label">已禁用</div>
+              <div class="metric-value">6</div>
+              <div class="metric-foot">来自统一认证平台或本控制台</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2 class="card-title">当前部署默认值</h2>
+                  <p class="card-desc">保存后只影响新用户；存量用户需要手动应用。</p>
+                </div>
+                <button class="btn btn-sm" onclick="go('defaults')">去修改</button>
+              </div>
+              <div class="card-body">
+                <div class="summary-list">
+                  <div class="summary-row"><span>默认对话模型</span><strong>DeepSeek · DeepSeek V3.2</strong></div>
+                  <div class="summary-row"><span>Provider 范围</span><strong>DeepSeek、OpenAI、Anthropic</strong></div>
+                  <div class="summary-row"><span>允许用户修改模型配置</span><strong>否</strong></div>
+                  <div class="summary-row"><span>允许用户修改实验室开关</span><strong>是（锁定项除外）</strong></div>
+                  <div class="summary-row"><span>新用户实验室默认</span><strong>自我学习、项目、目标、OAuth 应用</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2 class="card-title">最近管理动作</h2>
+                  <p class="card-desc">P2 接入完整审计表。</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="activity">
+                  <div class="activity-item">
+                    <span class="activity-dot"></span>
+                    <div><p>张伟 将「自我学习」设为新用户默认开启</p><time>今天 09:42</time></div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot" style="background:#b26a00"></span>
+                    <div><p>张伟 禁止 李娜 修改模型配置</p><time>今天 09:18</time></div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot" style="background:#1a7f37"></span>
+                    <div><p>张伟 将默认模型切换为 DeepSeek V3.2</p><time>昨天 17:26</time></div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot" style="background:#9098a6"></span>
+                    <div><p>张伟 禁用用户 王强（A100877）</p><time>昨天 14:03</time></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= users ================= -->
+        <section class="page" id="page-users">
+          <div class="card">
+            <div class="toolbar">
+              <input class="search" id="userSearch" placeholder="搜索工号、姓名或邮箱…" oninput="renderUsers()" />
+              <div class="filters">
+                <button class="chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+                <button class="chip" data-filter="admin" onclick="setFilter('admin', this)">管理员</button>
+                <button class="chip" data-filter="banned" onclick="setFilter('banned', this)">已禁用</button>
+                <button class="chip" data-filter="custom" onclick="setFilter('custom', this)">已自定义</button>
+              </div>
+              <div style="margin-left:auto">
+                <button class="btn btn-sm" onclick="toast('导出功能在 P2 提供')">导出</button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>工号</th>
+                  <th>状态</th>
+                  <th>实验室</th>
+                  <th>默认模型</th>
+                  <th>模型权限</th>
+                  <th>最后活跃</th>
+                </tr>
+              </thead>
+              <tbody id="userRows"></tbody>
+            </table>
+            <div class="table-foot">
+              <span id="userCount">共 8 位用户</span>
+              <span>第 1 / 161 页</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= defaults ================= -->
+        <section class="page" id="page-defaults">
+          <div class="card form-section">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">实验室默认开关</h2>
+                <p class="card-desc">只影响新用户。锁定项会同时写入存量用户，并在用户端置灰。</p>
+              </div>
+              <span class="badge badge-warning">12 个实验</span>
+            </div>
+            <div class="card-body" id="defaultLabs"></div>
+          </div>
+
+          <div class="card form-section">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">默认模型</h2>
+                <p class="card-desc">新用户第一次会话使用的模型；用户可在允许的范围内修改。</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-row">
+                <div>
+                  <div class="form-label">默认 Provider</div>
+                  <div class="form-desc">只列出服务端已配置凭据的 Provider。</div>
+                </div>
+                <div class="form-control">
+                  <select><option>DeepSeek</option><option>OpenAI</option><option>Anthropic</option><option>Google</option></select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">默认模型</div>
+                  <div class="form-desc">对应 Provider 下已启用的模型。</div>
+                </div>
+                <div class="form-control">
+                  <select><option>DeepSeek V3.2</option><option>DeepSeek R1</option><option>DeepSeek V3.1</option></select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">服务模型跟随默认模型</div>
+                  <div class="form-desc">标题生成、记忆提取等后台任务使用同一模型；关闭后可单独配置。</div>
+                </div>
+                <div class="form-control"><label class="switch"><input type="checkbox" checked /><span></span></label></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card form-section">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">用户可用的 Provider 与模型</h2>
+                <p class="card-desc">未勾选的 Provider 不会出现在用户的模型设置里。</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-row">
+                <div><div class="form-label">DeepSeek</div><div class="form-desc">deepseek-chat、deepseek-reasoner</div></div>
+                <div class="form-control"><label class="switch"><input type="checkbox" checked /><span></span></label></div>
+              </div>
+              <div class="form-row">
+                <div><div class="form-label">OpenAI</div><div class="form-desc">GPT-5.2、GPT-5.1、o4-mini</div></div>
+                <div class="form-control"><label class="switch"><input type="checkbox" checked /><span></span></label></div>
+              </div>
+              <div class="form-row">
+                <div><div class="form-label">Anthropic</div><div class="form-desc">Claude Sonnet 4.6、Claude Opus 4.6</div></div>
+                <div class="form-control"><label class="switch"><input type="checkbox" checked /><span></span></label></div>
+              </div>
+              <div class="form-row">
+                <div><div class="form-label">Google</div><div class="form-desc">Gemini 3 Pro、Gemini 3 Flash</div></div>
+                <div class="form-control"><label class="switch"><input type="checkbox" /><span></span></label></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card form-section">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">默认权限</h2>
+                <p class="card-desc">可按用户在「用户详情 → 模型与权限」中覆盖。</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-row">
+                <div>
+                  <div class="form-label">允许用户修改模型与 Provider 配置</div>
+                  <div class="form-desc">关闭后，用户不能新增 Provider、填写 API Key 或修改默认模型；服务端写入同样被拒绝。</div>
+                </div>
+                <div class="form-control"><label class="switch"><input type="checkbox" id="allowModelConfig" /><span></span></label></div>
+              </div>
+              <div class="form-row">
+                <div>
+                  <div class="form-label">允许用户修改实验室开关</div>
+                  <div class="form-desc">关闭后，用户端实验室页面全部只读；管理员锁定项始终只读。</div>
+                </div>
+                <div class="form-control"><label class="switch"><input type="checkbox" checked /><span></span></label></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-footer">
+            <button class="btn" onclick="toast('已还原未保存的修改')">还原</button>
+            <button class="btn" onclick="toast('已保存默认模板，未应用到存量用户')">保存</button>
+            <button class="btn btn-primary" onclick="openApply()">保存并应用…</button>
+          </div>
+        </section>
+
+        <!-- ================= audit placeholder ================= -->
+        <section class="page" id="page-audit">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">审计日志</h2>
+                <p class="card-desc">记录管理员对默认值、用户策略与账号状态的操作。</p>
+              </div>
+              <span class="badge badge-neutral">P2</span>
+            </div>
+            <div class="card-body muted">
+              原型阶段不实现。字段建议：操作者、动作、目标用户、变更前后值、时间、来源 IP。
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ================= drawer ================= -->
+    <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <div>
+          <span class="badge badge-primary" id="drawerBadge">成员</span>
+          <h2 class="drawer-title" id="drawerName">张伟</h2>
+          <p class="drawer-sub" id="drawerSub">A100231 · a100231@tellhow.com</p>
+        </div>
+        <button class="icon-btn" onclick="closeDrawer()" aria-label="关闭">✕</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="profile" onclick="setTab('profile', this)">概览</button>
+        <button class="tab" data-tab="labs" onclick="setTab('labs', this)">实验室</button>
+        <button class="tab" data-tab="model" onclick="setTab('model', this)">模型与权限</button>
+        <button class="tab" data-tab="actions" onclick="setTab('actions', this)">操作</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="tab-panel active" id="tab-profile">
+          <div class="info-grid">
+            <div class="info-item"><span>用户 ID</span><strong class="mono">user_3f9a2c71</strong></div>
+            <div class="info-item"><span>来源</span><strong>统一认证平台 SSO</strong></div>
+            <div class="info-item"><span>角色</span><strong id="infoRole">成员</strong></div>
+            <div class="info-item"><span>状态</span><strong id="infoStatus">正常</strong></div>
+            <div class="info-item"><span>创建时间</span><strong>2026-03-18 10:22</strong></div>
+            <div class="info-item"><span>最后活跃</span><strong id="infoActive">今天 09:12</strong></div>
+          </div>
+          <div class="policy-box">
+            <h4>生效配置摘要</h4>
+            <p id="infoSummary">实验室开启 3 项；默认模型 DeepSeek V3.2；允许修改模型配置。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-labs">
+          <p class="tiny muted" style="margin:0 0 8px">「锁定」表示该值由管理员强制，用户端开关置灰。</p>
+          <div id="drawerLabs"></div>
+        </div>
+
+        <div class="tab-panel" id="tab-model">
+          <div class="form-row" style="padding-top:0">
+            <div><div class="form-label">默认模型</div><div class="form-desc">仅影响该用户的新会话。</div></div>
+            <div class="form-control">
+              <select id="userModel">
+                <option>DeepSeek V3.2</option>
+                <option>DeepSeek R1</option>
+                <option>OpenAI GPT-5.2</option>
+                <option>Claude Sonnet 4.6</option>
+              </select>
+            </div>
+          </div>
+          <div class="policy-box">
+            <h4>模型配置权限</h4>
+            <p>控制该用户能否修改 Provider、API Key 与默认模型。</p>
+            <div class="radio-row">
+              <label><input type="radio" name="modelPolicy" value="inherit" checked /> 继承部署默认</label>
+              <label><input type="radio" name="modelPolicy" value="allow" /> 允许修改</label>
+              <label><input type="radio" name="modelPolicy" value="deny" /> 禁止修改</label>
+            </div>
+          </div>
+          <div class="policy-box">
+            <h4>锁定默认模型</h4>
+            <p>开启后，用户不能在设置里更换默认模型；会话内临时切换是否允许由 P2 决定。</p>
+            <div class="radio-row">
+              <label class="switch" style="margin-left:auto"><input type="checkbox" /><span></span></label>
+            </div>
+          </div>
+          <div class="policy-box">
+            <h4>实验室开关权限</h4>
+            <p>关闭后该用户不能修改任何实验室开关。</p>
+            <div class="radio-row">
+              <label><input type="radio" name="labPolicy" value="inherit" checked /> 继承部署默认</label>
+              <label><input type="radio" name="labPolicy" value="allow" /> 允许修改</label>
+              <label><input type="radio" name="labPolicy" value="deny" /> 禁止修改</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-actions">
+          <div class="drawer-actions">
+            <button class="btn btn-primary" onclick="toast('已保存该用户的策略')">保存策略</button>
+            <button class="btn" onclick="toast('已按「仅补齐未设置项」应用默认值')">应用默认值</button>
+            <button class="btn" onclick="toast('已将该用户恢复为部署默认')">恢复默认</button>
+            <button class="btn" onclick="toast('已发送重置密码邮件（若启用）')">发送重置密码</button>
+            <button class="btn" onclick="toast('已设为管理员')">设为管理员</button>
+            <button class="btn btn-danger" onclick="toast('已禁用该用户，现有会话将被吊销')">禁用用户</button>
+          </div>
+          <p class="tiny muted" style="margin-top:16px">
+            账号类操作复用 Better Auth admin 插件；策略与默认值走 Fork 自有 RPC。
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= apply modal ================= -->
+    <div class="modal-backdrop" id="applyModal">
+      <div class="modal">
+        <div class="modal-head">
+          <h3>应用默认配置到存量用户</h3>
+          <p>默认只补齐用户从未设置过的项，不会覆盖用户自己的选择。</p>
+        </div>
+        <div class="modal-body">
+          <label class="option selected" id="optUnset" onclick="selectApplyMode('unset')">
+            <input type="radio" name="applyMode" checked />
+            <div>
+              <strong>仅补齐未设置项（推荐）</strong>
+              <span>用户已自定义的实验室开关、默认模型保持不变。</span>
+            </div>
+          </label>
+          <label class="option" id="optForce" onclick="selectApplyMode('force')">
+            <input type="radio" name="applyMode" />
+            <div>
+              <strong>强制覆盖</strong>
+              <span>用默认值覆盖所有选中用户的对应配置。</span>
+            </div>
+          </label>
+          <div class="apply-summary" id="applySummary">
+            预计影响 <strong>1,284</strong> 位用户：补齐 <strong>1,196</strong> 位，跳过 <strong>88</strong> 位（已自定义）。
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" onclick="closeApply()">取消</button>
+          <button class="btn btn-primary" onclick="confirmApply()">确认应用</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+      const LABS = [
+        { key: 'enableSelfLearning', name: '自我学习', desc: '从对话中沉淀规则与经验', on: true },
+        { key: 'enableProjects', name: '项目', desc: '项目空间、环境与仓库上下文', on: true },
+        { key: 'enableGoals', name: '目标', desc: '长期目标与验收标准', on: true },
+        { key: 'enableOAuthApps', name: 'OAuth 应用', desc: '把 LobeHub 作为 OAuth Provider', on: true },
+        { key: 'enableAgentGraphConfig', name: 'Agent Graph', desc: '图形化 Agent 运行时配置', on: false },
+        { key: 'enableBetterCodingExperience', name: 'Better Coding', desc: '排队/插话式编码体验', on: false },
+        { key: 'enableDeviceTunnel', name: '设备隧道', desc: '端口转发与本地开发服务', on: false },
+        { key: 'enableArtifactDeployment', name: '产物部署', desc: '部署生成的前端产物', on: false },
+      ];
+
+      const USERS = [
+        { id: 'u1', name: '张伟', username: 'A100231', email: 'a100231@tellhow.com', role: 'admin', status: 'active', labs: 4, model: 'DeepSeek V3.2', policy: '管理员', active: '今天 09:12', custom: true },
+        { id: 'u2', name: '李娜', username: 'A100455', email: 'a100455@tellhow.com', role: 'member', status: 'active', labs: 3, model: 'DeepSeek V3.2', policy: '禁止改模型', active: '今天 08:47', custom: true },
+        { id: 'u3', name: '王强', username: 'A100877', email: 'a100877@tellhow.com', role: 'member', status: 'banned', labs: 0, model: '—', policy: '继承默认', active: '昨天 14:03', custom: false },
+        { id: 'u4', name: '陈静', username: 'A101002', email: 'a101002@tellhow.com', role: 'member', status: 'active', labs: 4, model: 'DeepSeek V3.2', policy: '继承默认', active: '今天 09:05', custom: false },
+        { id: 'u5', name: '刘洋', username: 'A101188', email: 'a101188@tellhow.com', role: 'member', status: 'active', labs: 2, model: 'OpenAI GPT-5.2', policy: '允许改模型', active: '昨天 18:21', custom: true },
+        { id: 'u6', name: '赵敏', username: 'A101230', email: 'a101230@tellhow.com', role: 'member', status: 'active', labs: 4, model: 'DeepSeek V3.2', policy: '继承默认', active: '昨天 16:40', custom: false },
+        { id: 'u7', name: '孙磊', username: 'A101377', email: 'a101377@tellhow.com', role: 'member', status: 'active', labs: 1, model: 'Claude Sonnet 4.6', policy: '继承默认', active: '2026-11-17', custom: true },
+        { id: 'u8', name: '周婷', username: 'A101409', email: 'a101409@tellhow.com', role: 'member', status: 'active', labs: 4, model: 'DeepSeek V3.2', policy: '继承默认', active: '2026-11-17', custom: false },
+      ];
+
+      let activeFilter = 'all';
+      let currentUser = null;
+      let applyMode = 'unset';
+
+      const titles = {
+        overview: ['总览', '部署用户、默认配置与权限策略的集中管理入口。'],
+        users: ['用户', '查看所有 SSO 用户及其生效配置，按人调整策略。'],
+        defaults: ['默认配置', '配置新用户默认值；需要时再应用到存量用户。'],
+        audit: ['审计日志', '管理员操作的完整记录。'],
+      };
+
+      function go(page) {
+        document.querySelectorAll('.page').forEach((el) => el.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
+        const t = titles[page] || titles.overview;
+        document.getElementById('pageTitle').textContent = t[0];
+        document.getElementById('pageDesc').textContent = t[1];
+        if (page === 'users') renderUsers();
+      }
+
+      document.querySelectorAll('.nav-item').forEach((btn) => {
+        btn.addEventListener('click', () => go(btn.dataset.page));
+      });
+
+      function setFilter(filter, el) {
+        activeFilter = filter;
+        document.querySelectorAll('.chip[data-filter]').forEach((c) => c.classList.remove('active'));
+        el.classList.add('active');
+        renderUsers();
+      }
+
+      function statusBadge(user) {
+        if (user.status === 'banned') return '<span class="badge badge-danger">已禁用</span>';
+        if (user.role === 'admin') return '<span class="badge badge-primary">管理员</span>';
+        return '<span class="badge badge-success">正常</span>';
+      }
+
+      function policyBadge(user) {
+        if (user.policy === '禁止改模型') return '<span class="badge badge-warning">禁止改模型</span>';
+        if (user.policy === '允许改模型') return '<span class="badge badge-success">允许改模型</span>';
+        if (user.policy === '管理员') return '<span class="badge badge-primary">管理员</span>';
+        return '<span class="badge badge-neutral">继承默认</span>';
+      }
+
+      function renderUsers() {
+        const query = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+        const rows = USERS.filter((u) => {
+          const matchQuery = !query || [u.name, u.username, u.email].some((v) => v.toLowerCase().includes(query));
+          const matchFilter =
+            activeFilter === 'all' ||
+            (activeFilter === 'admin' && u.role === 'admin') ||
+            (activeFilter === 'banned' && u.status === 'banned') ||
+            (activeFilter === 'custom' && u.custom);
+          return matchQuery && matchFilter;
+        });
+
+        document.getElementById('userCount').textContent = '共 ' + rows.length + ' 位用户';
+        document.getElementById('userRows').innerHTML = rows
+          .map(
+            (u) => `
+            <tr onclick="openDrawer('${u.id}')">
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar">${u.name.slice(0, 1)}</div>
+                  <div>
+                    <div class="user-name">${u.name}</div>
+                    <div class="user-mail">${u.email}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="mono">${u.username}</td>
+              <td>${statusBadge(u)}</td>
+              <td><span class="badge badge-neutral">${u.labs} / 12</span></td>
+              <td>${u.model}</td>
+              <td>${policyBadge(u)}</td>
+              <td class="muted tiny">${u.active}</td>
+            </tr>`
+          )
+          .join('');
+      }
+
+      function openDrawer(id) {
+        currentUser = USERS.find((u) => u.id === id);
+        if (!currentUser) return;
+        document.getElementById('drawerName').textContent = currentUser.name;
+        document.getElementById('drawerSub').textContent = currentUser.username + ' · ' + currentUser.email;
+        document.getElementById('drawerBadge').textContent = currentUser.role === 'admin' ? '管理员' : '成员';
+        document.getElementById('infoRole').textContent = currentUser.role === 'admin' ? '管理员' : '成员';
+        document.getElementById('infoStatus').textContent = currentUser.status === 'banned' ? '已禁用' : '正常';
+        document.getElementById('infoActive').textContent = currentUser.active;
+        document.getElementById('infoSummary').textContent =
+          '实验室开启 ' + currentUser.labs + ' 项；默认模型 ' + currentUser.model + '；' + currentUser.policy + '。';
+        document.getElementById('userModel').value = currentUser.model === '—' ? 'DeepSeek V3.2' : currentUser.model;
+        renderDrawerLabs();
+        setTab('profile', document.querySelector('.tab[data-tab="profile"]'));
+        document.getElementById('drawer').classList.add('show');
+        document.getElementById('drawerBackdrop').classList.add('show');
+        document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+      }
+
+      function closeDrawer() {
+        document.getElementById('drawer').classList.remove('show');
+        document.getElementById('drawerBackdrop').classList.remove('show');
+        document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+      }
+
+      function setTab(tab, el) {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+        if (el) el.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+      }
+
+      function renderDrawerLabs() {
+        const container = document.getElementById('drawerLabs');
+        const userLabs = currentUser.labs;
+        container.innerHTML = LABS.map((lab, index) => {
+          const checked = index < userLabs;
+          return `
+            <div class="lab-row">
+              <div>
+                <div class="lab-name">${lab.name}</div>
+                <div class="lab-meta">${lab.desc}</div>
+              </div>
+              <div class="lab-right">
+                <span class="badge ${checked ? 'badge-success' : 'badge-neutral'}">${checked ? '生效开启' : '生效关闭'}</span>
+                <label class="switch"><input type="checkbox" ${checked ? 'checked' : ''} /><span></span></label>
+                <label class="lock"><input type="checkbox" ${index < 2 ? 'checked' : ''} /> 锁定</label>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      function renderDefaultLabs() {
+        document.getElementById('defaultLabs').innerHTML = LABS.map(
+          (lab) => `
+          <div class="form-row">
+            <div>
+              <div class="form-label">${lab.name}</div>
+              <div class="form-desc">${lab.desc}</div>
+            </div>
+            <div class="form-control">
+              <span class="tiny muted">默认${lab.on ? '开启' : '关闭'}</span>
+              <label class="switch"><input type="checkbox" ${lab.on ? 'checked' : ''} /><span></span></label>
+            </div>
+          </div>`
+        ).join('');
+      }
+
+      function openApply() {
+        document.getElementById('applyModal').classList.add('show');
+        selectApplyMode('unset');
+      }
+
+      function closeApply() {
+        document.getElementById('applyModal').classList.remove('show');
+      }
+
+      function selectApplyMode(mode) {
+        applyMode = mode;
+        document.getElementById('optUnset').classList.toggle('selected', mode === 'unset');
+        document.getElementById('optForce').classList.toggle('selected', mode === 'force');
+        document.querySelector('#optUnset input').checked = mode === 'unset';
+        document.querySelector('#optForce input').checked = mode === 'force';
+        document.getElementById('applySummary').innerHTML =
+          mode === 'unset'
+            ? '预计影响 <strong>1,284</strong> 位用户：补齐 <strong>1,196</strong> 位，跳过 <strong>88</strong> 位（已自定义）。'
+            : '预计影响 <strong>1,284</strong> 位用户：全部覆盖，用户已有的自定义值将丢失。';
+      }
+
+      function confirmApply() {
+        closeApply();
+        toast(applyMode === 'unset' ? '已开始应用：仅补齐未设置项' : '已开始应用：强制覆盖');
+      }
+
+      let toastTimer;
+      function toast(message) {
+        const el = document.getElementById('toast');
+        el.textContent = message;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+      }
+
+      document.getElementById('applyModal').addEventListener('click', (e) => {
+        if (e.target.id === 'applyModal') closeApply();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeDrawer();
+          closeApply();
+        }
+      });
+
+      renderUsers();
+      renderDefaultLabs();
+    </script>
+  </body>
+</html>
