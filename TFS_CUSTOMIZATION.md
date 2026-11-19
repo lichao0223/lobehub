@@ -159,7 +159,7 @@ Docker 是 **LobeHub 服务怎么部署**；下表是 **Agent 运行时把代码
 | `src/features/Integrations/{registry,index,Overview}.tsx`                                                   | 注册卡片、详情和个人绑定状态（registry 实际为 .ts）                                        |
 | `src/features/Projects/List/index.tsx`                                                                      | 从 TFS 创建入口                                                                            |
 | `src/features/Projects/CreateFromGithub/{index,Content}.tsx`                                                | 可选 provider，复用原表单，不能删除 GitHub 默认值                                          |
-| `src/features/Projects/AddEnvironmentModal.tsx`                                                             | TFS 环境来源入口                                                                           |
+| `src/features/Projects/AddEnvironmentModal.tsx`                                                             | TFS 环境来源入口；一环境多仓库后由服务端兼容过程向项目唯一环境追加仓库，不得删文件 |
 | `src/features/EnvironmentManager/{CreateEnvironmentModal,EnvironmentForm}.tsx`、`repository.ts`             | 平台选择、仓库显示和分支处理                                                               |
 | `src/store/utils/userDataStores.ts`                                                                         | 登出时清理 TFS 内存数据                                                                    |
 | `src/features/ChatInput/ControlBar/sandboxEnvironmentOptions.ts`                                            | 环境列表显示 TFS 的 project/repository，避免把 Collection/\_git 路径当仓库名               |
@@ -224,6 +224,8 @@ git diff --check
 覆盖账号一对一、加密存储、不能借用其他用户身份、Collection 变更后解绑、未配置密钥拒绝绑定、受限 Collection、URL 穿越、PAT 本机 HTTP 传输、不跟随重定向、错误脱敏、分页、PR 检查失败与空结果区分、失败构建语义、TFVC 跨项目路径拒绝、日志行数限制、临时 Git helper 清理、未授权恢复重试、公共 drive 拒绝初始化和登出缓存重置。
 
 2026-11-19 上游切换到“一项目一环境、多仓库”后，沙盒统一入口补回了公共盘边界。实际持久公共盘拒绝 TFS 初始化，workspace 默认的临时沙盒仍允许当前用户凭据克隆；新增回归覆盖这两个结果，并确认公共盘拒绝时不会读取 TFS 凭据。
+
+2026-11-20 合并 `upstream/canary` `1ce7bdcefb` 后，Fork 的 TFS 接点改动两处：`apps/server/src/services/tfs/agentContext.ts` 不再调用上游删除的 `ProjectModel.listEnvironments`，改用 `ProjectEnvironmentRepository.get(projectId)`（与上游 `projectPlacement.ts` 同构），其 17 项测试通过；`sandboxEnvironmentOptions.ts` 的 `repositorySelection` 保持 TFS 个人盘判断，签名与 `SandboxDrivePicker` 统一。`AddEnvironmentModal` 依赖的 store 方法与 `environment.add.*` 文案在上游一并移除，本 Fork 已补回，接点落到服务端保留的兼容过程 `attachRepository` / `attachEnvironment`（向项目唯一环境追加仓库，不再“关联环境”）。未重跑真实 NTLM 克隆与页面验收。
 
 后续 Docker 部署补充：`bash -n scripts/deploy-custom-image.sh` 与 15 项 Python 测试通过，覆盖首次安装自动生成加密密钥、预制公司地址、老部署补缺省值、保留原 Collection/API/ 禁用值、保留原密钥与 `.env`。相关文件 lint 无错误，22 项部署相关 TypeScript 测试通过。Docker 镜像构建和真实 Compose 解析仍未执行。
 

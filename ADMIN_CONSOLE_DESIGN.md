@@ -447,6 +447,13 @@ prototypes/admin-console/index.html
 7. Better Auth 升级时复核 `adminClient()` 的方法名与返回结构（`listUsers`、`banUser`、`setRole`）。
 8. 迁移编号：继续使用 `9000+` 保留区；不要占用上游编号。
 
+### 本轮复查记录（2026-11-20，合并 `upstream/canary` `1ce7bdcefb`）
+
+- 第 1 条：`src/libs/better-auth/define-config.ts` 仍启用 `admin()`，控制台账号接口保持可用。
+- 第 2 条：`databaseHooks.user.create.after` 仍调用 `userService.initUser(...)`，`applyDefaultsToNewUser` 的实施接点未变。
+- 第 8 条：上游本轮推进到 `0224`，Fork 的 `9000_nosy_tag` 顺延到 idx 225；`9001_admin_console.sql`（CUST-008）仍落在保留区。
+- 其余条目（用户设置列、lab flag、`settingsRouter` 写入口、`desktopRouter.shared.tsx`、`adminClient()`）本轮上游未改动，实施时按第 9 节控制共享文件改动面即可。
+
 ## 12. 验收清单
 
 产品行为：
