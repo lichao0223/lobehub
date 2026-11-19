@@ -274,6 +274,51 @@ describe('buildSandboxEnvironmentInitCommand', () => {
     expect(existsSync(join(work, 'README.md'))).toBe(false);
   });
 
+  it('checks out side-by-side repositories even when the working folder holds other files', () => {
+    writeFileSync(join(work, 'mine.txt'), 'work');
+
+    const result = run(
+      buildSandboxEnvironmentInitCommand(
+        init({
+          bootstrapCommand: undefined,
+          sources: [
+            { path: 'one', url: `file://${repo}` },
+            { path: 'two', url: `file://${repo}` },
+          ],
+        }),
+      ),
+      work,
+    );
+
+    expect(environmentInitRan(result.stdout)).toBe(true);
+    expect(readFileSync(join(work, 'one', 'README.md'), 'utf8')).toBe('hello');
+    expect(readFileSync(join(work, 'two', 'README.md'), 'utf8')).toBe('hello');
+    expect(readFileSync(join(work, 'mine.txt'), 'utf8')).toBe('work');
+  });
+
+  it('fills in a missing side-by-side checkout without touching the one already there', () => {
+    mkdirSync(join(work, 'two'));
+    writeFileSync(join(work, 'two', 'mine.txt'), 'work');
+
+    const result = run(
+      buildSandboxEnvironmentInitCommand(
+        init({
+          bootstrapCommand: undefined,
+          sources: [
+            { path: 'one', url: `file://${repo}` },
+            { path: 'two', url: `file://${repo}` },
+          ],
+        }),
+      ),
+      work,
+    );
+
+    expect(environmentInitRan(result.stdout)).toBe(true);
+    expect(readFileSync(join(work, 'one', 'README.md'), 'utf8')).toBe('hello');
+    expect(readFileSync(join(work, 'two', 'mine.txt'), 'utf8')).toBe('work');
+    expect(existsSync(join(work, 'two', 'README.md'))).toBe(false);
+  });
+
   it('runs a setup that writes nothing into the folder once, not on every call', () => {
     // A global install leaves the folder empty, and each tool call starts a
     // fresh service: the record in the sandbox is what stops a rerun.

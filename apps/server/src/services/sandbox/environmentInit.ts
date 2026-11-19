@@ -159,10 +159,18 @@ export const buildSandboxEnvironmentInitCommand = (init: SandboxInitialization):
 
   const exports = toExports(init.env);
 
+  // Each repository fills a destination of its own, and only when that one is
+  // still empty. A repository left at the top of the working directory keeps
+  // the old rule — the folder itself must be empty, so a folder that already
+  // holds someone's work is left alone — while side-by-side checkouts fill in
+  // the ones that are missing and leave the rest untouched.
   const clones = init.sources.map((source, index) => {
     const destination = safeDestination(source.path);
     if (!destination)
-      return `echo ${shellQuote(`Skipped a repository with an unusable path: ${source.path}`)}`;
+      return {
+        needs: '__lobe_needs=1',
+        step: `echo ${shellQuote(`Skipped a repository with an unusable path: ${source.path}`)}`,
+      };
 
     const branch = source.ref ? ` --branch ${shellQuote(source.ref)}` : '';
     const url = shellQuote(source.url);
@@ -170,12 +178,22 @@ export const buildSandboxEnvironmentInitCommand = (init: SandboxInitialization):
     // land in a sub-path of a directory the first one already filled; the
     // checkout's own `.git` comes along.
     const staging = `"$__lobe_tmp/${index}"`;
+    const target = shellQuote(destination);
+    const isEmpty = `[ -z "$(ls -A ${target} 2>/dev/null)" ]`;
 
-    return [
-      `git clone --depth 1${branch} ${url} ${staging}`,
-      `mkdir -p ${shellQuote(destination)}`,
-      `cp -a ${staging}/. ${shellQuote(destination)}/`,
-    ].join(' && ');
+    return {
+      needs: `if ${isEmpty}; then __lobe_needs=1; fi`,
+      step: [
+        `if ${isEmpty}; then`,
+        `  ${[
+          `git clone --depth 1${branch} ${url} ${staging}`,
+          `mkdir -p ${target}`,
+          `cp -a ${staging}/. ${target}/`,
+          `__lobe_cloned=1`,
+        ].join(' && ')}`,
+        `fi`,
+      ].join('\n'),
+    };
   });
 
   // Given to git through its environment for the clones alone, and unset
@@ -232,14 +250,26 @@ export const buildSandboxEnvironmentInitCommand = (init: SandboxInitialization):
     ...(tfsCredential ? ['set +x'] : exports),
     ...staging,
     ...credential.set,
-    ...clones,
+    ...clones.map((clone) => clone.step),
     ...credential.unset,
     ...(tfsCredential ? exports : []),
-    ...(init.bootstrapCommand ? [init.bootstrapCommand] : []),
+    // Setup follows a clone, or the first run of an environment that clones
+    // nothing. It does not rerun just because one missing checkout was filled
+    // in later.
+    ...(init.bootstrapCommand
+      ? [
+          [
+            `if [ "\${__lobe_cloned:-0}" = 1 ] || [ ! -e "$__lobe_state" ]; then`,
+            init.bootstrapCommand,
+            `fi`,
+          ].join('\n'),
+        ]
+      : []),
   ];
 
-  // Joined with `&&` inside one subshell, so the first failure stops what
-  // follows and its status is the subshell's.
+  // Chained with `&&` inside one subshell — a subshell used as an `if`
+  // condition, so `set -e` alone would let a failure through. The first
+  // failure stops what follows and becomes the subshell's status.
   const body = `( set -e; ${steps.join(' && ')} )`;
 
   const record = `"\${HOME:-/tmp}/${SANDBOX_ENVIRONMENT_STATE_DIR}"`;
@@ -253,13 +283,17 @@ export const buildSandboxEnvironmentInitCommand = (init: SandboxInitialization):
   // setup with nothing to clone keeps relying on its record alone.
   const staleWhenEmpty = tfsCredential
     ? ' || true'
-    : clones.length > 0
+    : init.sources.length > 0
       ? ` || [ "$(cat "$__lobe_state" 2>/dev/null)" = done ]`
       : '';
 
   return [
     `__lobe_state=${record}/${key}`,
-    `if [ -z "$(ls -A . 2>/dev/null)" ] && { [ ! -e "$__lobe_state" ]${staleWhenEmpty}; }; then`,
+    '__lobe_needs=0',
+    ...(init.sources.length > 0
+      ? clones.map((clone) => clone.needs)
+      : ['if [ -z "$(ls -A . 2>/dev/null)" ]; then __lobe_needs=1; fi']),
+    `if [ "$__lobe_needs" = 1 ] && { [ ! -e "$__lobe_state" ]${staleWhenEmpty}; }; then`,
     `  echo ${SANDBOX_ENVIRONMENT_RAN_LINE}`,
     `  mkdir -p ${record}`,
     `  if ${body}; then`,
