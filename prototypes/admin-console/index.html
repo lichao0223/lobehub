@@ -5,477 +5,2472 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>管理员控制台 · 用户设置模板原型</title>
     <style>
+      /* ==========================================================================
+       * 管理员控制台原型 — 视觉基线对齐「设置」页真实实现
+       *
+       * 取自本仓库：
+       *   src/features/NavHeader            · 页头三槽 / 44px 高
+       *   src/features/NavPanel             · 280px 侧栏 / colorBgLayout 背景
+       *   src/features/Settings/Layout      · 外壳结构
+       *   src/features/Settings/features/SettingHeader
+       *   src/features/Settings/features/SettingsContent（NavHeader + SettingContainer）
+       *   @lobehub/ui Form variant="filled" itemsType="group"
+       *   packages/const/src/layoutTokens   · MAX_WIDTH 1024 / itemMinWidth max(34%,240px)
+       *   src/styles/densityScale           · loose 密度（默认）
+       * ========================================================================== */
+
       :root {
-        --bg: #f6f7f9;
-        --panel: #ffffff;
-        --border: #e6e8ec;
-        --border-strong: #d5d9e0;
-        --text: #1f2329;
-        --muted: #6b7280;
-        --muted-2: #9098a6;
-        --primary: #1677ff;
-        --primary-weak: #eef4ff;
-        --danger: #d93025;
-        --danger-weak: #fef1f0;
-        --success: #1a7f37;
-        --success-weak: #edf7ef;
-        --warning: #b26a00;
-        --warning-weak: #fff7e6;
-        --radius: 10px;
-        --shadow: 0 8px 30px rgba(20, 28, 45, 0.08);
+        color-scheme: light;
+
+        /* surfaces */
+        --lobe-color-bg-container: #fff;
+        --lobe-color-bg-layout: #f8f8f8;
+        --lobe-color-bg-elevated: #fff;
+
+        /* borders & fills */
+        --lobe-color-border: #e3e3e3;
+        --lobe-color-border-secondary: #eee;
+        --lobe-fill-quaternary: rgba(0, 0, 0, 0.015);
+        --lobe-fill-tertiary: rgba(0, 0, 0, 0.03);
+        --lobe-fill-secondary: rgba(0, 0, 0, 0.06);
+        --lobe-fill-content: rgba(0, 0, 0, 0.06);
+
+        /* text */
+        --lobe-color-text: #1f1f1f;
+        --lobe-color-text-secondary: #666;
+        --lobe-color-text-tertiary: #8a8a8a;
+        --lobe-color-text-quaternary: #b0b0b0;
+
+        /* semantic */
+        /* colorPrimary 在本产品是近黑；强调色不另造蓝色 */
+        --lobe-color-primary: #222222;
+        --lobe-color-primary-hover: #333333;
+        --lobe-color-primary-active: #111111;
+        --lobe-color-primary-bg: #f5f5f5;
+        --lobe-color-primary-contrast: #fff;
+        --lobe-color-success: #00a03f;
+        --lobe-color-success-bg: rgba(0, 160, 63, 0.1);
+        --lobe-color-warning: #b26a00;
+        --lobe-color-warning-bg: rgba(254, 180, 0, 0.14);
+        --lobe-color-error: #f35837;
+        --lobe-color-error-bg: rgba(243, 88, 55, 0.1);
+        --lobe-color-info: #2c91ff;
+        --lobe-color-info-bg: rgba(44, 145, 255, 0.08);
+
+        /* metrics（loose 密度 + 设置页常量） */
+        --lobe-radius: 8px;
+        --lobe-radius-lg: 12px;
+        --lobe-radius-sm: 6px;
+        --lobe-radius-xs: 4px;
+        --lobe-header-height: 44px;
+        --lobe-nav-width: 280px;
+        --lobe-row-height: 36px;
+        --lobe-control-height: 32px;
+
+        /* 卡片阴影：Form filled group 的 bodyFilled 四层投影 */
+        --lobe-shadow-card:
+          0 1px 0 -1px var(--lobe-color-border), 0 1px 2px -0.5px var(--lobe-color-border),
+          0 2px 2px -1px var(--lobe-color-border-secondary),
+          0 3px 6px -4px var(--lobe-color-border-secondary);
+        --lobe-shadow-popup:
+          0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+          0 9px 28px 8px rgba(0, 0, 0, 0.05);
+
+        /* genFontFamily() / genFontFamilyCode()：Geist 起 */
+        --font-sans:
+          'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+          'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+        --font-mono:
+          'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
       }
 
-      * { box-sizing: border-box; }
+      [data-theme='dark'] {
+        color-scheme: dark;
+        --lobe-color-bg-container: #0d0d0d;
+        --lobe-color-bg-layout: #000;
+        --lobe-color-bg-elevated: #1a1a1a;
 
-      html, body {
+        --lobe-color-border: #202020;
+        --lobe-color-border-secondary: #1a1a1a;
+        --lobe-fill-quaternary: rgba(255, 255, 255, 0.02);
+        --lobe-fill-tertiary: rgba(255, 255, 255, 0.06);
+        --lobe-fill-secondary: rgba(255, 255, 255, 0.1);
+        --lobe-fill-content: rgba(255, 255, 255, 0.16);
+
+        --lobe-color-text: #e6e6e6;
+        --lobe-color-text-secondary: #b4b4b4;
+        --lobe-color-text-tertiary: #8f8f8f;
+        --lobe-color-text-quaternary: #6b6b6b;
+
+        --lobe-color-primary: #eeeeee;
+        --lobe-color-primary-hover: #ffffff;
+        --lobe-color-primary-active: #dddddd;
+        --lobe-color-primary-bg: #111111;
+        --lobe-color-primary-contrast: #111111;
+        --lobe-color-success: #80c933;
+        --lobe-color-success-bg: rgba(128, 201, 51, 0.12);
+        --lobe-color-warning: #ffbe45;
+        --lobe-color-warning-bg: rgba(255, 190, 69, 0.12);
+        --lobe-color-error: #e95350;
+        --lobe-color-error-bg: rgba(233, 83, 80, 0.12);
+        --lobe-color-info: #4cb3ff;
+        --lobe-color-info-bg: rgba(76, 179, 255, 0.1);
+
+        --lobe-shadow-card: 0 0 0 1px var(--lobe-color-border-secondary);
+        --lobe-shadow-popup: 0 6px 16px 0 rgba(0, 0, 0, 0.5);
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
         margin: 0;
-        min-height: 100%;
-        color: var(--text);
-        background: var(--bg);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        font-family: var(--font-sans);
         font-size: 14px;
-        line-height: 1.55;
+        line-height: 22px;
+        color: var(--lobe-color-text);
+        background: var(--lobe-color-bg-container);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-variant-numeric: tabular-nums;
       }
 
-      button, input, select { font: inherit; color: inherit; }
-      .app { display: flex; min-height: 100vh; }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
 
-      .sidebar {
-        position: sticky;
-        top: 0;
+      button {
+        border: 0;
+        background: none;
+        padding: 0;
+        cursor: pointer;
+        text-align: start;
+      }
+
+      svg {
+        display: block;
+      }
+
+      .icon {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+
+      .icon-sm {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        flex: none;
+      }
+
+      .mono {
+        font-family: var(--font-mono);
+      }
+
+      .muted {
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .tiny {
+        font-size: 11px;
+        line-height: 18px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      /* ==========================================================================
+       * 外壳：NavPanel + 主内容
+       * ========================================================================== */
+
+      .app {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        background: var(--lobe-color-bg-container);
+      }
+
+      /* ------------------------------------------------------------ NavPanel */
+      .nav-panel {
+        flex: none;
+        width: var(--lobe-nav-width);
         display: flex;
         flex-direction: column;
-        width: 232px;
-        height: 100vh;
-        padding: 18px 14px;
-        background: var(--panel);
-        border-right: 1px solid var(--border);
+        background: var(--lobe-color-bg-layout);
       }
 
-      .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
-      .brand-mark {
-        display: grid; place-items: center; width: 32px; height: 32px;
-        border-radius: 9px; background: linear-gradient(135deg, #1677ff, #4f9dff);
-        color: white; font-weight: 700;
+      /* SideBarHeaderLayout：父级面包屑 + 右侧收起按钮，paddingInline 6 */
+      .nav-header {
+        flex: none;
+        height: var(--lobe-header-height);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2px;
+        padding: 0 6px;
       }
-      .brand-name { font-weight: 650; letter-spacing: 0.2px; }
-      .brand-sub { color: var(--muted-2); font-size: 12px; }
-      .nav { display: flex; flex-direction: column; gap: 4px; }
+
+      /* 面包屑 12px / normal / colorTextDescription，hover 取 colorText */
+      .nav-breadcrumb {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding-inline: 6px;
+        overflow: hidden;
+      }
+
+      .crumb {
+        min-width: 0;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 20px;
+        color: var(--lobe-color-text-tertiary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .crumb-link:hover {
+        color: var(--lobe-color-text);
+      }
+
+      .crumb-home {
+        flex: none;
+        display: flex;
+        align-items: center;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .crumb-home:hover {
+        color: var(--lobe-color-text);
+      }
+
+      .icon-crumb {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .crumb-sep {
+        flex: none;
+        width: 12px;
+        height: 12px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        color: var(--lobe-color-text-quaternary);
+      }
+
+      /* NavPanel 底部身份区：HomeSidebar/Header/components/User（Block clickable borderless） */
+      .nav-footer {
+        flex: none;
+        padding: 4px 4px 8px;
+      }
+
+      /* User：avatar 28 + 名字 14/500 + ChevronDown 16；
+         paddingBlock 2 / paddingInlineStart 2 / paddingInlineEnd 8 / gap 8 / minWidth 32 */
+      .nav-user {
+        width: 100%;
+        min-width: 32px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow: hidden;
+        padding-block: 2px;
+        padding-inline: 2px 8px;
+        border-radius: var(--lobe-radius-sm);
+        color: var(--lobe-color-text);
+        user-select: none;
+        transition: background 0.15s ease;
+      }
+
+      .nav-user:hover {
+        background: var(--lobe-fill-tertiary);
+      }
+
+      .nav-user-name {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 22px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .nav-user-chevron {
+        flex: none;
+        width: 16px;
+        height: 16px;
+        color: var(--lobe-color-text-description);
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .nav-header-actions {
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .nav-search {
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0 4px 2px;
+        height: 32px;
+        padding: 0 8px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .nav-search input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+      }
+
+      .nav-search input::placeholder {
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .nav-scroll {
+        flex: 1;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 4px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .nav-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .nav-scroll::-webkit-scrollbar-thumb {
+        border-radius: 3px;
+        background: var(--lobe-fill-secondary);
+      }
+
+      .nav-section {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      /* sectionHeaderHeight = controlHeight(32)；trigger paddingBlock = (32 − 24) / 2 = 4 */
+      .section-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        min-height: var(--lobe-control-height);
+        /* sectionTriggerPaddingBlock 4 + sectionTriggerPaddingInline '8px 4px' */
+        padding: 4px 4px 4px 8px;
+        color: var(--lobe-color-text-secondary);
+        border-radius: var(--lobe-radius-sm);
+        user-select: none;
+      }
+
+      /* Accordion header hover = colorFillTertiary */
+      .section-trigger:hover {
+        color: var(--lobe-color-text);
+        background: var(--lobe-fill-tertiary);
+      }
+
+      .section-trigger-title {
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      .section-chevron {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        color: var(--lobe-color-text-tertiary);
+        transition: transform 0.2s ease;
+      }
+
+      .nav-section[data-open='false'] .section-chevron {
+        transform: rotate(-90deg);
+      }
+
+      .nav-section[data-open='false'] .nav-items {
+        display: none;
+      }
+
+      .nav-items {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
       .nav-item {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 9px 10px; border: 0; border-radius: 8px; background: transparent;
-        color: var(--muted); cursor: pointer; text-align: left;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        height: var(--lobe-row-height);
+        padding: 0 4px;
+        border-radius: var(--lobe-radius);
+        color: var(--lobe-color-text-secondary);
+        font-size: 14px;
+        line-height: 22px;
+        user-select: none;
+        transition: background 0.15s ease, color 0.15s ease;
       }
-      .nav-item:hover { background: #f2f4f7; color: var(--text); }
-      .nav-item.active { background: var(--primary-weak); color: var(--primary); font-weight: 600; }
-      .nav-icon { width: 18px; text-align: center; opacity: 0.9; }
-      .sidebar-foot { margin-top: auto; padding: 12px 10px 4px; border-top: 1px solid var(--border); color: var(--muted-2); font-size: 12px; }
-      .sidebar-foot strong { display: block; color: var(--text); font-weight: 600; }
 
-      .main { flex: 1; min-width: 0; }
-      .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 34px 18px; }
-      .topbar h1 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -0.2px; }
-      .topbar p { margin: 4px 0 0; color: var(--muted); }
-      .top-actions { display: flex; align-items: center; gap: 10px; padding-top: 4px; }
-      .admin-chip { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); color: var(--muted); font-size: 12px; }
-      .avatar { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #e8efff; color: var(--primary); font-weight: 650; }
-      .page { display: none; padding: 0 34px 40px; }
-      .page.active { display: block; }
+      .nav-item:hover {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+      }
 
-      .card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); }
-      .card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
-      .card-title { margin: 0; font-size: 15px; font-weight: 650; }
-      .card-desc { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
-      .card-body { padding: 18px; }
+      /* NavItem：active 只换 variant(filled) 与文字/图标色，不加字重 */
+      .nav-item.active {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+      }
 
-      .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-      .metric { padding: 16px 18px; }
-      .metric-label { color: var(--muted); font-size: 12px; }
-      .metric-value { margin-top: 8px; font-size: 28px; font-weight: 650; letter-spacing: -0.5px; }
-      .metric-foot { margin-top: 6px; color: var(--muted-2); font-size: 12px; }
-      .metric-foot.up { color: var(--success); }
+      .nav-item:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-      .grid-2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 16px; margin-top: 16px; }
-      .summary-list { display: grid; gap: 12px; }
-      .summary-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 12px; border-radius: 8px; background: #f8f9fb; }
-      .summary-row span { color: var(--muted); }
-      .summary-row strong { font-weight: 600; }
-      .activity { display: grid; gap: 14px; }
-      .activity-item { display: flex; gap: 12px; }
-      .activity-dot { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--primary); }
-      .activity-item p { margin: 0; }
-      .activity-item time { color: var(--muted-2); font-size: 12px; }
+      .nav-icon {
+        flex: none;
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        color: var(--lobe-color-text-tertiary);
+      }
 
-      .toolbar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
-      .search { flex: 1; min-width: 200px; max-width: 360px; height: 36px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: #fbfcfd; outline: none; }
-      .search:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12); }
-      .filters { display: flex; gap: 6px; }
-      .chip { padding: 6px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); color: var(--muted); cursor: pointer; }
-      .chip.active { border-color: var(--primary); background: var(--primary-weak); color: var(--primary); }
+      .nav-item:hover .nav-icon,
+      .nav-item.active .nav-icon {
+        color: var(--lobe-color-text);
+      }
 
-      .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--panel); cursor: pointer; white-space: nowrap; }
-      .btn:hover { border-color: #c3c9d4; background: #fafbfc; }
-      .btn-primary { border-color: var(--primary); background: var(--primary); color: white; }
-      .btn-primary:hover { border-color: #0f62d9; background: #0f62d9; }
-      .btn-danger { border-color: #f2c6c2; background: var(--danger-weak); color: var(--danger); }
-      .btn-sm { height: 30px; padding: 0 10px; font-size: 13px; }
+      .nav-title {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
 
-      table { width: 100%; border-collapse: collapse; }
-      th { padding: 11px 16px; border-bottom: 1px solid var(--border); background: #fafbfc; color: var(--muted); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
-      td { padding: 13px 16px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
-      tbody tr { cursor: pointer; }
-      tbody tr:hover { background: #f8faff; }
-      tbody tr:last-child td { border-bottom: 0; }
-      .user-cell { display: flex; align-items: center; gap: 10px; }
-      .user-avatar { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 9px; background: #eef2f7; color: #4b5563; font-weight: 600; }
-      .user-name { font-weight: 600; }
-      .user-mail { color: var(--muted-2); font-size: 12px; }
+      .nav-item .tag {
+        margin-inline-start: auto;
+      }
 
-      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
-      .badge-neutral { background: #f2f4f7; color: var(--muted); }
-      .badge-success { background: var(--success-weak); color: var(--success); }
-      .badge-warning { background: var(--warning-weak); color: var(--warning); }
-      .badge-danger { background: var(--danger-weak); color: var(--danger); }
-      .badge-primary { background: var(--primary-weak); color: var(--primary); }
-      .badge-alpha { background: #f4f0ff; color: #6d4aff; }
-      .badge-beta { background: #eaf7f3; color: #137a5b; }
+      /* UserAvatar：方形像素回退头像（boring-avatars pixel），圆角 = size / 6 */
+      .avatar {
+        flex: none;
+        display: block;
+        overflow: hidden;
+        line-height: 0;
+        background: var(--lobe-fill-tertiary);
+      }
 
-      .muted { color: var(--muted); }
-      .tiny { font-size: 12px; }
-      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+      .avatar > svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
 
-      /* settings template layout */
-      .settings-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 16px; align-items: start; }
-      .settings-nav { position: sticky; top: 16px; max-height: calc(100vh - 120px); overflow: auto; padding: 10px; }
-      .settings-nav-group + .settings-nav-group { margin-top: 12px; }
-      .settings-nav-title { padding: 4px 10px; color: var(--muted-2); font-size: 11px; font-weight: 600; letter-spacing: 0.4px; }
-      .settings-nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; text-align: left; font-size: 13px; }
-      .settings-nav-item:hover { background: #f5f7fa; color: var(--text); }
-      .settings-nav-item.active { background: var(--primary-weak); color: var(--primary); font-weight: 600; }
-      .settings-nav-icon { width: 16px; text-align: center; opacity: 0.8; }
+      .avatar-24 {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+      }
 
-      .settings-panel { min-width: 0; }
-      .settings-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--border); }
-      .settings-panel-head h2 { margin: 0; font-size: 17px; font-weight: 650; }
-      .settings-panel-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
-      .summary-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-      .summary-chip { padding: 2px 8px; border-radius: 999px; background: #f2f4f7; color: var(--muted); font-size: 11px; }
-      .summary-chip.primary { background: var(--primary-weak); color: var(--primary); }
+      .avatar-28 {
+        width: 28px;
+        height: 28px;
+        border-radius: 4.67px;
+      }
 
-      .policy-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 16px 20px 0; padding: 14px 16px; border: 1px solid #dbe7ff; border-radius: 9px; background: #f6f9ff; }
-      .policy-card h4 { margin: 0; font-size: 13px; }
-      .policy-card p { margin: 3px 0 0; color: var(--muted); font-size: 12px; max-width: 720px; }
+      .avatar-40 {
+        width: 40px;
+        height: 40px;
+        border-radius: 6.67px;
+      }
 
-      .sub-section { padding: 4px 20px 0; }
-      .sub-section + .sub-section { margin-top: 8px; }
-      .sub-section-title { display: flex; align-items: center; gap: 8px; padding: 16px 0 8px; font-size: 12px; font-weight: 650; color: var(--muted); letter-spacing: 0.3px; }
-      .sub-section-title::after { content: ""; flex: 1; height: 1px; background: #f0f2f5; }
+      /* ------------------------------------------------------- 主内容 */
+      /* 设置页外壳不画页头：标题由 SettingHeader 在容器内绘制 */
+      .main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--lobe-color-bg-container);
+      }
 
-      .setting-row { display: grid; grid-template-columns: minmax(0, 1fr) 210px 86px 170px; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f4f7; }
-      .setting-row:last-child { border-bottom: 0; }
-      .setting-label { font-weight: 550; }
-      .setting-path { margin-top: 2px; color: var(--muted-2); font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-      .setting-desc { margin-top: 2px; color: var(--muted); font-size: 12px; }
-      .setting-control { display: flex; justify-content: flex-end; }
-      .setting-control select, .setting-control input[type="text"], .setting-control input[type="number"] { width: 100%; height: 34px; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--panel); }
-      .setting-control select:disabled, .setting-control input:disabled { background: #f7f8fa; color: var(--muted-2); }
-      .cap { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
-      .cap-server { background: var(--primary-weak); color: var(--primary); }
-      .cap-device { background: #fff7e6; color: var(--warning); }
-      .cap-private { background: #f4f0ff; color: #6d4aff; }
-      .cap-data { background: #f2f4f7; color: var(--muted); }
-      .cap-serveronly { background: #eef7f6; color: #0f766e; }
-      .cap-readonly { background: #f2f4f7; color: var(--muted-2); }
-      .policy-toggles { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
-      .mini-check { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; cursor: pointer; }
-      .mini-check input { margin: 0; }
+      /* NavHeader：height 44 / paddingBlock 8 / paddingInline 8 / gap 4 / space-between */
+      .page-header {
+        flex: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        height: var(--lobe-header-height);
+        padding: 8px;
+        overflow: hidden;
+      }
 
-      .switch { position: relative; display: inline-flex; width: 40px; height: 22px; }
-      .switch input { position: absolute; opacity: 0; pointer-events: none; }
-      .switch span { width: 100%; height: 100%; border-radius: 999px; background: #d7dbe2; cursor: pointer; transition: background 0.15s ease; }
-      .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: transform 0.15s ease; }
-      .switch input:checked + span { background: var(--primary); }
-      .switch input:checked + span::after { transform: translateX(18px); }
-      .switch input:disabled + span { opacity: 0.45; cursor: not-allowed; }
+      .header-left,
+      .header-right {
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
 
-      .form-footer { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 18px 20px 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); }
-      .form-footer .left { margin-right: auto; color: var(--muted-2); font-size: 12px; }
+      /* 设置页标题由 NavHeader 居中绘制（SettingsContent：<Text weight={500}>） */
+      .header-center {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-      .note-page { padding: 22px; }
-      .note-box { display: flex; gap: 14px; padding: 18px; border-radius: 10px; background: #f8f9fb; }
-      .note-icon { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 9px; background: var(--panel); border: 1px solid var(--border); }
-      .note-box h3 { margin: 0; font-size: 14px; }
-      .note-box p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
-      .note-list { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
-      .note-list li + li { margin-top: 6px; }
+      .header-title {
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 22px;
+        color: var(--lobe-color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
-      /* drawer */
-      .drawer-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(15, 23, 42, 0.28); opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
-      .drawer-backdrop.show { opacity: 1; pointer-events: auto; }
-      .drawer { position: fixed; top: 0; right: 0; z-index: 30; display: flex; flex-direction: column; width: min(640px, 96vw); height: 100vh; background: var(--panel); box-shadow: var(--shadow); transform: translateX(104%); transition: transform 0.22s ease; }
-      .drawer.show { transform: translateX(0); }
-      .drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px 0; }
-      .drawer-title { margin: 8px 0 0; font-size: 18px; font-weight: 650; }
-      .drawer-sub { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
-      .icon-btn { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--muted); cursor: pointer; }
-      .tabs { display: flex; gap: 4px; padding: 16px 22px 0; border-bottom: 1px solid var(--border); }
-      .tab { padding: 8px 10px 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
-      .tab.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 600; }
-      .drawer-body { flex: 1; overflow: auto; padding: 18px 22px 28px; }
-      .tab-panel { display: none; }
-      .tab-panel.active { display: block; }
-      .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      .info-item { padding: 12px; border-radius: 8px; background: #f8f9fb; }
-      .info-item span { display: block; color: var(--muted-2); font-size: 12px; }
-      .info-item strong { display: block; margin-top: 4px; font-weight: 600; }
-      .policy-box { margin-top: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 8px; }
-      .policy-box h4 { margin: 0 0 4px; font-size: 13px; }
-      .policy-box p { margin: 0; color: var(--muted); font-size: 12px; }
-      .radio-row { display: flex; gap: 16px; margin-top: 10px; }
-      .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-      .drawer-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-      .drawer-toolbar select { height: 34px; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--panel); }
-      .user-setting-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px 120px 90px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #f2f4f7; font-size: 13px; }
-      .user-setting-row:last-child { border-bottom: 0; }
-      .value-pill { display: inline-block; max-width: 120px; padding: 2px 7px; border-radius: 6px; background: #f2f4f7; color: var(--text); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .value-pill.default { background: #f8f9fb; color: var(--muted); }
-      .drawer-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; }
+      /* 侧栏收起后的展开入口（真实产品由布局层提供） */
+      .nav-expand-fab {
+        display: none;
+        position: fixed;
+        top: 6px;
+        inset-inline-start: 6px;
+        z-index: 30;
+        width: 28px;
+        height: 28px;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--lobe-radius-sm);
+        color: var(--lobe-color-text-secondary);
+        background: var(--lobe-color-bg-container);
+      }
 
-      /* modal */
-      .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: none; place-items: center; padding: 20px; background: rgba(15, 23, 42, 0.32); }
-      .modal-backdrop.show { display: grid; }
-      .modal { width: min(560px, 100%); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
-      .modal-head { padding: 20px 22px 0; }
-      .modal-head h3 { margin: 0; font-size: 17px; }
-      .modal-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
-      .modal-body { padding: 18px 22px; }
-      .option { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; cursor: pointer; }
-      .option + .option { margin-top: 10px; }
-      .option.selected { border-color: var(--primary); background: var(--primary-weak); }
-      .option strong { display: block; font-weight: 600; }
-      .option span { color: var(--muted); font-size: 12px; }
-      .apply-summary { margin-top: 16px; padding: 12px 14px; border-radius: 8px; background: #f8f9fb; font-size: 13px; }
-      .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 0 22px 20px; }
+      .nav-expand-fab:hover {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+      }
 
-      #toast { position: fixed; left: 50%; bottom: 28px; z-index: 80; padding: 10px 16px; border-radius: 9px; background: #1f2329; color: white; opacity: 0; pointer-events: none; transform: translate(-50%, 8px); transition: all 0.2s ease; }
-      #toast.show { opacity: 1; transform: translate(-50%, 0); }
+      .app.nav-collapsed .nav-expand-fab {
+        display: inline-flex;
+      }
+
+      .scroll {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
+        background: var(--lobe-color-bg-container);
+      }
+
+      .scroll::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      .scroll::-webkit-scrollbar-thumb {
+        border-radius: 4px;
+        background: var(--lobe-fill-secondary);
+      }
+
+      /* SettingContainer */
+      .container {
+        width: 100%;
+        max-width: 1024px;
+        margin: 0 auto;
+        padding: 24px 24px 128px;
+        overflow-x: hidden;
+      }
+
+      .page {
+        display: none;
+      }
+
+      .page.active {
+        display: flex;
+        flex-direction: column;
+        gap: 36px;
+      }
+
+      /* ==========================================================================
+       * SettingHeader —— 标题 24 / 描述 14 / 右上操作 / 底部分隔线
+       * ========================================================================== */
+
+      .setting-header {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding-top: 12px;
+      }
+
+      .setting-header-main {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .setting-header-text {
+        min-width: 0;
+      }
+
+      .setting-title {
+        margin: 0;
+        font-size: 24px;
+        line-height: 32px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        color: var(--lobe-color-text);
+      }
+
+      .setting-desc {
+        margin: 4px 0 0;
+        font-size: 14px;
+        line-height: 22px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .setting-note {
+        margin: 8px 0 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .setting-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: none;
+        padding-top: 4px;
+      }
+
+      .summary-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--lobe-color-border-secondary);
+        opacity: 0.66;
+      }
+
+      /* ==========================================================================
+       * Form（variant="filled" / itemsType="group"）
+       * 外层 fill-quaternary + 12px 圆角 → 内层 container + 1px border + 8px 圆角
+       * ========================================================================== */
+
+      .form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .form-group {
+        border-radius: var(--lobe-radius-lg);
+        background: var(--lobe-fill-quaternary);
+      }
+
+      [data-theme='dark'] .form-group {
+        background: var(--lobe-color-bg-layout);
+      }
+
+      .form-group-card {
+        margin: 0 3px 3px;
+        border-radius: var(--lobe-radius);
+        border: 1px solid var(--lobe-color-border-secondary);
+        background: var(--lobe-color-bg-container);
+        box-shadow: var(--lobe-shadow-card);
+        overflow: hidden;
+      }
+
+      /* 真实实现里 shadow 只在浅色下挂载（groupStyles.bodyFilledLight 仅 !isDarkMode） */
+      [data-theme='dark'] .form-group-card {
+        box-shadow: none;
+      }
+
+      .form-group-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 16px 0;
+      }
+
+      .form-group-title {
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .form-group-desc {
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .form-group-extra {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: none;
+      }
+
+      .form-group-body {
+        padding: 4px 16px 8px;
+      }
+
+      .form-group-body.flush {
+        padding: 4px 0 0;
+      }
+
+      /* --------------------------------------------------------- FormField */
+      .form-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 200px 76px 96px;
+        align-items: start;
+        gap: 12px;
+        padding: 16px 0;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .form-row:first-child,
+      .form-group-body > .form-row:first-of-type {
+        border-top: 0;
+      }
+
+      .form-label {
+        min-width: 0;
+      }
+
+      .form-label-title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+      }
+
+      .form-label-desc {
+        margin-top: 4px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .form-label-path {
+        margin-top: 4px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-text-tertiary);
+        word-break: break-all;
+      }
+
+      .form-control {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: var(--lobe-control-height);
+        gap: 8px;
+        padding-top: 1px;
+      }
+
+      .form-action {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: var(--lobe-control-height);
+      }
+
+      /* 能力标签列 / 锁定策略列：与 form-control 同基线，右侧元信息 */
+      .form-meta {
+        display: flex;
+        align-items: center;
+        min-height: var(--lobe-control-height);
+        padding-top: 1px;
+      }
+
+      .form-policy {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: var(--lobe-control-height);
+        padding-top: 1px;
+      }
+
+      .lock-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--lobe-radius-sm);
+        color: var(--lobe-color-text-quaternary);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .lock-btn:hover {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .lock-btn.is-locked {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+      }
+
+      /* ==========================================================================
+       * 控件
+       * ========================================================================== */
+
+      .control {
+        width: 100%;
+        max-width: 200px;
+        height: var(--lobe-control-height);
+        padding: 0 8px;
+        border-radius: var(--lobe-radius);
+        border: 1px solid var(--lobe-color-border);
+        background: var(--lobe-color-bg-container);
+        font-size: 14px;
+        line-height: 22px;
+        color: var(--lobe-color-text);
+        outline: 0;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .control:focus {
+        border-color: var(--lobe-color-primary);
+        box-shadow: 0 0 0 2px var(--lobe-color-primary-bg);
+      }
+
+      select.control {
+        appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+          linear-gradient(135deg, currentColor 50%, transparent 50%);
+        background-position: calc(100% - 14px) 14px, calc(100% - 9px) 14px;
+        background-size: 5px 5px, 5px 5px;
+        background-repeat: no-repeat;
+        padding-inline-end: 26px;
+      }
+
+      .control:disabled {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text-tertiary);
+        cursor: not-allowed;
+      }
+
+      .switch {
+        position: relative;
+        display: inline-flex;
+        flex: none;
+        width: 40px;
+        height: 22px;
+      }
+
+      .switch input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        cursor: pointer;
+        z-index: 1;
+      }
+
+      .switch span {
+        position: relative;
+        width: 40px;
+        height: 22px;
+        border-radius: 11px;
+        background: var(--lobe-fill-content);
+        transition: background 0.2s ease;
+      }
+
+      .switch span::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+        transition: transform 0.2s ease;
+      }
+
+      .switch input:checked + span {
+        background: var(--lobe-color-primary);
+      }
+
+      .switch input:checked + span::after {
+        transform: translateX(18px);
+      }
+
+      [data-theme='dark'] .switch input:checked + span::after {
+        background: #111;
+      }
+
+      .switch input:disabled {
+        cursor: not-allowed;
+      }
+
+      .switch input:disabled + span {
+        opacity: 0.5;
+      }
+
+      .mini-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .mini-check input {
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        accent-color: var(--lobe-color-primary);
+        cursor: pointer;
+      }
+
+      /* ---------------------------------------------------------- 标签 */
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        flex: none;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 11px;
+        line-height: 1;
+        font-weight: 500;
+        white-space: nowrap;
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .tag-primary {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+      }
+
+      .tag-success {
+        background: var(--lobe-color-success-bg);
+        color: var(--lobe-color-success);
+      }
+
+      .tag-warning {
+        background: var(--lobe-color-warning-bg);
+        color: var(--lobe-color-warning);
+      }
+
+      .tag-danger {
+        background: var(--lobe-color-error-bg);
+        color: var(--lobe-color-error);
+      }
+
+      .tag-alpha {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .tag-beta {
+        background: var(--lobe-color-success-bg);
+        color: var(--lobe-color-success);
+      }
+
+      .cap {
+        display: inline-flex;
+        align-items: center;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 11px;
+        line-height: 1;
+        white-space: nowrap;
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .cap-server {
+        background: var(--lobe-color-success-bg);
+        color: var(--lobe-color-success);
+      }
+
+      .cap-device {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .cap-private {
+        background: var(--lobe-color-warning-bg);
+        color: var(--lobe-color-warning);
+      }
+
+      .cap-data {
+        background: var(--lobe-color-warning-bg);
+        color: var(--lobe-color-warning);
+      }
+
+      .cap-serveronly {
+        background: var(--lobe-color-error-bg);
+        color: var(--lobe-color-error);
+      }
+
+      .cap-readonly {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* ---------------------------------------------------------- 按钮 */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 32px;
+        padding: 0 12px;
+        border-radius: var(--lobe-radius);
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--lobe-color-text);
+        font-size: 13px;
+        line-height: 20px;
+        white-space: nowrap;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .btn:hover {
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .btn-text {
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .btn-text:hover {
+        color: var(--lobe-color-text);
+      }
+
+      .btn-outline {
+        border-color: var(--lobe-color-border);
+        background: var(--lobe-color-bg-container);
+      }
+
+      .btn-primary {
+        background: var(--lobe-color-primary);
+        color: var(--lobe-color-primary-contrast);
+      }
+
+      .btn-primary:hover {
+        background: var(--lobe-color-primary-hover);
+      }
+
+      .btn-danger {
+        color: var(--lobe-color-error);
+      }
+
+      .btn-danger:hover {
+        background: var(--lobe-color-error-bg);
+      }
+
+      .btn-sm {
+        height: 28px;
+        padding: 0 10px;
+        font-size: 12px;
+        border-radius: var(--lobe-radius-sm);
+      }
+
+      .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--lobe-radius-sm);
+        color: var(--lobe-color-text-secondary);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .icon-btn:hover {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text);
+      }
+
+      /* ---------------------------------------------------------- 搜索 / chips */
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: var(--lobe-control-height);
+        width: 260px;
+        max-width: 100%;
+        padding: 0 10px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-fill-quaternary);
+        border: 1px solid transparent;
+        color: var(--lobe-color-text-tertiary);
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+
+      .search:focus-within {
+        border-color: var(--lobe-color-primary);
+        background: var(--lobe-color-bg-container);
+      }
+
+      .search input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+      }
+
+      .search input::placeholder {
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .chip {
+        height: 26px;
+        padding: 0 10px;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 12px;
+        line-height: 1;
+        color: var(--lobe-color-text-secondary);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .chip:hover {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text);
+      }
+
+      .chip.active {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+        font-weight: 500;
+      }
+
+      /* ==========================================================================
+       * 总览（= 设置页 Form group + ProfileRow 行）
+       * ========================================================================== */
+
+      .summary-list {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        min-height: 48px;
+        padding-block: 16px;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .summary-row:first-child {
+        border-top: 0;
+        padding-top: 4px;
+      }
+
+      .summary-row > span {
+        flex: 0 0 160px;
+        font-size: 14px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+      }
+
+      .summary-row > strong {
+        flex: 1;
+        min-width: 0;
+        font-size: 14px;
+        line-height: 22px;
+        font-weight: 400;
+        text-align: end;
+        color: var(--lobe-color-text);
+      }
+
+      .activity {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .activity-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-height: 48px;
+        padding-block: 16px;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .activity-item:first-child {
+        border-top: 0;
+        padding-top: 4px;
+      }
+
+      .activity-dot {
+        flex: none;
+        width: 6px;
+        height: 6px;
+        margin-top: 8px;
+        border-radius: 50%;
+        background: var(--lobe-color-text-quaternary);
+      }
+
+      .activity-item p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 22px;
+        color: var(--lobe-color-text);
+      }
+
+      .activity-item time {
+        display: block;
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* ==========================================================================
+       * 用户列表（沿用 Settings 列表行：hover fillTertiary / active fillSecondary）
+       * ========================================================================== */
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 4px 0 12px;
+      }
+
+      .filters {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+
+      .list {
+        display: flex;
+        flex-direction: column;
+        margin-inline: -12px;
+      }
+
+      .list-header,
+      .list-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) 88px 84px minmax(0, 1.2fr) 104px 92px;
+        align-items: center;
+        gap: 12px;
+        padding-inline: 12px;
+      }
+
+      .list-header {
+        padding-block: 8px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .list-row {
+        padding-block: 12px;
+        border-radius: var(--lobe-radius);
+        cursor: pointer;
+        transition: background 0.12s ease;
+      }
+
+      .list-row:hover {
+        background: var(--lobe-fill-tertiary);
+      }
+
+      .list-row.active {
+        background: var(--lobe-fill-secondary);
+      }
+
+      .list-empty {
+        padding: 24px 12px;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .user-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .user-name {
+        font-size: 14px;
+        line-height: 22px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .user-mail {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .list-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* ==========================================================================
+       * 说明页（不提供默认值的设置页）
+       * ========================================================================== */
+
+      .alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: var(--lobe-radius-lg);
+        background: var(--lobe-color-info-bg);
+      }
+
+      .alert > .icon {
+        margin-top: 2px;
+        color: var(--lobe-color-info);
+      }
+
+      .alert-title {
+        font-size: 13px;
+        line-height: 20px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .alert-desc {
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .note-list {
+        margin: 8px 0 0;
+        padding-inline-start: 18px;
+      }
+
+      .note-list li {
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .note-list li + li {
+        margin-top: 4px;
+      }
+
+      /* ==========================================================================
+       * 抽屉（用户详情）
+       * ========================================================================== */
+
+      .drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        background: rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .drawer-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 41;
+        width: min(520px, 96vw);
+        display: flex;
+        flex-direction: column;
+        background: var(--lobe-color-bg-container);
+        border-left: 1px solid var(--lobe-color-border-secondary);
+        box-shadow: var(--lobe-shadow-popup);
+        transform: translateX(100%);
+        transition: transform 0.24s cubic-bezier(0.32, 0.72, 0, 1);
+      }
+
+      .drawer.show {
+        transform: translateX(0);
+      }
+
+      .drawer-head {
+        flex: none;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .drawer-title {
+        margin: 0;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .drawer-sub {
+        margin: 2px 0 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* segmented tabs */
+      .tabs {
+        flex: none;
+        display: flex;
+        gap: 2px;
+        margin: 0 16px 12px;
+        padding: 3px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .tab {
+        flex: 1;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 12px;
+        line-height: 1;
+        color: var(--lobe-color-text-secondary);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .tab:hover {
+        color: var(--lobe-color-text);
+      }
+
+      .tab.active {
+        background: var(--lobe-color-bg-container);
+        color: var(--lobe-color-text);
+        font-weight: 500;
+        box-shadow: var(--lobe-shadow-card);
+      }
+
+      .drawer-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0 16px 24px;
+      }
+
+      .drawer-body::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .drawer-body::-webkit-scrollbar-thumb {
+        border-radius: 3px;
+        background: var(--lobe-fill-secondary);
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .info-item {
+        padding: 10px 12px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .info-item > span {
+        display: block;
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .info-item > strong {
+        display: block;
+        margin-top: 2px;
+        font-size: 13px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+        word-break: break-all;
+      }
+
+      .drawer-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0 8px;
+      }
+
+      .drawer-toolbar .control {
+        max-width: 180px;
+        height: 28px;
+        font-size: 12px;
+      }
+
+      .policy-box {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--lobe-color-border-secondary);
+        border-radius: var(--lobe-radius);
+      }
+
+      .policy-box h4 {
+        margin: 0;
+        font-size: 13px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+      }
+
+      .policy-box p {
+        margin: 4px 0 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .radio-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+      }
+
+      .radio-row label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+        cursor: pointer;
+      }
+
+      .radio-row input {
+        margin: 0;
+        accent-color: var(--lobe-color-primary);
+      }
+
+      .drawer-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding-top: 4px;
+      }
+
+      .value-pill {
+        display: inline-block;
+        max-width: 140px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+        padding: 2px 6px;
+        border-radius: var(--lobe-radius-sm);
+        background: var(--lobe-fill-quaternary);
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text);
+      }
+
+      .value-pill.default {
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .user-setting-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 104px 104px 82px;
+        align-items: start;
+        gap: 8px;
+        padding: 10px 0;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .user-setting-row .form-label-title {
+        font-size: 13px;
+      }
+
+      .user-setting-row .form-label-path {
+        margin-top: 2px;
+      }
+
+      /* ==========================================================================
+       * 弹窗
+       * ========================================================================== */
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.45);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .modal-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal {
+        width: min(560px, 100%);
+        border-radius: var(--lobe-radius-lg);
+        border: 1px solid var(--lobe-color-border-secondary);
+        background: var(--lobe-color-bg-container);
+        box-shadow: var(--lobe-shadow-popup);
+        overflow: hidden;
+      }
+
+      .modal-head {
+        padding: 20px 20px 0;
+      }
+
+      .modal-head h3 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 24px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .modal-head p {
+        margin: 6px 0 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .modal-body {
+        padding: 16px 20px;
+      }
+
+      .option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--lobe-color-border-secondary);
+        border-radius: var(--lobe-radius);
+        cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease;
+      }
+
+      .option + .option {
+        margin-top: 8px;
+      }
+
+      .option.selected {
+        border-color: var(--lobe-color-primary);
+        background: var(--lobe-color-primary-bg);
+      }
+
+      .option input {
+        margin: 2px 0 0;
+        accent-color: var(--lobe-color-primary);
+      }
+
+      .option strong {
+        display: block;
+        font-size: 13px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+      }
+
+      .option span {
+        display: block;
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .apply-summary {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-fill-quaternary);
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .apply-summary strong {
+        color: var(--lobe-color-text);
+        font-weight: 600;
+      }
+
+      .modal-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 0 20px 20px;
+      }
+
+      /* ---------------------------------------------------------- toast */
+      #toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        z-index: 60;
+        padding: 8px 14px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-color-text);
+        color: var(--lobe-color-bg-container);
+        font-size: 13px;
+        line-height: 20px;
+        box-shadow: var(--lobe-shadow-popup);
+        opacity: 0;
+        transform: translate(-50%, 8px);
+        pointer-events: none;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        max-width: calc(100vw - 32px);
+      }
+
+      #toast.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+
+      /* ==========================================================================
+       * 概览指标 / 卡片网格 / 用户表
+       * ========================================================================== */
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .stat-card {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 14px 16px 16px;
+        border: 1px solid var(--lobe-color-border-secondary);
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-color-bg-container);
+        box-shadow: var(--lobe-shadow-card);
+      }
+
+      .stat-label {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .stat-value {
+        font-size: 24px;
+        line-height: 32px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .stat-foot {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 16px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      th {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+        text-align: start;
+        white-space: nowrap;
+      }
+
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
+        color: var(--lobe-color-text);
+        vertical-align: middle;
+      }
+
+      tbody tr {
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      tbody tr:hover {
+        background: var(--lobe-fill-quaternary);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .table-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 12px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* ==========================================================================
+       * 响应式
+       * ========================================================================== */
 
       @media (max-width: 1180px) {
-        .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .grid-2 { grid-template-columns: 1fr; }
-        .setting-row { grid-template-columns: minmax(0, 1fr) 180px 80px; }
-        .setting-row .policy-toggles { grid-column: 1 / -1; flex-direction: row; gap: 14px; }
+        .form-row {
+          grid-template-columns: minmax(0, 1fr) 180px 64px 88px;
+        }
+
+        .metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-2 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .list-header,
+        .list-row {
+          grid-template-columns: minmax(0, 1.4fr) 80px 76px minmax(0, 1fr) 96px 88px;
+          gap: 8px;
+        }
+
+        .user-setting-row {
+          grid-template-columns: minmax(0, 1fr) 96px 96px;
+        }
       }
+
       @media (max-width: 900px) {
-        .settings-layout { grid-template-columns: 1fr; }
-        .settings-nav { position: static; max-height: none; }
-        .sidebar { display: none; }
-        .topbar, .page { padding-left: 18px; padding-right: 18px; }
+        .nav-panel {
+          display: none;
+        }
+
+        .container {
+          padding: 16px 16px 96px;
+        }
+
+        .header-center {
+          position: static;
+          transform: none;
+          max-width: none;
+          flex: 1;
+          justify-content: flex-start;
+          padding-inline: 6px;
+        }
+
+        .header-left {
+          display: none;
+        }
+
+        .setting-header-main {
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .setting-header-actions {
+          padding-top: 0;
+          flex-wrap: wrap;
+        }
+
+        .setting-title {
+          font-size: 20px;
+          line-height: 28px;
+        }
+
+        .form-row {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .form-meta,
+        .form-policy {
+          display: none;
+        }
+
+        th,
+        td {
+          padding-inline: 8px;
+        }
+
+        .form-control,
+        .form-action {
+          justify-content: flex-start;
+          min-height: 0;
+          padding-top: 0;
+        }
+
+        .user-setting-row {
+          grid-template-columns: minmax(0, 1fr) 82px;
+        }
+
+        .user-setting-row > :nth-child(3) {
+          display: none;
+        }
+
+        .search {
+          width: 100%;
+        }
+
+        .list {
+          margin-inline: 0;
+        }
+
+        .list-header {
+          display: none;
+        }
+
+        .list-row {
+          grid-template-columns: minmax(0, 1fr) 84px;
+        }
+
+        .list-row > :nth-child(2),
+        .list-row > :nth-child(4),
+        .list-row > :nth-child(5),
+        .list-row > :nth-child(6) {
+          display: none;
+        }
+      }
+
+      /* ==========================================================================
+       * 原型补充：交互态（真实产品里由 NavPanel / Drawer 组件提供）
+       * ========================================================================== */
+
+      .app.nav-collapsed .nav-panel {
+        display: none;
+      }
+
+      /* 对应 Settings/Layout/Body：Accordion gap={8} + 每组 Flexbox gap={1} */
+      #settingsNav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      #settingsNav .nav-icon {
+        font-size: 14px;
+      }
+
+      .form-group-header.solo {
+        padding-bottom: 16px;
+      }
+
+      .drawer-section-title {
+        margin-top: 12px;
+        padding-bottom: 2px;
+        font-size: 12px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--lobe-color-text-secondary);
       }
     </style>
   </head>
   <body>
-    <div class="app">
-      <aside class="sidebar">
-        <div class="brand">
-          <div class="brand-mark">L</div>
-          <div>
-            <div class="brand-name">管理员控制台</div>
-            <div class="brand-sub">LobeHub · 交互原型</div>
+    <div class="app" id="app">
+      <!-- ============================== NavPanel ============================== -->
+      <aside class="nav-panel">
+        <div class="nav-header">
+          <nav class="nav-breadcrumb" aria-label="面包屑">
+            <a class="crumb-home" href="#" onclick="return false" title="首页" aria-label="首页">
+              <svg class="icon-crumb" viewBox="0 0 24 24">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+                <path d="M9 22V12h6v10" />
+              </svg>
+            </a>
+            <svg class="crumb-sep" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
+            <span class="crumb" id="pageCrumb">管理员控制台</span>
+            <svg class="crumb-sep" id="pageCrumbSep" viewBox="0 0 24 24" hidden>
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+            <span class="crumb" id="pageCrumbExtra" hidden>用户设置模板</span>
+          </nav>
+          <div class="nav-header-actions">
+            <button class="icon-btn" title="收起侧栏" onclick="toggleNav()" aria-label="收起侧栏">
+              <svg class="icon-sm" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M9 3v18" />
+              </svg>
+            </button>
           </div>
         </div>
-        <nav class="nav">
-          <button class="nav-item active" data-page="overview"><span class="nav-icon">◎</span>总览</button>
-          <button class="nav-item" data-page="users"><span class="nav-icon">☷</span>用户</button>
-          <button class="nav-item" data-page="settings"><span class="nav-icon">⚙</span>用户设置模板</button>
-          <button class="nav-item" data-page="audit"><span class="nav-icon">⌁</span>审计日志 <span class="badge badge-neutral" style="margin-left:auto">P2</span></button>
+
+        <div class="nav-search">
+          <svg class="icon-sm" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <input id="navSearch" type="search" placeholder="搜索页面" oninput="filterNav(this.value)" />
+        </div>
+
+        <nav class="nav-scroll" id="navScroll">
+          <div class="nav-section" data-open="true">
+            <button class="section-trigger" onclick="toggleSection(this)">
+              <span class="section-trigger-title">控制台</span>
+              <svg class="section-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <div class="nav-items">
+              <button class="nav-item active" data-page="overview" data-label="总览" onclick="go('overview')">
+                <span class="nav-icon">
+                  <svg class="icon" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="7" height="9" rx="1.5" />
+                    <rect x="14" y="3" width="7" height="5" rx="1.5" />
+                    <rect x="14" y="12" width="7" height="9" rx="1.5" />
+                    <rect x="3" y="16" width="7" height="5" rx="1.5" />
+                  </svg>
+                </span>
+                <span class="nav-title">总览</span>
+              </button>
+              <button class="nav-item" data-page="users" data-label="用户" onclick="go('users')">
+                <span class="nav-icon">
+                  <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                </span>
+                <span class="nav-title">用户</span>
+              </button>
+              <button class="nav-item" data-page="audit" data-label="审计日志" onclick="go('audit')">
+                <span class="nav-icon">
+                  <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2" />
+                    <rect x="8" y="2" width="8" height="4" rx="1" />
+                    <path d="M8 11h8M8 15h6" />
+                  </svg>
+                </span>
+                <span class="nav-title">审计日志</span>
+                <span class="tag">P2</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 设置模板的分组导航由 renderSettingsNav() 写入 -->
+          <div id="settingsNav"></div>
         </nav>
-        <div class="sidebar-foot">
-          <strong>A000001 · 系统管理员</strong>
-          统一认证平台 · SSO_TICKET
+
+        <!-- 底部身份区：与 HomeSidebar/Header/components/User 同构（avatar 28 + 名字 + ChevronDown） -->
+        <div class="nav-footer">
+          <button
+            class="nav-user"
+            type="button"
+            title="张伟 · 系统管理员 · A000001"
+            onclick="toast('原型：账号菜单不在此实现')"
+          >
+            <span class="avatar avatar-28" data-avatar="张伟"></span>
+            <span class="nav-user-name">张伟</span>
+            <svg class="nav-user-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+          </button>
         </div>
       </aside>
 
+      <!-- ================================ 主内容 ================================ -->
       <main class="main">
-        <header class="topbar">
-          <div>
-            <h1 id="pageTitle">总览</h1>
-            <p id="pageDesc">部署用户、默认配置与权限策略的集中管理入口。</p>
+        <header class="page-header">
+          <div class="header-left">
+            <button class="icon-btn" title="展开侧栏" onclick="toggleNav()" aria-label="展开侧栏">
+              <svg class="icon-sm" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M9 3v18" />
+              </svg>
+            </button>
           </div>
-          <div class="top-actions">
-            <span class="badge badge-primary">管理员</span>
-            <div class="admin-chip"><span class="avatar">张</span>张伟</div>
+          <div class="header-center">
+            <span class="header-title" id="pageTitle">总览</span>
+          </div>
+          <div class="header-right">
+            <span class="tag tag-primary">管理员</span>
+            <button class="icon-btn" id="themeBtn" title="切换主题" onclick="toggleTheme()" aria-label="切换主题"></button>
           </div>
         </header>
 
-        <!-- ================= overview ================= -->
-        <section class="page active" id="page-overview">
-          <div class="metrics">
-            <div class="card metric">
-              <div class="metric-label">用户总数</div>
-              <div class="metric-value">1,284</div>
-              <div class="metric-foot up">近 7 天 +37</div>
-            </div>
-            <div class="card metric">
-              <div class="metric-label">近 7 天活跃</div>
-              <div class="metric-value">612</div>
-              <div class="metric-foot">47.7% 的账号</div>
-            </div>
-            <div class="card metric">
-              <div class="metric-label">实验室默认开启</div>
-              <div class="metric-value">0 / 18</div>
-              <div class="metric-foot">全部按代码默认关闭</div>
-            </div>
-            <div class="card metric">
-              <div class="metric-label">已禁用</div>
-              <div class="metric-value">6</div>
-              <div class="metric-foot">来自统一认证平台或本控制台</div>
-            </div>
-          </div>
-
-          <div class="grid-2">
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h2 class="card-title">当前部署默认值</h2>
-                  <p class="card-desc">来自真实代码默认值；保存后只影响新用户，存量用户需手动应用。</p>
-                </div>
-                <button class="btn btn-sm" onclick="go('settings')">去配置</button>
-              </div>
-              <div class="card-body">
-                <div class="summary-list">
-                  <div class="summary-row"><span>默认对话模型</span><strong>deepseek / deepseek-v4-flash（DeepSeek V4 Flash）</strong></div>
-                  <div class="summary-row"><span>默认启用的 Provider</span><strong>DeepSeek、OpenAI、Anthropic、Google</strong></div>
-                  <div class="summary-row"><span>Flash / 验收模型</span><strong>openai/gpt-5.6-luna · zhipu/glm-5.3-flash</strong></div>
-                  <div class="summary-row"><span>记忆</span><strong>开启 · 强度中</strong></div>
-                  <div class="summary-row"><span>允许用户修改模型配置</span><strong>是（可改为禁止）</strong></div>
-                  <div class="summary-row"><span>可下发设置项</span><strong id="deployableSummary">按真实设置矩阵统计</strong></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-head">
-                <div>
-                  <h2 class="card-title">最近管理动作</h2>
-                  <p class="card-desc">P2 接入完整审计表。</p>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="activity">
-                  <div class="activity-item">
-                    <span class="activity-dot"></span>
-                    <div><p>张伟 将「自进化」设为新用户默认关闭</p><time>今天 09:42</time></div>
+        <div class="scroll" id="scroll">
+          <div class="container">
+            <!-- ============================== 总览 ============================== -->
+            <section class="page active" id="page-overview">
+              <div class="setting-header">
+                <div class="setting-header-main">
+                  <div class="setting-header-text">
+                    <h1 class="setting-title">总览</h1>
+                    <p class="setting-desc">部署用户、默认配置与权限策略的集中管理入口。</p>
                   </div>
-                  <div class="activity-item">
-                    <span class="activity-dot" style="background:#b26a00"></span>
-                    <div><p>张伟 禁止 李娜 修改 AI 服务商配置</p><time>今天 09:18</time></div>
-                  </div>
-                  <div class="activity-item">
-                    <span class="activity-dot" style="background:#1a7f37"></span>
-                    <div><p>张伟 将主模型默认值设为 deepseek/deepseek-v4-flash</p><time>昨天 17:26</time></div>
-                  </div>
-                  <div class="activity-item">
-                    <span class="activity-dot" style="background:#9098a6"></span>
-                    <div><p>张伟 禁用用户 王强（A100877）</p><time>昨天 14:03</time></div>
+                  <div class="setting-header-actions">
+                    <button class="btn btn-sm btn-text" onclick="go('users')">查看用户</button>
+                    <button class="btn btn-sm btn-outline" onclick="go('settings')">配置默认值</button>
                   </div>
                 </div>
+                <div class="divider"></div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- ================= users ================= -->
-        <section class="page" id="page-users">
-          <div class="card">
-            <div class="toolbar">
-              <input class="search" id="userSearch" placeholder="搜索工号、姓名或邮箱…" oninput="renderUsers()" />
-              <div class="filters">
-                <button class="chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
-                <button class="chip" data-filter="admin" onclick="setFilter('admin', this)">管理员</button>
-                <button class="chip" data-filter="banned" onclick="setFilter('banned', this)">已禁用</button>
-                <button class="chip" data-filter="custom" onclick="setFilter('custom', this)">已自定义</button>
-              </div>
-              <div style="margin-left:auto">
-                <button class="btn btn-sm" onclick="toast('导出功能在 P2 提供')">导出</button>
-              </div>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>用户</th>
-                  <th>工号</th>
-                  <th>状态</th>
-                  <th>实验室</th>
-                  <th>默认模型</th>
-                  <th>模型权限</th>
-                  <th>最后活跃</th>
-                </tr>
-              </thead>
-              <tbody id="userRows"></tbody>
-            </table>
-            <div class="table-foot">
-              <span id="userCount">共 8 位用户</span>
-              <span>第 1 / 161 页</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- ================= settings template ================= -->
-        <section class="page" id="page-settings">
-          <div class="settings-layout">
-            <aside class="card settings-nav" id="settingsNav"></aside>
-            <div class="card settings-panel">
-              <div class="settings-panel-head">
-                <div>
-                  <h2 id="settingsTitle">外观</h2>
-                  <p id="settingsIntro"></p>
-                  <div class="summary-chips" id="settingsSummary"></div>
+              <div class="metrics">
+                <div class="stat-card">
+                  <div class="stat-label">用户总数</div>
+                  <div class="stat-value">1,284</div>
+                  <div class="stat-foot">近 7 天 +37</div>
                 </div>
-                <div style="display:flex;gap:8px">
-                  <button class="btn btn-sm" id="resetDefaultsBtn" onclick="toast('已恢复为代码默认值')">恢复代码默认</button>
+                <div class="stat-card">
+                  <div class="stat-label">近 7 天活跃</div>
+                  <div class="stat-value">612</div>
+                  <div class="stat-foot">47.7% 的账号</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">实验室默认开启</div>
+                  <div class="stat-value">0 / 18</div>
+                  <div class="stat-foot">全部按代码默认关闭</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">已禁用</div>
+                  <div class="stat-value">6</div>
+                  <div class="stat-foot">来自统一认证平台或本控制台</div>
                 </div>
               </div>
-              <div id="settingsBody"></div>
-              <div class="form-footer">
-                <span class="left" id="settingsFootNote">模板只影响新用户；存量用户需手动应用。</span>
-                <button class="btn" onclick="toast('已还原未保存的修改')">还原</button>
-                <button class="btn" onclick="toast('已保存用户设置模板，未应用到存量用户')">保存模板</button>
-                <button class="btn btn-primary" onclick="openApply()">保存并应用…</button>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        <!-- ================= audit ================= -->
-        <section class="page" id="page-audit">
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <h2 class="card-title">审计日志</h2>
-                <p class="card-desc">记录管理员对默认值、用户策略与账号状态的操作。</p>
+              <div class="grid-2">
+                <div class="form-group">
+                  <div class="form-group-card">
+                    <div class="form-group-header">
+                      <div>
+                        <div class="form-group-title">当前部署默认值</div>
+                        <div class="form-group-desc">来自真实代码默认值；保存后只影响新用户，存量用户需手动应用。</div>
+                      </div>
+                      <div class="form-group-extra">
+                        <button class="btn btn-sm btn-text" onclick="go('settings')">去配置</button>
+                      </div>
+                    </div>
+                    <div class="form-group-body">
+                      <div class="summary-list">
+                        <div class="summary-row"><span>默认对话模型</span><strong>deepseek / deepseek-v4-flash（DeepSeek V4 Flash）</strong></div>
+                        <div class="summary-row"><span>默认启用的 Provider</span><strong>DeepSeek、OpenAI、Anthropic、Google</strong></div>
+                        <div class="summary-row"><span>Flash / 验收模型</span><strong>openai/gpt-5.6-luna · zhipu/glm-5.3-flash</strong></div>
+                        <div class="summary-row"><span>记忆</span><strong>开启 · 强度中</strong></div>
+                        <div class="summary-row"><span>允许用户修改模型配置</span><strong>是（可改为禁止）</strong></div>
+                        <div class="summary-row"><span>可下发设置项</span><strong id="deployableSummary">按真实设置矩阵统计</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <div class="form-group-card">
+                    <div class="form-group-header">
+                      <div>
+                        <div class="form-group-title">最近管理动作</div>
+                        <div class="form-group-desc">P2 接入完整审计表。</div>
+                      </div>
+                    </div>
+                    <div class="form-group-body">
+                      <div class="activity">
+                        <div class="activity-item">
+                          <span class="activity-dot"></span>
+                          <div><p>张伟 将「自进化」设为新用户默认关闭</p><time>今天 09:42</time></div>
+                        </div>
+                        <div class="activity-item">
+                          <span class="activity-dot" style="background: var(--lobe-color-warning)"></span>
+                          <div><p>张伟 禁止 李娜 修改 AI 服务商配置</p><time>今天 09:18</time></div>
+                        </div>
+                        <div class="activity-item">
+                          <span class="activity-dot" style="background: var(--lobe-color-success)"></span>
+                          <div><p>张伟 将主模型默认值设为 deepseek/deepseek-v4-flash</p><time>昨天 17:26</time></div>
+                        </div>
+                        <div class="activity-item">
+                          <span class="activity-dot" style="background: var(--lobe-color-text-quaternary)"></span>
+                          <div><p>张伟 禁用用户 王强（A100877）</p><time>昨天 14:03</time></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span class="badge badge-neutral">P2</span>
-            </div>
-            <div class="card-body muted">
-              原型阶段不实现。字段建议：操作者、动作、目标用户、设置路径、变更前后值、时间、来源 IP。
-            </div>
+            </section>
+
+            <!-- ============================== 用户 ============================== -->
+            <section class="page" id="page-users">
+              <div class="setting-header">
+                <div class="setting-header-main">
+                  <div class="setting-header-text">
+                    <h1 class="setting-title">用户</h1>
+                    <p class="setting-desc">查看所有 SSO 用户及其生效配置，按人调整策略。</p>
+                  </div>
+                  <div class="setting-header-actions">
+                    <button class="btn btn-sm btn-text" onclick="toast('导出功能在 P2 提供')">导出</button>
+                  </div>
+                </div>
+                <div class="divider"></div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-group-card">
+                  <div class="form-group-header">
+                    <div>
+                      <div class="form-group-title">全部用户</div>
+                      <div class="form-group-desc" id="userCount">共 8 位用户</div>
+                    </div>
+                    <div class="form-group-extra">
+                      <span class="tag">SSO 同步</span>
+                    </div>
+                  </div>
+                  <div class="form-group-body">
+                    <div class="toolbar">
+                      <label class="search">
+                        <svg class="icon-sm" viewBox="0 0 24 24">
+                          <circle cx="11" cy="11" r="7" />
+                          <path d="m20 20-3.5-3.5" />
+                        </svg>
+                        <input id="userSearch" placeholder="搜索工号、姓名或邮箱" oninput="renderUsers()" />
+                      </label>
+                      <div class="filters">
+                        <button class="chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+                        <button class="chip" data-filter="admin" onclick="setFilter('admin', this)">管理员</button>
+                        <button class="chip" data-filter="banned" onclick="setFilter('banned', this)">已禁用</button>
+                        <button class="chip" data-filter="custom" onclick="setFilter('custom', this)">已自定义</button>
+                      </div>
+                    </div>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>用户</th>
+                            <th>工号</th>
+                            <th>状态</th>
+                            <th>实验室</th>
+                            <th>默认模型</th>
+                            <th>模型权限</th>
+                            <th>最后活跃</th>
+                          </tr>
+                        </thead>
+                        <tbody id="userRows"></tbody>
+                      </table>
+                    </div>
+                    <div class="table-foot">
+                      <span>第 1 / 161 页</span>
+                      <span>按工号排序</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ========================== 用户设置模板 ========================== -->
+            <section class="page" id="page-settings">
+              <div class="setting-header">
+                <div class="setting-header-main">
+                  <div class="setting-header-text">
+                    <h1 class="setting-title" id="settingsTitle">外观</h1>
+                    <p class="setting-desc" id="settingsIntro"></p>
+                    <div class="summary-chips" id="settingsSummary"></div>
+                    <p class="setting-note" id="settingsFootNote">模板只影响新用户；存量用户需手动应用。</p>
+                  </div>
+                  <div class="setting-header-actions" id="settingsActions">
+                    <button class="btn btn-sm btn-text" id="resetDefaultsBtn" onclick="toast('已恢复为代码默认值')">恢复代码默认</button>
+                    <button class="btn btn-sm btn-text" onclick="toast('已还原未保存的修改')">还原</button>
+                    <button class="btn btn-sm btn-outline" onclick="toast('已保存用户设置模板，未应用到存量用户')">保存模板</button>
+                    <button class="btn btn-sm btn-primary" onclick="openApply()">保存并应用…</button>
+                  </div>
+                </div>
+                <div class="divider"></div>
+              </div>
+
+              <div class="form" id="settingsBody"></div>
+            </section>
+
+            <!-- ============================== 审计 ============================== -->
+            <section class="page" id="page-audit">
+              <div class="setting-header">
+                <div class="setting-header-main">
+                  <div class="setting-header-text">
+                    <h1 class="setting-title">审计日志</h1>
+                    <p class="setting-desc">管理员操作的完整记录。</p>
+                  </div>
+                  <div class="setting-header-actions">
+                    <span class="tag">P2</span>
+                  </div>
+                </div>
+                <div class="divider"></div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-group-card">
+                  <div class="form-group-header">
+                    <div>
+                      <div class="form-group-title">记录范围</div>
+                      <div class="form-group-desc">记录管理员对默认值、用户策略与账号状态的操作。</div>
+                    </div>
+                  </div>
+                  <div class="form-group-body">
+                    <ul class="note-list" style="margin-top: 0">
+                      <li>操作者：发起操作的管理员（含 SSO 工号与会话来源）</li>
+                      <li>动作：保存模板、应用到存量用户、修改用户策略、禁用/启用账号</li>
+                      <li>目标用户：受影响账号；模板级操作记录影响人数</li>
+                      <li>设置路径：写入的字段路径与变更前后的值</li>
+                      <li>时间与来源 IP</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
       </main>
     </div>
 
-    <!-- ================= drawer ================= -->
+    <!-- ============================== 用户抽屉 ============================== -->
     <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
     <aside class="drawer" id="drawer" aria-hidden="true">
       <div class="drawer-head">
-        <div>
-          <span class="badge badge-primary" id="drawerBadge">成员</span>
-          <h2 class="drawer-title" id="drawerName">张伟</h2>
-          <p class="drawer-sub" id="drawerSub">A100231 · a100231@tellhow.com</p>
+        <div style="display: flex; gap: 12px; min-width: 0">
+          <span class="avatar avatar-40" id="drawerAvatar"></span>
+          <div style="min-width: 0">
+            <h2 class="drawer-title" id="drawerName">张伟</h2>
+            <p class="drawer-sub" id="drawerSub">A100231 · a100231@tellhow.com</p>
+          </div>
         </div>
-        <button class="icon-btn" onclick="closeDrawer()" aria-label="关闭">✕</button>
+        <button class="icon-btn" onclick="closeDrawer()" aria-label="关闭">
+          <svg class="icon-sm" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
       </div>
 
       <div class="tabs">
@@ -504,8 +2499,8 @@
         <div class="tab-panel" id="tab-settings">
           <div class="drawer-toolbar">
             <span class="tiny muted">设置页</span>
-            <select id="drawerPageSelect" onchange="setDrawerPage(this.value)"></select>
-            <span class="tiny muted" style="margin-left:auto">当前值 vs 模板默认</span>
+            <select class="control" id="drawerPageSelect" onchange="setDrawerPage(this.value)"></select>
+            <span class="tiny muted" style="margin-left: auto">当前值 / 模板默认</span>
           </div>
           <div id="drawerSettingsBody"></div>
         </div>
@@ -542,21 +2537,21 @@
 
         <div class="tab-panel" id="tab-actions">
           <div class="drawer-actions">
-            <button class="btn btn-primary" onclick="toast('已保存该用户的策略')">保存策略</button>
-            <button class="btn" onclick="toast('已按「仅补齐未设置项」应用模板')">应用模板</button>
-            <button class="btn" onclick="toast('已将该用户恢复为模板默认')">恢复默认</button>
-            <button class="btn" onclick="toast('已发送重置密码邮件（若启用）')">发送重置密码</button>
-            <button class="btn" onclick="toast('已设为管理员')">设为管理员</button>
-            <button class="btn btn-danger" onclick="toast('已禁用该用户，现有会话将被吊销')">禁用用户</button>
+            <button class="btn btn-sm btn-primary" onclick="toast('已保存该用户的策略')">保存策略</button>
+            <button class="btn btn-sm btn-outline" onclick="toast('已按「仅补齐未设置项」应用模板')">应用模板</button>
+            <button class="btn btn-sm btn-text" onclick="toast('已将该用户恢复为模板默认')">恢复默认</button>
+            <button class="btn btn-sm btn-text" onclick="toast('已发送重置密码邮件（若启用）')">发送重置密码</button>
+            <button class="btn btn-sm btn-text" onclick="toast('已设为管理员')">设为管理员</button>
+            <button class="btn btn-sm btn-danger" onclick="toast('已禁用该用户，现有会话将被吊销')">禁用用户</button>
           </div>
-          <p class="tiny muted" style="margin-top:16px">
+          <p class="tiny muted" style="margin-top: 16px">
             账号类操作复用 Better Auth admin 插件；设置模板与策略走 Fork 自有 RPC。
           </p>
         </div>
       </div>
     </aside>
 
-    <!-- ================= apply modal ================= -->
+    <!-- ============================== 应用弹窗 ============================== -->
     <div class="modal-backdrop" id="applyModal">
       <div class="modal">
         <div class="modal-head">
@@ -578,20 +2573,16 @@
               <span>用模板值覆盖所有选中用户的对应字段；锁定项始终覆盖。</span>
             </div>
           </label>
-          <div class="apply-summary" id="applySummary">
-            预计影响 <strong>1,284</strong> 位用户：补齐 <strong>1,196</strong> 位，跳过 <strong>88</strong> 位（已自定义）。
-            <br /><span class="tiny muted" id="applySkipNote">不可下发字段会自动跳过。</span>
-          </div>
+          <div class="apply-summary" id="applySummary"></div>
         </div>
         <div class="modal-foot">
-          <button class="btn" onclick="closeApply()">取消</button>
-          <button class="btn btn-primary" onclick="confirmApply()">确认应用</button>
+          <button class="btn btn-sm btn-text" onclick="closeApply()">取消</button>
+          <button class="btn btn-sm btn-primary" onclick="confirmApply()">确认应用</button>
         </div>
       </div>
     </div>
 
     <div id="toast"></div>
-
     <script>
       /* ------------------------------------------------------------------
        * 真实设置项与默认值（来自本仓库代码）
@@ -1070,318 +3061,609 @@
         audit: ['审计日志', '管理员操作的完整记录。'],
       };
 
-      let activeFilter = 'all';
-      let currentUser = null;
-      let applyMode = 'unset';
+      /* ------------------------------------------------------------------
+       * 原型交互逻辑（仅用于静态原型；真实实现见 ADMIN_CONSOLE_DESIGN.md）
+       * ------------------------------------------------------------------ */
+
       let currentSettingsPage = 'appearance';
       let currentDrawerPage = 'appearance';
+      let currentUser = null;
+      let activeFilter = 'all';
+      let applyMode = 'unset';
+      let toastTimer = 0;
 
-      /* ---------- navigation ---------- */
-      function go(page) {
-        document.querySelectorAll('.page').forEach((el) => el.classList.remove('active'));
-        document.getElementById('page-' + page).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
-        const t = titles[page] || titles.overview;
-        document.getElementById('pageTitle').textContent = t[0];
-        document.getElementById('pageDesc').textContent = t[1];
-        if (page === 'users') renderUsers();
-        if (page === 'settings') renderSettingsNav();
+      const AFFECTED_USERS = 1284;
+      const COMPLETE_USERS = 88;
+
+      const $ = (id) => document.getElementById(id);
+
+      const esc = (value) =>
+        String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+
+      const pageByKey = (key) => PAGES.find((page) => page.key === key);
+
+      /* -------------------------------------------------- 头像（UserAvatar 像素回退） */
+      // @lobehub/ui 的 pixel 回退头像：5×5 网格、固定色板（charcoal / violet / cream / yellow / orange），名字作种子
+      const AVATAR_PALETTE = ['#383838', '#7858f9', '#f8f7bf', '#ffdd1f', '#f88c13'];
+
+      function pixelAvatar(name) {
+        const seedText = String(name || 'User');
+        let seed = 0;
+        for (let index = 0; index < seedText.length; index += 1) {
+          seed = (seed * 31 + seedText.charCodeAt(index)) >>> 0;
+        }
+        seed = seed || 1;
+
+        const next = () => {
+          seed = (seed * 1664525 + 1013904223) >>> 0;
+          return (seed >>> 8) / 0x1000000;
+        };
+
+        const background = AVATAR_PALETTE[Math.floor(next() * AVATAR_PALETTE.length)];
+        const cells = [];
+
+        for (let row = 0; row < 5; row += 1) {
+          for (let column = 0; column < 3; column += 1) {
+            const filled = next() >= 0.3;
+            const color = AVATAR_PALETTE[Math.floor(next() * AVATAR_PALETTE.length)];
+            if (!filled) continue;
+            const columns = column === 2 ? [2] : [column, 4 - column];
+            columns.forEach((x) =>
+              cells.push(`<rect x="${x}" y="${row}" width="1" height="1" fill="${color}"/>`),
+            );
+          }
+        }
+
+        return `<svg viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true"><rect width="5" height="5" fill="${background}"/>${cells.join('')}</svg>`;
       }
 
-      document.querySelectorAll('.nav-item').forEach((btn) => {
-        btn.addEventListener('click', () => go(btn.dataset.page));
-      });
+      function renderAvatarSlots() {
+        document.querySelectorAll('[data-avatar]').forEach((element) => {
+          element.innerHTML = pixelAvatar(element.dataset.avatar);
+        });
+      }
 
-      /* ---------- settings template ---------- */
+      const rowAt = (pi, si, ri) => PAGES[pi].sections[si].rows[ri];
+
+      /* ------------------------------------------------------------ 主题 */
+
+      function renderThemeIcon() {
+        const dark = document.documentElement.dataset.theme === 'dark';
+        $('themeBtn').innerHTML = dark
+          ? '<svg class="icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+          : '<svg class="icon-sm" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>';
+      }
+
+      function toggleTheme() {
+        const root = document.documentElement;
+        root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        renderThemeIcon();
+      }
+
+      /* ------------------------------------------------------------ 外壳 */
+
+      function toggleNav() {
+        $('app').classList.toggle('nav-collapsed');
+      }
+
+      function toggleSection(trigger) {
+        const section = trigger.closest('.nav-section');
+        section.dataset.open = section.dataset.open === 'true' ? 'false' : 'true';
+      }
+
+      function filterNav(value) {
+        const keyword = (value || '').trim().toLowerCase();
+
+        document.querySelectorAll('#navScroll .nav-section').forEach((section) => {
+          let visible = 0;
+
+          section.querySelectorAll('.nav-item').forEach((item) => {
+            const text = `${item.dataset.label || ''} ${item.textContent}`.toLowerCase();
+            const hit = !keyword || text.includes(keyword);
+            item.hidden = !hit;
+            if (hit) visible += 1;
+          });
+
+          section.hidden = visible === 0;
+          if (keyword) section.dataset.open = 'true';
+        });
+      }
+
+      function go(page, key) {
+        if (page !== 'settings' && !titles[page]) return;
+        if (page === 'settings' && key) currentSettingsPage = key;
+
+        document.querySelectorAll('.page').forEach((section) => {
+          section.classList.toggle('active', section.id === `page-${page}`);
+        });
+
+        document.querySelectorAll('#navScroll .nav-item').forEach((item) => {
+          const target = item.dataset.page;
+          const active =
+            target === page || (page === 'settings' && target === `settings:${currentSettingsPage}`);
+          item.classList.toggle('active', active);
+        });
+
+        const inSettings = page === 'settings';
+
+        $('pageCrumb').textContent = '管理员控制台';
+        $('pageCrumbSep').hidden = !inSettings;
+        $('pageCrumbExtra').hidden = !inSettings;
+
+        if (inSettings) {
+          const current = pageByKey(currentSettingsPage) || PAGES[0];
+          $('pageTitle').textContent = current.label;
+          renderSettingsPage();
+        } else {
+          $('pageTitle').textContent = titles[page][0];
+        }
+
+        $('scroll').scrollTop = 0;
+      }
+
+      /* -------------------------------------------------------- 设置导航 */
+
       function settingsGroups() {
         const groups = [];
+
         PAGES.forEach((page) => {
-          let group = groups.find((g) => g.title === page.group);
-          if (!group) { group = { title: page.group, items: [] }; groups.push(group); }
+          let group = groups.find((item) => item.name === page.group);
+          if (!group) {
+            group = { name: page.group, items: [] };
+            groups.push(group);
+          }
           group.items.push(page);
         });
+
         return groups;
       }
 
       function renderSettingsNav() {
-        document.getElementById('settingsNav').innerHTML = settingsGroups().map((group) => `
-          <div class="settings-nav-group">
-            <div class="settings-nav-title">${group.title}</div>
-            ${group.items.map((page) => `
-              <button class="settings-nav-item ${page.key === currentSettingsPage ? 'active' : ''}" onclick="setSettingsPage('${page.key}')">
-                <span class="settings-nav-icon">${page.icon}</span>${page.label}
-              </button>`).join('')}
-          </div>`).join('');
+        $('settingsNav').innerHTML = settingsGroups()
+          .map(
+            (group) => `
+            <div class="nav-section" data-open="true">
+              <button class="section-trigger" onclick="toggleSection(this)">
+                <span class="section-trigger-title">${esc(group.name)}</span>
+                <svg class="section-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+              <div class="nav-items">
+                ${group.items
+                  .map(
+                    (page) => `
+                  <button
+                    class="nav-item"
+                    data-page="settings:${page.key}"
+                    data-label="${esc(page.label)}"
+                    onclick="go('settings', '${page.key}')"
+                  >
+                    <span class="nav-icon">${page.icon}</span>
+                    <span class="nav-title">${esc(page.label)}</span>
+                    ${page.kind === 'note' ? '<span class="tag">只读</span>' : ''}
+                  </button>`,
+                  )
+                  .join('')}
+              </div>
+            </div>`,
+          )
+          .join('');
       }
 
-      function setSettingsPage(key) {
-        currentSettingsPage = key;
-        renderSettingsNav();
-        renderSettingsPage();
+      /* ------------------------------------------------------ 设置模板页 */
+
+      function capOf(row) {
+        return CAP[row.capability] || CAP.server;
       }
 
-      function capabilityOf(row) { return CAP[row.capability] || CAP.server; }
-
-      function countCapabilities(page) {
-        if (page.kind === 'note') return { server: 0, device: 0, private: 0, data: 0, serverOnly: 0, readonly: 0 };
-        const counts = { server: 0, device: 0, private: 0, data: 0, serverOnly: 0, readonly: 0 };
-        (page.sections || []).forEach((section) => section.rows.forEach((row) => { counts[row.capability] = (counts[row.capability] || 0) + 1; }));
-        return counts;
-      }
-
-      function capabilityTotals() {
-        const totals = { server: 0, device: 0, private: 0, data: 0, serverOnly: 0, readonly: 0 };
-        PAGES.forEach((page) => {
-          const counts = countCapabilities(page);
-          Object.keys(totals).forEach((key) => { totals[key] += counts[key] || 0; });
-        });
-        return totals;
-      }
-
-      function formatValue(row) {
-        if (row.type === 'switch') return row.value ? '开启' : '关闭';
-        if (row.type === 'model') {
-          const match = (row.options || []).find(([value]) => String(value) === String(row.value));
-          return match ? match[1] : String(row.value);
+      function formatValue(row, value) {
+        if (row.type === 'switch') return value ? '开启' : '关闭';
+        if (row.options) {
+          const hit = row.options.find((option) => option[0] === value);
+          return hit ? hit[1] : String(value);
         }
-        if (row.value === '' || row.value === undefined) return '默认';
-        return String(row.value);
+        return String(value);
       }
 
-      function renderControl(row) {
-        const disabled = row.capability !== 'server' ? 'disabled' : '';
+      function templateStats() {
+        const stats = { server: 0, total: 0, locked: 0 };
+
+        PAGES.forEach((page) =>
+          (page.sections || []).forEach((section) =>
+            section.rows.forEach((row) => {
+              stats.total += 1;
+              if (row.capability === 'server' && row.editable) stats.server += 1;
+              if (row.lock) stats.locked += 1;
+            }),
+          ),
+        );
+
+        return stats;
+      }
+
+      function renderControl(pageIndex, sectionIndex, rowIndex, row) {
+        const disabled = !row.editable || row.lock;
+        const handler = `setRowValue(${pageIndex}, ${sectionIndex}, ${rowIndex}, this.value)`;
+
+        if (row.type === 'switch') {
+          return `<label class="switch">
+            <input type="checkbox" ${row.value ? 'checked' : ''} ${disabled ? 'disabled' : ''}
+              onchange="setRowValue(${pageIndex}, ${sectionIndex}, ${rowIndex}, this.checked)" />
+            <span></span>
+          </label>`;
+        }
+
         if (row.type === 'select' || row.type === 'model') {
-          return `<select ${disabled} onchange="updateRowValue('${row.path}', this.value)">
-            ${row.options.map(([value, label]) => `<option value="${value}" ${String(row.value) === String(value) ? 'selected' : ''}>${label}</option>`).join('')}
+          return `<select class="control" ${disabled ? 'disabled' : ''} onchange="${handler}">
+            ${row.options
+              .map(
+                (option) =>
+                  `<option value="${esc(option[0])}" ${option[0] === row.value ? 'selected' : ''}>${esc(option[1])}</option>`,
+              )
+              .join('')}
           </select>`;
         }
-        if (row.type === 'switch') {
-          return `<label class="switch"><input type="checkbox" ${row.value ? 'checked' : ''} ${disabled} onchange="updateRowChecked('${row.path}', this.checked)" /><span></span></label>`;
-        }
-        if (row.type === 'number') {
-          return `<input type="number" value="${row.value}" ${disabled} onchange="updateRowValue('${row.path}', Number(this.value))" />`;
-        }
+
         if (row.type === 'text') {
-          return `<input type="text" value="${row.value ?? ''}" placeholder="跟随系统默认" ${disabled} onchange="updateRowValue('${row.path}', this.value)" />`;
+          return `<input class="control" value="${esc(row.value)}" ${disabled ? 'disabled' : ''} onchange="${handler}" />`;
         }
-        return `<span class="tiny muted">${formatValue(row)}</span>`;
-      }
 
-      function findRow(path) {
-        for (const page of PAGES) {
-          for (const section of page.sections || []) {
-            const row = section.rows.find((r) => r.path === path);
-            if (row) return row;
-          }
+        if (row.type === 'number') {
+          return `<input class="control" type="number" value="${esc(row.value)}" ${disabled ? 'disabled' : ''} onchange="${handler}" />`;
         }
-        return null;
+
+        return `<span class="tiny muted">${esc(row.value)}</span>`;
       }
 
-      function updateRowValue(path, value) {
-        const row = findRow(path);
-        if (!row) return;
-        row.value = value;
-        renderSettingsPage();
-        toast('已修改默认值，记得保存模板');
-      }
+      function renderRow(pageIndex, sectionIndex, rowIndex, row) {
+        const cap = capOf(row);
+        const tags = [
+          row.stage ? `<span class="tag tag-${row.stage}">${row.stage}</span>` : '',
+          row.availability ? `<span class="tag">${esc(row.availability)}</span>` : '',
+        ].join('');
+        const desc = [row.desc, row.note ? `（${row.note}）` : ''].join('');
 
-      function updateRowChecked(path, checked) {
-        const row = findRow(path);
-        if (!row) return;
-        row.value = checked;
-        renderSettingsPage();
-        toast('已修改默认值，记得保存模板');
-      }
-
-      function updateEditable(path, checked) {
-        const row = findRow(path);
-        if (!row) return;
-        row.editable = checked;
-        if (!checked) row.lock = false;
-        renderSettingsPage();
-      }
-
-      function updateLock(path, checked) {
-        const row = findRow(path);
-        if (!row) return;
-        row.lock = checked;
-        if (checked) row.editable = false;
-        renderSettingsPage();
-      }
-
-      function renderRow(row) {
-        const cap = capabilityOf(row);
-        const policy = row.capability === 'server'
-          ? `<div class="policy-toggles">
-               <label class="mini-check"><input type="checkbox" ${row.editable ? 'checked' : ''} onchange="updateEditable('${row.path}', this.checked)" /> 允许修改</label>
-               <label class="mini-check"><input type="checkbox" ${row.lock ? 'checked' : ''} onchange="updateLock('${row.path}', this.checked)" /> 锁定</label>
-             </div>`
-          : `<span class="tiny muted">—</span>`;
-
-        const extras = [];
-        if (row.stage) extras.push(`<span class="badge badge-${row.stage}">${row.stage === 'alpha' ? 'Alpha' : 'Beta'}</span>`);
-        if (row.availability) extras.push(`<span class="badge badge-neutral">${row.availability}</span>`);
-        if (row.note) extras.push(`<span class="badge badge-neutral">${row.note}</span>`);
-
-        return `<div class="setting-row">
-          <div>
-            <div class="setting-label">${row.label} ${extras.join(' ')}</div>
-            <div class="setting-path">${row.path}</div>
-            <div class="setting-desc">${row.desc || ''}</div>
+        return `<div class="form-row">
+          <div class="form-label">
+            <div class="form-label-title">${esc(row.label)}${tags}</div>
+            <div class="form-label-desc">${esc(desc)}</div>
+            <div class="form-label-path">${esc(row.path)}</div>
           </div>
-          <div class="setting-control">${renderControl(row)}</div>
-          <div><span class="cap ${cap.cls}">${cap.label}</span></div>
-          ${policy}
+          <div class="form-control">${renderControl(pageIndex, sectionIndex, rowIndex, row)}</div>
+          <div class="form-meta"><span class="cap ${cap.cls}">${cap.label}</span></div>
+          <div class="form-policy">
+            ${
+              row.capability === 'server' && row.editable
+                ? `<label class="mini-check" title="锁定后用户端置灰，服务端拒绝写入">
+                    <input type="checkbox" ${row.lock ? 'checked' : ''}
+                      onchange="toggleRowLock(${pageIndex}, ${sectionIndex}, ${rowIndex}, this.checked)" /> 锁定
+                  </label>`
+                : '<span class="tiny muted">—</span>'
+            }
+          </div>
+        </div>`;
+      }
+
+      function renderPolicyGroup(page) {
+        const policy = page.policy;
+
+        return `<div class="form-group">
+          <div class="form-group-card">
+            <div class="form-group-header">
+              <div>
+                <div class="form-group-title">页面策略</div>
+                <div class="form-group-desc">作用于整页，优先于单项锁定。</div>
+              </div>
+              <div class="form-group-extra"><span class="tag tag-primary">策略</span></div>
+            </div>
+            <div class="form-group-body">
+              <div class="form-row">
+                <div class="form-label">
+                  <div class="form-label-title">${esc(policy.label)}</div>
+                  <div class="form-label-desc">${esc(policy.desc)}</div>
+                  <div class="form-label-path">policy.${esc(policy.key)}</div>
+                </div>
+                <div class="form-control">
+                  <label class="switch">
+                    <input type="checkbox" ${policy.value ? 'checked' : ''} onchange="setPolicy('${page.key}', this.checked)" />
+                    <span></span>
+                  </label>
+                </div>
+                <div class="form-meta"><span class="cap cap-server">可下发</span></div>
+                <div class="form-policy"><span class="tiny muted">页面级</span></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      function renderNotePage(page) {
+        const points = (page.points || [])
+          .map((point) => `<li>${esc(point)}</li>`)
+          .join('');
+
+        return `<div class="form-group">
+          <div class="form-group-card">
+            <div class="form-group-header">
+              <div>
+                <div class="form-group-title">${esc(page.noteTitle || page.label)}</div>
+                <div class="form-group-desc">${esc(page.note || '')}</div>
+              </div>
+              <div class="form-group-extra"><span class="tag">无默认值</span></div>
+            </div>
+            <div class="form-group-body">
+              <div class="alert">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 16v-5M12 8h.01" /></svg>
+                <div>
+                  <div class="alert-title">这一页在用户端是可用的，但不属于「部署默认值」</div>
+                  <div class="alert-desc">${esc(page.note || '')}</div>
+                </div>
+              </div>
+              ${points ? `<ul class="note-list">${points}</ul>` : ''}
+            </div>
+          </div>
         </div>`;
       }
 
       function renderSettingsPage() {
-        const page = PAGES.find((p) => p.key === currentSettingsPage) || PAGES[0];
-        document.getElementById('settingsTitle').textContent = page.label;
-        document.getElementById('settingsIntro').textContent = page.intro || '';
-        const counts = countCapabilities(page);
-        const chips = [];
-        if (counts.server) chips.push(`<span class="summary-chip primary">可下发 ${counts.server} 项</span>`);
-        if (counts.device) chips.push(`<span class="summary-chip">设备本地 ${counts.device} 项</span>`);
-        if (counts.private) chips.push(`<span class="summary-chip">用户私有 ${counts.private} 项</span>`);
-        if (counts.data) chips.push(`<span class="summary-chip">用户数据 ${counts.data} 项</span>`);
-        if (counts.serverOnly) chips.push(`<span class="summary-chip">服务端配置 ${counts.serverOnly} 项</span>`);
-        if (counts.readonly) chips.push(`<span class="summary-chip">只读 ${counts.readonly} 项</span>`);
-        document.getElementById('settingsSummary').innerHTML = chips.join('');
+        const page = pageByKey(currentSettingsPage) || PAGES[0];
+        const pageIndex = PAGES.indexOf(page);
+        const note = page.kind === 'note';
 
-        const footer = document.querySelector('#page-settings .form-footer');
-        const resetBtn = document.getElementById('resetDefaultsBtn');
-        footer.style.display = page.kind === 'note' ? 'none' : 'flex';
-        resetBtn.style.display = page.kind === 'note' ? 'none' : '';
+        $('settingsTitle').textContent = page.label;
+        $('settingsIntro').textContent = page.intro || page.note || '';
 
-        const body = document.getElementById('settingsBody');
-        if (page.kind === 'note') {
-          body.innerHTML = `<div class="note-page">
-            <div class="note-box">
-              <div class="note-icon">${page.icon}</div>
-              <div>
-                <h3>${page.noteTitle}</h3>
-                <p>${page.note}</p>
-                <ul class="note-list">${(page.points || []).map((p) => `<li>${p}</li>`).join('')}</ul>
-              </div>
-            </div>
-          </div>`;
-          document.getElementById('settingsFootNote').textContent = '此页面不提供默认值，保存按钮不会写入任何用户设置。';
+        if (note) {
+          $('settingsSummary').innerHTML = '<span class="tag">只读</span><span class="tag">无默认值</span>';
+          $('settingsFootNote').textContent = '此页面不提供默认值，仅供了解该页在用户端的实际来源。';
+          $('settingsActions').hidden = true;
+          $('settingsBody').innerHTML = renderNotePage(page);
           return;
         }
 
-        const policy = page.policy ? `<div class="policy-card">
-          <div>
-            <h4>${page.policy.label}</h4>
-            <p>${page.policy.desc}</p>
-          </div>
-          <label class="switch"><input type="checkbox" ${page.policy.value ? 'checked' : ''} onchange="updatePagePolicy('${page.key}', this.checked)" /><span></span></label>
-        </div>` : '';
+        const stats = { server: 0, locked: 0 };
+        (page.sections || []).forEach((section) =>
+          section.rows.forEach((row) => {
+            if (row.capability === 'server' && row.editable) stats.server += 1;
+            if (row.lock) stats.locked += 1;
+          }),
+        );
 
-        body.innerHTML = policy + page.sections.map((section) => `
-          <div class="sub-section">
-            <div class="sub-section-title">${section.title}</div>
-            ${section.rows.map(renderRow).join('')}
-          </div>`).join('');
-        document.getElementById('settingsFootNote').textContent = '模板只影响新用户；存量用户需手动应用。';
+        const chips = [
+          `<span class="tag">${(page.sections || []).length} 个分组</span>`,
+          `<span class="tag tag-primary">${stats.server} 项可下发</span>`,
+        ];
+        if (stats.locked) chips.push(`<span class="tag tag-warning">${stats.locked} 项已锁定</span>`);
+
+        $('settingsSummary').innerHTML = chips.join('');
+        $('settingsFootNote').textContent = '模板只影响新用户；存量用户需手动应用。';
+        $('settingsActions').hidden = false;
+
+        const groups = (page.sections || [])
+          .map(
+            (section, sectionIndex) => `
+            <div class="form-group">
+              <div class="form-group-card">
+                <div class="form-group-header">
+                  <div>
+                    <div class="form-group-title">${esc(section.title)}</div>
+                    <div class="form-group-desc">${section.rows.length} 项 · 可下发 ${
+                      section.rows.filter((row) => row.capability === 'server' && row.editable).length
+                    } 项</div>
+                  </div>
+                </div>
+                <div class="form-group-body">
+                  ${section.rows
+                    .map((row, rowIndex) => renderRow(pageIndex, sectionIndex, rowIndex, row))
+                    .join('')}
+                </div>
+              </div>
+            </div>`,
+          )
+          .join('');
+
+        $('settingsBody').innerHTML = (page.policy ? renderPolicyGroup(page) : '') + groups;
       }
 
-      function updatePagePolicy(pageKey, checked) {
-        const page = PAGES.find((p) => p.key === pageKey);
+      function setRowValue(pageIndex, sectionIndex, rowIndex, value) {
+        rowAt(pageIndex, sectionIndex, rowIndex).value = value;
+        renderSettingsPage();
+      }
+
+      function toggleRowLock(pageIndex, sectionIndex, rowIndex, checked) {
+        rowAt(pageIndex, sectionIndex, rowIndex).lock = checked;
+        renderSettingsPage();
+        toast(checked ? '已锁定该字段：用户端置灰，服务端拒绝写入' : '已解除锁定');
+      }
+
+      function setPolicy(key, checked) {
+        const page = pageByKey(key);
         if (!page || !page.policy) return;
         page.policy.value = checked;
         renderSettingsPage();
-        toast('已修改页面权限，记得保存模板');
+        toast(checked ? '已允许用户修改该项' : '已禁止用户修改该项');
       }
 
-      /* ---------- users ---------- */
+      /* ------------------------------------------------------------ 用户 */
+
       function statusBadge(user) {
-        if (user.status === 'banned') return '<span class="badge badge-danger">已禁用</span>';
-        if (user.role === 'admin') return '<span class="badge badge-primary">管理员</span>';
-        return '<span class="badge badge-success">正常</span>';
+        return user.status === 'banned'
+          ? '<span class="tag tag-danger">已禁用</span>'
+          : '<span class="tag tag-success">正常</span>';
       }
 
       function policyBadge(user) {
-        if (user.policy === '禁止改模型') return '<span class="badge badge-warning">禁止改模型</span>';
-        if (user.policy === '允许改模型') return '<span class="badge badge-success">允许改模型</span>';
-        if (user.policy === '管理员') return '<span class="badge badge-primary">管理员</span>';
-        return '<span class="badge badge-neutral">继承模板</span>';
+        if (user.policy === '管理员') return '<span class="tag tag-primary">管理员</span>';
+        if (user.policy === '禁止改模型') return '<span class="tag tag-danger">禁止改模型</span>';
+        if (user.policy === '允许改模型') return '<span class="tag tag-success">允许改模型</span>';
+        return '<span class="tag">继承模板</span>';
       }
 
       function renderUsers() {
-        const query = (document.getElementById('userSearch').value || '').trim().toLowerCase();
-        const rows = USERS.filter((u) => {
-          const matchQuery = !query || [u.name, u.username, u.email].some((v) => v.toLowerCase().includes(query));
-          const matchFilter =
+        const keyword = ($('userSearch').value || '').trim().toLowerCase();
+        const rows = USERS.filter((user) => {
+          const hitKeyword =
+            !keyword ||
+            [user.name, user.username, user.email].some((field) =>
+              field.toLowerCase().includes(keyword),
+            );
+          const hitFilter =
             activeFilter === 'all' ||
-            (activeFilter === 'admin' && u.role === 'admin') ||
-            (activeFilter === 'banned' && u.status === 'banned') ||
-            (activeFilter === 'custom' && u.custom);
-          return matchQuery && matchFilter;
+            (activeFilter === 'admin' && user.role === 'admin') ||
+            (activeFilter === 'banned' && user.status === 'banned') ||
+            (activeFilter === 'custom' && user.custom);
+
+          return hitKeyword && hitFilter;
         });
 
-        document.getElementById('userCount').textContent = '共 ' + rows.length + ' 位用户';
-        document.getElementById('userRows').innerHTML = rows.map((u) => `
-          <tr onclick="openDrawer('${u.id}')">
-            <td>
-              <div class="user-cell">
-                <div class="user-avatar">${u.name.slice(0, 1)}</div>
-                <div>
-                  <div class="user-name">${u.name}</div>
-                  <div class="user-mail">${u.email}</div>
-                </div>
-              </div>
-            </td>
-            <td class="mono">${u.username}</td>
-            <td>${statusBadge(u)}</td>
-            <td><span class="badge badge-neutral">${u.labs} / 18</span></td>
-            <td>${u.model}</td>
-            <td>${policyBadge(u)}</td>
-            <td class="muted tiny">${u.active}</td>
-          </tr>`).join('');
+        $('userCount').textContent =
+          keyword || activeFilter !== 'all'
+            ? `筛选出 ${rows.length} / ${USERS.length} 位用户`
+            : `共 ${USERS.length} 位用户`;
+
+        $('userRows').innerHTML = rows.length
+          ? rows
+              .map(
+                (user) => `<tr onclick="openDrawer('${user.id}')">
+                  <td>
+                    <div class="user-cell">
+                      <span class="avatar avatar-28">${pixelAvatar(user.name)}</span>
+                      <div>
+                        <div class="user-name">${esc(user.name)}</div>
+                        <div class="user-mail">${esc(user.email)}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="mono tiny">${esc(user.username)}</td>
+                  <td>${statusBadge(user)}</td>
+                  <td class="tiny muted">${user.labs ? `${user.labs} 项` : '—'}</td>
+                  <td class="tiny">${esc(user.model)}</td>
+                  <td>${policyBadge(user)}</td>
+                  <td class="tiny muted">${esc(user.active)}</td>
+                </tr>`,
+              )
+              .join('')
+          : '<tr><td colspan="7"><div class="tiny muted" style="padding: 16px 12px">没有匹配的用户</div></td></tr>';
       }
 
-      function setFilter(filter, el) {
-        activeFilter = filter;
-        document.querySelectorAll('.chip[data-filter]').forEach((c) => c.classList.remove('active'));
-        el.classList.add('active');
+      function setFilter(name, element) {
+        activeFilter = name;
+        document
+          .querySelectorAll('#page-users .chip')
+          .forEach((chip) => chip.classList.toggle('active', chip === element));
         renderUsers();
       }
 
-      /* ---------- drawer ---------- */
+      /* ------------------------------------------------------------ 抽屉 */
+
+      function userValue(user, row) {
+        const has = Object.prototype.hasOwnProperty.call(user.overrides, row.path);
+        return { has, text: has ? formatValue(row, user.overrides[row.path]) : '未设置' };
+      }
+
+      function drawerRow(row) {
+        const current = userValue(currentUser, row);
+        const template = formatValue(row, row.value);
+        const lockable = row.capability === 'server' && row.editable;
+        const locked = currentUser.locked.includes(row.path);
+
+        return `<div class="user-setting-row">
+          <div class="form-label">
+            <div class="form-label-title">${esc(row.label)}</div>
+            <div class="form-label-path">${esc(row.path)}</div>
+          </div>
+          <div><span class="value-pill ${current.has ? '' : 'default'}" title="${esc(current.text)}">${esc(current.text)}</span></div>
+          <div><span class="value-pill default" title="${esc(template)}">${esc(template)}</span></div>
+          <div>
+            ${
+              lockable
+                ? `<label class="mini-check">
+                    <input type="checkbox" ${locked ? 'checked' : ''}
+                      onchange="toggleUserLock(this, '${esc(row.path)}')" /> 锁定
+                  </label>`
+                : '<span class="tiny muted">—</span>'
+            }
+          </div>
+        </div>`;
+      }
+
+      function renderDrawerSettings() {
+        const page = pageByKey(currentDrawerPage);
+        const body = $('drawerSettingsBody');
+        if (!page) {
+          body.innerHTML = '';
+          return;
+        }
+
+        if (page.kind === 'note') {
+          body.innerHTML = `<div class="alert" style="margin-top: 8px">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 16v-5M12 8h.01" /></svg>
+              <div>
+                <div class="alert-title">${esc(page.noteTitle || page.label)}</div>
+                <div class="alert-desc">${esc(page.note || '')}</div>
+              </div>
+            </div>
+            <ul class="note-list">${(page.points || []).map((point) => `<li>${esc(point)}</li>`).join('')}</ul>`;
+          return;
+        }
+
+        body.innerHTML = (page.sections || [])
+          .map(
+            (section) => `<div class="drawer-section-title">${esc(section.title)}</div>
+              ${section.rows.map((row) => drawerRow(row)).join('')}`,
+          )
+          .join('');
+      }
+
       function openDrawer(id) {
-        currentUser = USERS.find((u) => u.id === id);
-        if (!currentUser) return;
-        document.getElementById('drawerName').textContent = currentUser.name;
-        document.getElementById('drawerSub').textContent = currentUser.username + ' · ' + currentUser.email;
-        document.getElementById('drawerBadge').textContent = currentUser.role === 'admin' ? '管理员' : '成员';
-        document.getElementById('infoRole').textContent = currentUser.role === 'admin' ? '管理员' : '成员';
-        document.getElementById('infoStatus').textContent = currentUser.status === 'banned' ? '已禁用' : '正常';
-        document.getElementById('infoActive').textContent = currentUser.active;
-        document.getElementById('infoSummary').textContent =
-          '实验室开启 ' + currentUser.labs + ' 项；默认模型 ' + currentUser.model + '；' + currentUser.policy + '。';
-        const drawerPages = PAGES.filter((p) => p.kind !== 'note');
-        if (!drawerPages.some((p) => p.key === currentDrawerPage)) currentDrawerPage = drawerPages[0].key;
-        document.getElementById('drawerPageSelect').innerHTML = drawerPages
-          .map((p) => `<option value="${p.key}" ${p.key === currentDrawerPage ? 'selected' : ''}>${p.label}</option>`).join('');
+        const user = USERS.find((item) => item.id === id);
+        if (!user) return;
+
+        currentUser = user;
+
+        $('drawerAvatar').innerHTML = pixelAvatar(user.name);
+        $('drawerName').textContent = user.name;
+        $('drawerSub').textContent = `${user.username} · ${user.email}`;
+        $('infoRole').textContent = user.role === 'admin' ? '管理员' : '成员';
+        $('infoStatus').textContent = user.status === 'banned' ? '已禁用' : '正常';
+        $('infoActive').textContent = user.active;
+        $('infoSummary').textContent = `实验室开启 ${user.labs} 项；默认模型 ${user.model}；${user.policy}；${
+          user.locked.length ? `锁定 ${user.locked.length} 项` : '无锁定项'
+        }。`;
+
+        const select = $('drawerPageSelect');
+        select.innerHTML = PAGES.map(
+          (page) => `<option value="${page.key}">${esc(page.label)}</option>`,
+        ).join('');
+
+        currentDrawerPage = pageByKey('serviceModel') ? 'serviceModel' : PAGES[0].key;
+        select.value = currentDrawerPage;
+
+        setTab('profile');
         renderDrawerSettings();
-        setTab('profile', document.querySelector('.tab[data-tab="profile"]'));
-        document.getElementById('drawer').classList.add('show');
-        document.getElementById('drawerBackdrop').classList.add('show');
-        document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+
+        $('drawer').classList.add('show');
+        $('drawer').setAttribute('aria-hidden', 'false');
+        $('drawerBackdrop').classList.add('show');
       }
 
       function closeDrawer() {
-        document.getElementById('drawer').classList.remove('show');
-        document.getElementById('drawerBackdrop').classList.remove('show');
-        document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+        $('drawer').classList.remove('show');
+        $('drawer').setAttribute('aria-hidden', 'true');
+        $('drawerBackdrop').classList.remove('show');
+        currentUser = null;
       }
 
-      function setTab(tab, el) {
-        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
-        if (el) el.classList.add('active');
-        document.getElementById('tab-' + tab).classList.add('active');
+      function setTab(name) {
+        document
+          .querySelectorAll('#drawer .tab')
+          .forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === name));
+        document
+          .querySelectorAll('#drawer .tab-panel')
+          .forEach((panel) => panel.classList.toggle('active', panel.id === `tab-${name}`));
       }
 
       function setDrawerPage(key) {
@@ -1389,112 +3671,95 @@
         renderDrawerSettings();
       }
 
-      function userValue(user, row) {
-        if (Object.prototype.hasOwnProperty.call(user.overrides, row.path)) return user.overrides[row.path];
-        if (row.path.startsWith('preference.lab.')) return false;
-        return row.value;
-      }
-
-      function formatUserValue(row, value) {
-        if (row.type === 'switch') return value ? '开启' : '关闭';
-        if (row.type === 'model') {
-          const match = (row.options || []).find(([optionValue]) => String(optionValue) === String(value));
-          return match ? match[1] : String(value);
-        }
-        if (value === '' || value === undefined) return '默认';
-        return String(value);
-      }
-
-      function renderDrawerSettings() {
-        const page = PAGES.find((p) => p.key === currentDrawerPage);
-        if (!page || page.kind === 'note' || !currentUser) {
-          document.getElementById('drawerSettingsBody').innerHTML = '<p class="tiny muted">该页面不提供默认值。</p>';
-          return;
-        }
-        document.getElementById('drawerSettingsBody').innerHTML = page.sections.map((section) => `
-          <div class="sub-section-title" style="padding-top:14px">${section.title}</div>
-          ${section.rows.map((row) => {
-            const current = userValue(currentUser, row);
-            const locked = currentUser.locked.includes(row.path);
-            const editable = row.capability === 'server' && row.editable && !locked;
-            return `<div class="user-setting-row">
-              <div>
-                <div class="setting-label">${row.label}</div>
-                <div class="setting-path">${row.path}</div>
-              </div>
-              <div><span class="value-pill">${formatUserValue(row, current)}</span></div>
-              <div><span class="value-pill default">${formatUserValue(row, row.value)}</span></div>
-              <div>
-                ${row.capability === 'server'
-                  ? `<label class="mini-check"><input type="checkbox" ${locked ? 'checked' : ''} onchange="toggleUserLock('${row.path}', this.checked)" /> 锁定</label>
-                     <div class="tiny muted">${editable ? '可修改' : '只读'}</div>`
-                  : `<span class="tiny muted">${capabilityOf(row).label}</span>`}
-              </div>
-            </div>`;
-          }).join('')}`).join('');
-      }
-
-      function toggleUserLock(path, checked) {
+      function toggleUserLock(input, path) {
         if (!currentUser) return;
-        if (checked) {
+
+        if (input.checked) {
           if (!currentUser.locked.includes(path)) currentUser.locked.push(path);
         } else {
-          currentUser.locked = currentUser.locked.filter((p) => p !== path);
+          currentUser.locked = currentUser.locked.filter((item) => item !== path);
         }
+
+        currentUser.custom = true;
         renderDrawerSettings();
-        toast(checked ? '已锁定该字段，将按模板值强制生效' : '已解除锁定');
+        renderUsers();
+        toast(input.checked ? '已锁定该字段：用户端置灰，服务端拒绝写入' : '已解除锁定');
       }
 
-      /* ---------- apply modal ---------- */
-      function openApply() {
-        document.getElementById('applyModal').classList.add('show');
-        selectApplyMode('unset');
-      }
+      /* ------------------------------------------------------------ 弹窗 */
 
-      function closeApply() { document.getElementById('applyModal').classList.remove('show'); }
+      function applySummary() {
+        const stats = templateStats();
+        const affected = AFFECTED_USERS.toLocaleString('en-US');
+        const skipped = COMPLETE_USERS.toLocaleString('en-US');
+        const patched = (AFFECTED_USERS - COMPLETE_USERS).toLocaleString('en-US');
+
+        return applyMode === 'unset'
+          ? `影响 <strong>${affected}</strong> 位用户：补齐 <strong>${patched}</strong> 位，跳过已设置的 <strong>${skipped}</strong> 位。<br />可下发 <strong>${stats.server}</strong> 项；设备本地 / 用户私有 / 用户数据字段不写入。`
+          : `影响 <strong>${affected}</strong> 位用户：全部覆盖可下发字段。<br />可下发 <strong>${stats.server}</strong> 项；设备本地 / 用户私有 / 用户数据字段不写入。`;
+      }
 
       function selectApplyMode(mode) {
         applyMode = mode;
-        const totals = capabilityTotals();
-        const skipNote = `可下发 ${totals.server} 项；设备本地 ${totals.device} 项、用户私有 ${totals.private} 项、用户数据 ${totals.data} 项不会写入。`;
-        document.getElementById('optUnset').classList.toggle('selected', mode === 'unset');
-        document.getElementById('optForce').classList.toggle('selected', mode === 'force');
-        document.querySelector('#optUnset input').checked = mode === 'unset';
-        document.querySelector('#optForce input').checked = mode === 'force';
-        document.getElementById('applySummary').innerHTML = mode === 'unset'
-          ? `预计影响 <strong>1,284</strong> 位用户：补齐 <strong>1,196</strong> 位，跳过 <strong>88</strong> 位（已自定义）。<br /><span class="tiny muted">${skipNote}</span>`
-          : `预计影响 <strong>1,284</strong> 位用户：全部覆盖，用户已有的自定义值将丢失。<br /><span class="tiny muted">锁定项始终覆盖；${skipNote}</span>`;
+        $('optUnset').classList.toggle('selected', mode === 'unset');
+        $('optForce').classList.toggle('selected', mode === 'force');
+        $('optUnset').querySelector('input').checked = mode === 'unset';
+        $('optForce').querySelector('input').checked = mode === 'force';
+        $('applySummary').innerHTML = applySummary();
+      }
+
+      function openApply() {
+        $('applyModal').classList.add('show');
+        selectApplyMode('unset');
+      }
+
+      function closeApply() {
+        $('applyModal').classList.remove('show');
       }
 
       function confirmApply() {
         closeApply();
-        toast(applyMode === 'unset' ? '已开始应用：仅补齐未设置项' : '已开始应用：强制覆盖');
+        toast(
+          applyMode === 'unset'
+            ? '已应用模板（仅补齐未设置项）：1,284 位用户'
+            : '已应用模板（强制覆盖）：1,284 位用户',
+        );
       }
 
-      /* ---------- toast / init ---------- */
-      let toastTimer;
+      /* ------------------------------------------------------------ 提示 */
+
       function toast(message) {
-        const el = document.getElementById('toast');
-        el.textContent = message;
-        el.classList.add('show');
+        const element = $('toast');
+        element.textContent = message;
+        element.classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+        toastTimer = setTimeout(() => element.classList.remove('show'), 2200);
       }
 
-      document.getElementById('applyModal').addEventListener('click', (e) => {
-        if (e.target.id === 'applyModal') closeApply();
-      });
+      /* ------------------------------------------------------------ 初始化 */
 
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { closeDrawer(); closeApply(); }
-      });
+      function init() {
+        document.documentElement.dataset.theme = 'light';
+        renderThemeIcon();
+        renderAvatarSlots();
+        renderSettingsNav();
+        renderUsers();
+        renderSettingsPage();
+        go('overview');
 
-      renderSettingsNav();
-      renderSettingsPage();
-      renderUsers();
-      const totals = capabilityTotals();
-      document.getElementById('deployableSummary').textContent =
-        `可下发 ${totals.server} 项；设备本地 ${totals.device} 项；用户私有 ${totals.private} 项；用户数据 ${totals.data} 项`;
+        const stats = templateStats();
+        $('deployableSummary').textContent = `可下发 ${stats.server} 项 / 共 ${stats.total} 项${
+          stats.locked ? `（${stats.locked} 项已锁定）` : ''
+        }`;
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key !== 'Escape') return;
+          closeDrawer();
+          closeApply();
+        });
+      }
+
+      init();
     </script>
   </body>
 </html>

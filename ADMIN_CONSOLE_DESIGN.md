@@ -7,9 +7,9 @@
 
 当前部署通过统一认证平台 SSO 自动建用户（CUST-007）。新用户第一次进入后：
 
-- 「实验室」里的功能开关全部取代码默认值（`DEFAULT_PREFERENCE.lab`），管理员无法按部署/按人控制；
+- 「实验室」里的功能开关全部取代码默认值（`DEFAULT_PREFERENCE.lab`），管理员无法按部署 / 按人控制；
 - 默认模型、默认助手参数、服务模型只能靠环境变量（`DEFAULT_AGENT_CONFIG`、`SYSTEM_AGENT`）全局控制，不能按用户设置；
-- 没有地方查看「这个用户现在到底是什么配置」，也没有地方限制「这个用户不许改模型/Provider」。
+- 没有地方查看「这个用户现在到底是什么配置」，也没有地方限制「这个用户不许改模型 / Provider」。
 
 需要的是一个**管理员入口**，能：
 
@@ -21,21 +21,21 @@
 
 ## 2. 现状（代码事实）
 
-| 能力 | 现状 | 位置 |
-| --- | --- | --- |
-| 用户表 | 已有 `role` / `banned` / `ban_reason` / `ban_expires` 字段 | `packages/database/src/schemas/user.ts` |
-| 认证 | 已启用 Better Auth `admin()` 插件，前端 auth client 已装 `adminClient()` | `src/libs/better-auth/define-config.ts:318`、`src/libs/better-auth/auth-client.ts` |
-| 用户创建 | Better Auth `databaseHooks.user.create.after` → `UserService.initUser` | `src/libs/better-auth/define-config.ts:251` |
-| 实验室开关 | 存在 `users.preference.lab`，默认值来自 `DEFAULT_PREFERENCE` | `packages/const/src/user.ts`、`src/store/user/slices/preference/selectors/labPrefer.ts` |
-| 服务端实验室判断 | 多处直接读 `users.preference.lab` | 例：`apps/server/src/services/aiAgent/pipeline/runSettings.ts` |
-| 用户设置 | `user_settings` 按列存 jsonb；读取时客户端用 `DEFAULT_SETTINGS` 补齐 | `packages/database/src/models/user.ts`、`src/store/user/slices/settings/selectors/settings.ts` |
-| 服务端全局默认 | `GlobalServerConfig` 已携带 `defaultAgent` / `systemAgent` / `image`，客户端会并入 `defaultSettings` | `apps/server/src/globalConfig/index.ts`、`src/store/user/slices/common/action.ts:80` |
-| 默认模型 | `languageModel` 控制 Provider/模型可用范围；`defaultAgent.config.model/provider` 是新会话默认模型 | `packages/business/config/src/llm.ts`、`@lobechat/const` |
-| RBAC | 已有全局角色概念 `super_admin` 与权限矩阵，但没有管理员控制台入口 | `packages/const/src/rbac.ts`、`packages/database/src/models/rbac.ts` |
+| 能力             | 现状                                                                                                 | 位置                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 用户表           | 已有 `role` / `banned` / `ban_reason` / `ban_expires` 字段                                           | `packages/database/src/schemas/user.ts`                                                        |
+| 认证             | 已启用 Better Auth `admin()` 插件，前端 auth client 已装 `adminClient()`                             | `src/libs/better-auth/define-config.ts:318`、`src/libs/better-auth/auth-client.ts`             |
+| 用户创建         | Better Auth `databaseHooks.user.create.after` → `UserService.initUser`                               | `src/libs/better-auth/define-config.ts:251`                                                    |
+| 实验室开关       | 存在 `users.preference.lab`，默认值来自 `DEFAULT_PREFERENCE`                                         | `packages/const/src/user.ts`、`src/store/user/slices/preference/selectors/labPrefer.ts`        |
+| 服务端实验室判断 | 多处直接读 `users.preference.lab`                                                                    | 例：`apps/server/src/services/aiAgent/pipeline/runSettings.ts`                                 |
+| 用户设置         | `user_settings` 按列存 jsonb；读取时客户端用 `DEFAULT_SETTINGS` 补齐                                 | `packages/database/src/models/user.ts`、`src/store/user/slices/settings/selectors/settings.ts` |
+| 服务端全局默认   | `GlobalServerConfig` 已携带 `defaultAgent` / `systemAgent` / `image`，客户端会并入 `defaultSettings` | `apps/server/src/globalConfig/index.ts`、`src/store/user/slices/common/action.ts:80`           |
+| 默认模型         | `languageModel` 控制 Provider / 模型可用范围；`defaultAgent.config.model/provider` 是新会话默认模型  | `packages/business/config/src/llm.ts`、`@lobechat/const`                                       |
+| RBAC             | 已有全局角色概念 `super_admin` 与权限矩阵，但没有管理员控制台入口                                    | `packages/const/src/rbac.ts`、`packages/database/src/models/rbac.ts`                           |
 
 关键结论：
 
-- **不需要改认证体系**：`users.role = 'admin'` 与 Better Auth admin 插件可以直接复用，用户列表/禁用/改角色/模拟登录都有现成接口。
+- **不需要改认证体系**：`users.role = 'admin'` 与 Better Auth admin 插件可以直接复用，用户列表 / 禁用 / 改角色 / 模拟登录都有现成接口。
 - **不要改运行时读配置的路径**：服务端 agent 运行直接读 `users.preference` 与 `user_settings`。只要把管理员默认值**物化**进这两处，运行时零改动。
 - **实验室默认值不能只放客户端**：服务端 `runSettings` 等路径也读 `users.preference.lab`，必须在服务端可见。
 
@@ -62,10 +62,10 @@
 
 ### 为什么物化而不是动态合并
 
-| 方案 | 优点 | 缺点 |
-| --- | --- | --- |
-| 动态 overlay（读时合并） | 改默认值立即对所有人生效 | 要改 `getUserPreference`、`getUserState`、`getUserSettings`、运行时多处读取；性能和缓存语义都变复杂 |
-| **物化（推荐）** | 运行时零改动；用户值可直接看/可审计；上游读取链不用碰 | 改默认值后要显式「应用到存量用户」 |
+| 方案                     | 优点                                                    | 缺点                                                                                                |
+| ------------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 动态 overlay（读时合并） | 改默认值立即对所有人生效                                | 要改 `getUserPreference`、`getUserState`、`getUserSettings`、运行时多处读取；性能和缓存语义都变复杂 |
+| **物化（推荐）**         | 运行时零改动；用户值可直接看 / 可审计；上游读取链不用碰 | 改默认值后要显式「应用到存量用户」                                                                  |
 
 企业部署更看重可解释性：管理员看到「这个用户当前值是什么」，就是数据库里的值。默认模板变更用「应用」动作显式传播，避免某天改一个开关影响所有在跑的任务。
 
@@ -73,37 +73,37 @@
 
 原型和实现都按当前代码里的真实设置页组织，不引入自定义字段。每个字段标注一种「可配置能力」：
 
-| 能力 | 含义 | 处理方式 |
-| --- | --- | --- |
-| `server` | 服务端持久化，可设默认值、可锁 | 写入 `user_settings` / `users.preference` |
-| `device` | 设备本地（主题、语言、诊断、更新通道） | 不下发，仅在原型里展示为「设备本地」 |
-| `private` | 用户私有（API Key、自定义 Provider、人工干预白名单） | 不下发，管理员不可见 |
-| `data` | 用户资源/数据（设备、环境、技能、标签、连接器、API Key） | 不提供默认值 |
-| `serverOnly` | 服务端环境变量配置（S3、文件向量化、Provider 凭据） | 不下发，不入模板 |
-| `readonly` | 只读信息（关于、统计） | 不提供默认值 |
+| 能力         | 含义                                                       | 处理方式                                  |
+| ------------ | ---------------------------------------------------------- | ----------------------------------------- |
+| `server`     | 服务端持久化，可设默认值、可锁                             | 写入 `user_settings` / `users.preference` |
+| `device`     | 设备本地（主题、语言、诊断、更新通道）                     | 不下发，仅在原型里展示为「设备本地」      |
+| `private`    | 用户私有（API Key、自定义 Provider、人工干预白名单）       | 不下发，管理员不可见                      |
+| `data`       | 用户资源 / 数据（设备、环境、技能、标签、连接器、API Key） | 不提供默认值                              |
+| `serverOnly` | 服务端环境变量配置（S3、文件向量化、Provider 凭据）        | 不下发，不入模板                          |
+| `readonly`   | 只读信息（关于、统计）                                     | 不提供默认值                              |
 
 按真实设置页的分组（与 `useCategory.tsx` 一致）：
 
-| 分组 | 页面 | 可配置内容 | 主要路径 |
-| --- | --- | --- | --- |
-| 账号 | 外观 | 动画、密度、右键菜单、主题色、字号、字体抗锯齿、聊天外观、话题列表 | `general.*`、`preference.fontFamily`、`preference.topic*` |
-| 账号 | 快捷键 | 可编辑热键默认值 | `hotkey.<id>` |
-| 账号 | 数据统计 | 只读 | — |
-| 智能体 | AI 服务商 | Provider 启停、模型白名单、是否允许用户改模型/填 Key/加自定义 Provider | `languageModel.<provider>.*`、`keyVaults.*`（private）、`policy.*` |
-| 智能体 | 服务模型 | 4 个层级模型 + 17 个高级任务槽位 | `systemAgent.tiers.*`、`systemAgent.<slot>` |
-| 智能体 | 技能 | 用户数据，不提供默认值 | — |
-| 智能体 | 工具 | 搜索/抓取渠道默认优先级 | `tool.searchProviders`、`tool.crawlerImpls` |
-| 智能体 | 记忆设置 | 启用、强度 | `memory.enabled`、`memory.effort` |
-| 智能体 | 标签 | 用户数据 | — |
-| 连接 | 集成 | GitHub 自动化开关 | `preference.integration.github.*` |
-| 连接 | 连接器 | 用户数据 | — |
-| 运行资源 | 设备 / 订阅账号 / 环境 | 用户资源 | — |
-| 运行资源 | 凭证管理 | 用户私有 | — |
-| 系统与开发者 | 存储 | 服务端配置 | — |
-| 系统与开发者 | 回收站 / API Key | 用户数据 | — |
-| 系统与开发者 | 高级 | 开发者模式、网关模式；诊断/更新通道为设备本地 | `general.isDevMode`、`defaultAgent.config.chatConfig.disableGatewayMode` |
-| 系统与开发者 | 实验室 | 18 个真实实验开关 | `preference.lab.*` |
-| 系统与开发者 | 关于 | 只读 | — |
+| 分组         | 页面                   | 可配置内容                                                                 | 主要路径                                                                 |
+| ------------ | ---------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 账号         | 外观                   | 动画、密度、右键菜单、主题色、字号、字体抗锯齿、聊天外观、话题列表         | `general.*`、`preference.fontFamily`、`preference.topic*`                |
+| 账号         | 快捷键                 | 可编辑热键默认值                                                           | `hotkey.<id>`                                                            |
+| 账号         | 数据统计               | 只读                                                                       | —                                                                        |
+| 智能体       | AI 服务商              | Provider 启停、模型白名单、是否允许用户改模型 / 填 Key / 加自定义 Provider | `languageModel.<provider>.*`、`keyVaults.*`（private）、`policy.*`       |
+| 智能体       | 服务模型               | 4 个层级模型 + 17 个高级任务槽位                                           | `systemAgent.tiers.*`、`systemAgent.<slot>`                              |
+| 智能体       | 技能                   | 用户数据，不提供默认值                                                     | —                                                                        |
+| 智能体       | 工具                   | 搜索 / 抓取渠道默认优先级                                                  | `tool.searchProviders`、`tool.crawlerImpls`                              |
+| 智能体       | 记忆设置               | 启用、强度                                                                 | `memory.enabled`、`memory.effort`                                        |
+| 智能体       | 标签                   | 用户数据                                                                   | —                                                                        |
+| 连接         | 集成                   | GitHub 自动化开关                                                          | `preference.integration.github.*`                                        |
+| 连接         | 连接器                 | 用户数据                                                                   | —                                                                        |
+| 运行资源     | 设备 / 订阅账号 / 环境 | 用户资源                                                                   | —                                                                        |
+| 运行资源     | 凭证管理               | 用户私有                                                                   | —                                                                        |
+| 系统与开发者 | 存储                   | 服务端配置                                                                 | —                                                                        |
+| 系统与开发者 | 回收站 / API Key       | 用户数据                                                                   | —                                                                        |
+| 系统与开发者 | 高级                   | 开发者模式、网关模式；诊断 / 更新通道为设备本地                            | `general.isDevMode`、`defaultAgent.config.chatConfig.disableGatewayMode` |
+| 系统与开发者 | 实验室                 | 18 个真实实验开关                                                          | `preference.lab.*`                                                       |
+| 系统与开发者 | 关于                   | 只读                                                                       | —                                                                        |
 
 **默认值来源**（实现时直接引用，不手写副本）：
 
@@ -113,11 +113,11 @@
 - `DEFAULT_LLM_CONFIG`（`packages/business/config/src/llm.ts`）→ 默认启用 DeepSeek / OpenAI / Anthropic / Google
 - `DEFAULT_SYSTEM_AGENT_CONFIG`（`packages/const/src/settings/systemAgent.ts`）→ 主模型 `deepseek-v4-flash`、Flash `gpt-5.6-luna`、验收 `glm-5.3-flash`
 - `DEFAULT_MEMORY_SETTINGS` → 开启、强度 `medium`
-- `LAB_FEATURES`（`src/features/Settings/labs/features.ts`）→ 实验室 18 项及 alpha/beta、商业版/桌面端标记
+- `LAB_FEATURES`（`src/features/Settings/labs/features.ts`）→ 实验室 18 项及 alpha/beta、商业版 / 桌面端标记
 
 客户端渲染用的字段清单必须来自同一份 `packages/types/src/adminConsole/settingsSchema.ts`，避免原型、后端、前端三处各写一份。
 
-**默认值解析顺序**：管理员模板 > 服务端环境变量（`DEFAULT_AGENT_CONFIG` / `SYSTEM_AGENT` / `DEFAULT_FILES_CONFIG` 等）> 代码默认常量。模板里只保存管理员显式改过的路径；未出现的路径继续走环境变量或代码默认，避免模板把部署已有配置“拍平”。
+**默认值解析顺序**：管理员模板 > 服务端环境变量（`DEFAULT_AGENT_CONFIG` / `SYSTEM_AGENT` / `DEFAULT_FILES_CONFIG` 等）> 代码默认常量。模板里只保存管理员显式改过的路径；未出现的路径继续走环境变量或代码默认，避免模板把部署已有配置 “拍平”。
 
 ## 4. 数据模型
 
@@ -125,11 +125,11 @@
 
 ### 4.1 `admin_console_settings`（单例）
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `id` | text PK | 固定 `global` |
-| `defaults` | jsonb | 部署默认模板 |
-| `updated_at` | timestamptz | |
+| 字段         | 类型            | 说明                             |
+| ------------ | --------------- | -------------------------------- |
+| `id`         | text PK         | 固定 `global`                    |
+| `defaults`   | jsonb           | 部署默认模板                     |
+| `updated_at` | timestamptz     |                                  |
 | `updated_by` | text → users.id | 最后修改人，`on delete set null` |
 
 `defaults` 形状（直接对应真实 `UserSettings` / `UserPreference`，只保留可下发字段）：
@@ -182,12 +182,12 @@ interface AdminDefaults {
 
 ### 4.2 `admin_console_user_policies`（按用户）
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `user_id` | text PK → users.id | `on delete cascade` |
-| `policy` | jsonb | 用户策略 |
-| `updated_at` | timestamptz | |
-| `updated_by` | text → users.id | |
+| 字段         | 类型               | 说明                |
+| ------------ | ------------------ | ------------------- |
+| `user_id`    | text PK → users.id | `on delete cascade` |
+| `policy`     | jsonb              | 用户策略            |
+| `updated_at` | timestamptz        |                     |
+| `updated_by` | text → users.id    |                     |
 
 ```ts
 interface AdminUserPolicy {
@@ -198,10 +198,7 @@ interface AdminUserPolicy {
    * - editable: false → 用户端只读，但保留用户当前值
    * - locked: true → 强制使用 value（不填则用模板默认值）并置灰
    */
-  fieldPolicies?: Record<
-    string,
-    { editable?: boolean; locked?: boolean; value?: unknown }
-  >;
+  fieldPolicies?: Record<string, { editable?: boolean; locked?: boolean; value?: unknown }>;
 }
 ```
 
@@ -225,7 +222,7 @@ await adminConsoleService.applyDefaultsToNewUser(user.id);
 
 1. 读 `admin_console_settings.defaults`；
 2. `users.preference = merge(DEFAULT_PREFERENCE, defaults.preference)`，只写白名单内的 key；
-3. `user_settings` 插入/更新 `defaults.settings`，只写白名单列（不含 `keyVaults` / `market`）；
+3. `user_settings` 插入 / 更新 `defaults.settings`，只写白名单列（不含 `keyVaults` / `market`）；
 4. 对 `fieldPolicies[path].locked === true` 的字段，写入强制值；
 5. 若该用户在 `ADMIN_CONSOLE_BOOTSTRAP_USERNAMES` / `EMAILS` 中，写 `users.role = 'admin'`。
 
@@ -251,7 +248,7 @@ v1 同步执行，单次上限 2000 人，按 200 人一批；超过上限转后
 
 `fieldPolicies[path].locked`（模板级）与用户策略里的 `locked` 是「强制值」：
 
-- 保存模板/策略时立即物化到 `user_settings` / `users.preference` 的真实路径；
+- 保存模板 / 策略时立即物化到 `user_settings` / `users.preference` 的真实路径；
 - 之后 `updatePreference` / `updateSettings` 拒绝修改这些路径；
 - 客户端把对应控件置灰并显示「由管理员设置」。
 
@@ -263,7 +260,7 @@ v1 同步执行，单次上限 2000 人，按 200 人一批；超过上限转后
 
 - 服务端：`settingsRouter.updateSettings` 拒绝 `languageModel`、`keyVaults`、`defaultAgent.config.model/provider` 的写入；
 - 客户端：隐藏「模型服务商」设置入口；默认模型选择器只读，并显示策略提示；
-- 注意：这只限制「用户级模型/Provider 配置」。会话内临时切换模型属于 Agent 配置，v1 不拦截；如果确实要完全锁死，P2 再拦 Agent 配置写入。
+- 注意：这只限制「用户级模型 / Provider 配置」。会话内临时切换模型属于 Agent 配置，v1 不拦截；如果确实要完全锁死，P2 再拦 Agent 配置写入。
 
 ## 6. 管理员身份
 
@@ -272,7 +269,7 @@ v1 同步执行，单次上限 2000 人，按 200 人一批；超过上限转后
 - 管理员 = `users.role === 'admin'`；
 - 首个管理员用环境变量引导：`ADMIN_CONSOLE_BOOTSTRAP_USERNAMES`（工号，逗号分隔）、`ADMIN_CONSOLE_BOOTSTRAP_EMAILS`；
 - `initUser` 时命中即写 `role = 'admin'`；对已存在用户，首次访问 `/admin` 时 `admin.whoami` 做一次惰性提升；
-- 后续在管理端「用户详情 → 设为管理员/取消管理员」调 Better Auth `setRole`。
+- 后续在管理端「用户详情 → 设为管理员 / 取消管理员」调 Better Auth `setRole`。
 
 不新增强制 RBAC 表，也不改 `super_admin` 语义。将来若要与平台 `roleCodes` 对齐，只需把 SSO `roleCodes` 映射到 `users.role`，控制台不用改。
 
@@ -315,29 +312,38 @@ v1 同步执行，单次上限 2000 人，按 200 人一批；超过上限转后
 
 - 四个页面切换：总览 / 用户 / 用户设置模板 / 审计日志；
 - 用户设置模板按真实设置页分组，逐项显示路径、默认值、可下发能力、允许修改、锁定；
-- 数据/资源类页面（技能、标签、设备、环境、凭证、存储等）明确标注“不提供默认值”，不会伪造字段；
-- 用户列表搜索/筛选；
+- 数据 / 资源类页面（技能、标签、设备、环境、凭证、存储等）明确标注 “不提供默认值”，不会伪造字段；
+- 用户列表搜索 / 筛选；
 - 点用户行打开详情抽屉，切换「概览 / 用户设置 / 权限 / 操作」；用户设置里可切换真实设置页，查看「当前值 vs 模板默认」并锁定；
 - 保存模板后打开「应用范围」确认框（仅补齐 / 强制覆盖 + 影响人数 + 自动跳过不可下发项）。
+
+原型视觉基线直接复刻现有设置页，不自造一套后台风格：
+
+- 外壳按 `src/features/Settings/Layout`：左侧 `NavPanel`（280px、`colorBgLayout`、36px `NavItem`）+ 44px 页头；
+- 内容区 `MAX_WIDTH = 1024`、`paddingBlock '24px 128px'`、`paddingInline 24`；模板页字段行为三列 `minmax(0, 1fr) 200px 28px`（标签 / 控件 / 锁定）；
+- 卡片复刻 `@lobehub/ui` 的 `Form variant="filled" itemsType="group"`：外层 `fill-quaternary` 12px 圆角承载，内层 `colorBgContainer` 卡片（`margin: 0 3px 3px`、1px `borderSecondary` + 浅色 4 层阴影 + 8px 圆角，深色无阴影 ——`bodyFilledLight` 只在浅色挂载）；
+- 侧栏分组复刻 `Settings/Layout/Body`：`SearchBar variant="filled"` + `Accordion`（`gap 8`、inline 指示器、32px 分组标题、hover `fillTertiary`）；
+- 颜色、圆角、阴影全部走 `--lobe-color-*` / `--lobe-radius*` / `--lobe-shadow-*` token，取值对齐 `@lobehub/ui` 的 `theme.css`（主色 `#222222`，深色反转为 `#eeeeee`），深色由 `data-theme="dark"` 驱动；
+- 侧栏支持搜索过滤与分组折叠，用户详情抽屉宽 520px（对齐设置页二级面板尺度）。
 
 ## 8. 后端接口
 
 新增 Fork 自有 lambda router：`adminConsoleRouter`，通过 `adminProcedure` 保护。
 
-| 接口 | 作用 |
-| --- | --- |
-| `adminConsole.whoami` | 返回 `{ isAdmin, role, canBootstrap }`，并做首次管理员提升 |
-| `adminConsole.listUsers` | 分页 + 搜索；join `user_settings` / `users.preference` 返回列表摘要 |
-| `adminConsole.getUser` | 用户详情：账号、偏好、设置、策略、生效值 |
-| `adminConsole.getSettingSchema` | 返回真实设置项矩阵：分组、页面、路径、能力、默认值、是否可编辑 |
-| `adminConsole.updateUserPolicy` | 保存用户策略，物化锁定项 |
-| `adminConsole.clearUserPolicy` | 清除用户策略，恢复继承 |
-| `adminConsole.getDefaults` | 读部署默认模板 |
-| `adminConsole.updateDefaults` | 保存模板（不自动应用） |
-| `adminConsole.previewApplyDefaults` | dry-run：返回影响人数/跳过人数/样例 |
-| `adminConsole.applyDefaults` | 按模式批量应用（仅补齐 / 强制） |
-| `adminConsole.resetUser` | 将单个用户恢复为部署默认 |
-| `adminConsole.listAudit`（P2） | 管理动作审计 |
+| 接口                                | 作用                                                                |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| `adminConsole.whoami`               | 返回 `{ isAdmin, role, canBootstrap }`，并做首次管理员提升          |
+| `adminConsole.listUsers`            | 分页 + 搜索；join `user_settings` / `users.preference` 返回列表摘要 |
+| `adminConsole.getUser`              | 用户详情：账号、偏好、设置、策略、生效值                            |
+| `adminConsole.getSettingSchema`     | 返回真实设置项矩阵：分组、页面、路径、能力、默认值、是否可编辑      |
+| `adminConsole.updateUserPolicy`     | 保存用户策略，物化锁定项                                            |
+| `adminConsole.clearUserPolicy`      | 清除用户策略，恢复继承                                              |
+| `adminConsole.getDefaults`          | 读部署默认模板                                                      |
+| `adminConsole.updateDefaults`       | 保存模板（不自动应用）                                              |
+| `adminConsole.previewApplyDefaults` | dry-run：返回影响人数 / 跳过人数 / 样例                             |
+| `adminConsole.applyDefaults`        | 按模式批量应用（仅补齐 / 强制）                                     |
+| `adminConsole.resetUser`            | 将单个用户恢复为部署默认                                            |
+| `adminConsole.listAudit`（P2）      | 管理动作审计                                                        |
 
 账号类操作直接复用 Better Auth admin 插件（无需新后端）：
 
@@ -374,18 +380,18 @@ prototypes/admin-console/index.html
 
 ### 9.2 必须修改的共享文件（逐条可核对）
 
-| 文件 | 改动 | 风险 |
-| --- | --- | --- |
-| `packages/database/src/schemas/index.ts` | 导出新 schema | 极低，一行 |
-| `packages/database/src/models/index.ts` | 导出新 model | 极低，一行 |
-| `apps/server/src/routers/lambda/index.ts` | 挂载 `adminConsoleRouter` | 极低，一行 |
-| `apps/server/src/services/user/index.ts` | `initUser` 末尾调用 `applyDefaultsToNewUser` | 低，try/catch 包裹 |
-| `apps/server/src/routers/lambda/user/settings.ts` | `updateSettings` / `updatePreference` 增加策略检查 | 中，需回归设置保存 |
-| `src/libs/better-auth/auth-client.ts` | 导出 `admin`（用于禁用/改角色） | 极低，一个词 |
-| `src/spa/router/desktopRouter.shared.tsx` | 注册 `/admin` 路由 | 低，按 `spa-routes` 规范 |
-| `src/features/Settings/labs/index.tsx` | 读取策略，锁定项置灰 | 低，纯展示 |
-| `src/features/Settings/provider/index.tsx` | 策略禁止时隐藏/只读 | 低，纯展示 |
-| `CUSTOMIZATIONS.md` | 登记 CUST-008 | 文档 |
+| 文件                                              | 改动                                               | 风险                     |
+| ------------------------------------------------- | -------------------------------------------------- | ------------------------ |
+| `packages/database/src/schemas/index.ts`          | 导出新 schema                                      | 极低，一行               |
+| `packages/database/src/models/index.ts`           | 导出新 model                                       | 极低，一行               |
+| `apps/server/src/routers/lambda/index.ts`         | 挂载 `adminConsoleRouter`                          | 极低，一行               |
+| `apps/server/src/services/user/index.ts`          | `initUser` 末尾调用 `applyDefaultsToNewUser`       | 低，try/catch 包裹       |
+| `apps/server/src/routers/lambda/user/settings.ts` | `updateSettings` / `updatePreference` 增加策略检查 | 中，需回归设置保存       |
+| `src/libs/better-auth/auth-client.ts`             | 导出 `admin`（用于禁用 / 改角色）                  | 极低，一个词             |
+| `src/spa/router/desktopRouter.shared.tsx`         | 注册 `/admin` 路由                                 | 低，按 `spa-routes` 规范 |
+| `src/features/Settings/labs/index.tsx`            | 读取策略，锁定项置灰                               | 低，纯展示               |
+| `src/features/Settings/provider/index.tsx`        | 策略禁止时隐藏 / 只读                              | 低，纯展示               |
+| `CUSTOMIZATIONS.md`                               | 登记 CUST-008                                      | 文档                     |
 
 合计共享改动约 **11 个文件、每处 1 行到 1 个小函数**。不触碰 `getUserSettings` / `getUserPreference` / `getUserState` 等运行时读取链。
 
@@ -421,7 +427,7 @@ prototypes/admin-console/index.html
 3. 服务模型 / 记忆 / 工具渠道的页面级权限；
 4. 批量应用后台任务化（超过 2000 人）；
 5. 审计日志；
-6. 数据/资源类页面的权限策略（是否允许添加设备、环境、API Key、自定义 MCP）。
+6. 数据 / 资源类页面的权限策略（是否允许添加设备、环境、API Key、自定义 MCP）。
 
 ### P3 与平台权限对齐
 
@@ -435,7 +441,7 @@ prototypes/admin-console/index.html
 1. `define-config.ts` 的 `admin()` 插件是否还在；若上游移除，控制台的基础账号接口要改成自研 RPC。
 2. `databaseHooks.user.create.after` → `UserService.initUser` 调用是否还在；若签名变化，同步 `applyDefaultsToNewUser`。
 3. `user_settings` 列结构是否变化（`languageModel` / `defaultAgent` / `systemAgent`）；默认值物化字段要跟着改。
-4. `users.preference.lab` 的 flag 列表是否新增/重命名；`LabFlag` 类型与 `src/features/Settings/labs/features.ts` 对齐。
+4. `users.preference.lab` 的 flag 列表是否新增 / 重命名；`LabFlag` 类型与 `src/features/Settings/labs/features.ts` 对齐。
 5. `settingsRouter.updateSettings` / `updatePreference` 是否被拆分或改签名；策略检查是唯一必须跟进的写入口。
 6. `desktopRouter.shared.tsx` 的路由注册方式；按 `spa-routes` 技能要求，Web/Electron 共享路由只注册一次。
 7. Better Auth 升级时复核 `adminClient()` 的方法名与返回结构（`listUsers`、`banUser`、`setRole`）。
@@ -450,7 +456,7 @@ prototypes/admin-console/index.html
 - [ ] 管理员把「自进化」默认打开后，新 SSO 用户登录即看到开启；
 - [ ] 管理员设置默认模型 `deepseek/deepseek-v4-flash` 后，新用户新会话使用该模型；
 - [ ] 管理员把主模型改为 `deepseek/deepseek-v4-pro`、Flash 改为 `openai/gpt-5.6-luna` 后，服务模型页显示一致；
-- [ ] 管理员禁止某用户修改模型配置后，该用户设置页无法改 Provider/默认模型，服务端写入也被拒绝；
+- [ ] 管理员禁止某用户修改模型配置后，该用户设置页无法改 Provider / 默认模型，服务端写入也被拒绝；
 - [ ] 管理员锁定某实验室开关后，用户端开关置灰，服务端运行按强制值执行；
 - [ ] 设备本地（主题、语言、诊断、更新通道）、用户私有（API Key、自定义 Provider）、数据类（设备、环境、技能）字段不会被写入；
 - [ ] 「仅补齐未设置项」不覆盖用户已改的值；dry-run 人数与实际一致；
@@ -466,7 +472,7 @@ prototypes/admin-console/index.html
 ## 13. 待确认的产品决策
 
 1. **默认值传播**：默认模板变更默认「只影响新用户」，还是保存后自动「仅补齐存量用户」？当前设计是保存不自动应用，必须手动点应用（更可控）。
-2. **模型限制范围**：v1 只限制 Provider/默认模型设置，还是连会话内切换模型也禁止？后者需要拦 Agent 配置写入，侵入更大。
+2. **模型限制范围**：v1 只限制 Provider / 默认模型设置，还是连会话内切换模型也禁止？后者需要拦 Agent 配置写入，侵入更大。
 3. **管理员数量**：是否需要多个管理员与操作审计？v1 支持多管理员，审计放 P2。
 4. **实验室开关白名单**：是否允许管理员把某个实验室开关从用户界面完全隐藏（而不只是锁定）？建议 P2 再评估。
 5. **v1 是否包含快捷键与 GitHub 自动化**：这两组字段可下发，但快捷键依赖设备、GitHub 依赖集成是否启用；建议先只读展示，P1 后期再开放编辑。
