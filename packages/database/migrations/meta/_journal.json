@@ -1558,7 +1558,14 @@
     {
       "idx": 222,
       "version": "7",
-      "when": 1794996111308,
+      "when": 1795064606437,
+      "tag": "0222_agent_skill_upstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 223,
+      "version": "7",
+      "when": 1795064606438,
       "tag": "9000_nosy_tag",
       "breakpoints": true
     }

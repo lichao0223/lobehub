@@ -10681,6 +10681,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "upstream": {
+          "name": "upstream",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "manifest": {
           "name": "manifest",
           "type": "jsonb",
