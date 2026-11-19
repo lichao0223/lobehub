@@ -91,6 +91,14 @@ interface ProjectDirectoryStore extends ProjectDirectoryStoreState {
   associateTopic: (
     ...args: ServiceParams<'associateTopic'>
   ) => Promise<ServiceData<'associateTopic'>>;
+  /** Fork (TFS): add one repository to the project's environment. */
+  attachEnvironment: (
+    ...args: ServiceParams<'attachEnvironment'>
+  ) => Promise<ServiceData<'attachEnvironment'>>;
+  /** Fork (TFS): copy another environment's repositories into the project's environment. */
+  attachRepository: (
+    ...args: ServiceParams<'attachRepository'>
+  ) => Promise<ServiceData<'attachRepository'>>;
   /** Register a working directory, absorbing the conversations it covers. */
   bind: (...args: ServiceParams<'bind'>) => Promise<ServiceData<'bind'>>;
   /** Open a project conversation outside any directory binding. */
@@ -212,6 +220,24 @@ export const useProjectDirectoryStore: UseBoundStoreWithEqualityFn<
   return {
     ...initialProjectDirectoryState,
 
+    attachRepository: async (input) => {
+      const result = await projectWorkingDirectoryService.attachRepository(input);
+      // The repository joins the project's environment, which the project's
+      // environment rows and its folders (they carry its definition) both show.
+      await Promise.all([
+        environments.revalidate(input.projectId),
+        directories.revalidate(input.projectId),
+      ]);
+      return result.data;
+    },
+    attachEnvironment: async (input) => {
+      const result = await projectWorkingDirectoryService.attachEnvironment(input);
+      await Promise.all([
+        environments.revalidate(input.projectId),
+        directories.revalidate(input.projectId),
+      ]);
+      return result.data;
+    },
     createProjectTopic: async (input) => {
       const result = await projectWorkingDirectoryService.createProjectTopic(input);
       await projectTopics.revalidate(input.projectId);

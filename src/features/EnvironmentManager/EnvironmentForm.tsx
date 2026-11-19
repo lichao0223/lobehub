@@ -30,6 +30,7 @@ import { useActiveWorkspaceId } from '@/business/client/hooks/useActiveWorkspace
 import { parseGithubRepository } from '@/features/Projects/CreateFromGithub/githubRepository';
 import { TfsRepositoryPicker } from '@/features/Tfs/TfsRepositoryPicker';
 import { environmentService, type SandboxEnvironmentSpecification } from '@/services/environment';
+import { densityVars } from '@/styles/densityVars';
 
 import EnvironmentVariables from './EnvironmentVariables';
 import { describeError } from './errorMessage';
@@ -43,7 +44,7 @@ const styles = createStaticStyles(({ css }) => ({
   /** One repository: a row, with its fields underneath while edited. */
   item: css`
     padding-block: 8px;
-    padding-inline: 12px;
+    padding-inline: ${densityVars.contentGap};
     border: 1px solid ${cssVar.colorBorderSecondary};
     border-radius: ${cssVar.borderRadius};
 

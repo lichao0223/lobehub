@@ -109,7 +109,8 @@ export const environmentSettingsPath = (projectId?: string) =>
  * sandbox the repository is cloned into. A repository is only cloned into an
  * empty folder, so it never inherits the folder the conversation was on, and
  * it is never checked out on the drive — the persistent sandbox is for keeping
- * a folder of the drive, not a repository.
+ * a folder of the drive, not a repository. A project conversation checks the
+ * repository out in the project's own folder, on the drive the agent may use.
  */
 export const repositorySelection = (
   environment: {
@@ -119,9 +120,9 @@ export const repositorySelection = (
   },
   {
     projectId,
-    published,
-    workspace,
-  }: { projectId?: string; published: boolean; workspace: boolean },
+    published = false,
+    workspace = false,
+  }: { projectId?: string; published?: boolean; workspace?: boolean } = {},
 ): SandboxSelection =>
   projectId
     ? {

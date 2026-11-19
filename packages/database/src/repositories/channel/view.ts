@@ -4,6 +4,7 @@ import {
   channelMessageEditedAt,
   channelMessageReceipt,
   channelMessageVia,
+  contactCardOf,
   type ChatMessageError,
   defaultChannelAgentDirectory,
   type LobeAgentAgencyConfig,
@@ -43,6 +44,7 @@ import {
   workspaceUserSettings,
 } from '../../schemas';
 import type { Transaction } from '../../type';
+import { agentAvatarSql, agentTitleSql } from '../../utils/inboxAgent';
 import { notTrashed } from '../../utils/softDelete';
 import { fileIdsByMessage } from './attachments';
 import { isAgentAuthored } from './author';
@@ -52,9 +54,9 @@ import { externalWorksByMessage } from './works';
 
 export const publicMessageColumns = {
   ...getTableColumns(channelMessages),
-  senderAgentAvatar: agents.avatar,
+  senderAgentAvatar: agentAvatarSql(),
   senderAgentName: agents.name,
-  senderAgentTitle: agents.title,
+  senderAgentTitle: agentTitleSql(),
   senderUserAvatar: users.avatar,
   senderUserName: users.fullName,
   senderUsername: users.username,
@@ -89,6 +91,7 @@ export const publicMessage = (row: MessageRow, fileIds: string[]) => {
       name: isAgent ? senderAgentName || senderAgentTitle : senderUserName || senderUsername,
       type: isAgent ? ('agent' as const) : ('user' as const),
     },
+    card: contactCardOf(message.metadata) ?? null,
     deletedAt: channelMessageDeletedAt(message.metadata),
     editedAt: channelMessageEditedAt(message.metadata),
     // On an Agent's message, the exchange between Agents it reports from.
@@ -124,7 +127,7 @@ const relayAgentAvatars = async (tx: Transaction, rows: MessageRow[]) => {
   ];
   if (!ids.length) return new Map<string, string | null>();
   const found = await tx
-    .select({ avatar: agents.avatar, id: agents.id })
+    .select({ avatar: agentAvatarSql(), id: agents.id })
     .from(agents)
     .where(inArray(agents.id, ids));
   return new Map(found.map(({ avatar, id }) => [id, avatar] as const));
@@ -276,6 +279,10 @@ const publicJobColumns = {
       ${channelJobs.executionConfig}->'agencyConfig'->>'boundDeviceId'
     )`,
   writerHeld: channelJobs.writerHeld,
+  // The acknowledgement posted before the run (`openingRequestKey`), so a failure shows under it.
+  openingMessageId: sql<string | null>`(SELECT ${channelMessages.id} FROM ${channelMessages}
+      WHERE ${channelMessages.channelId} = ${channelJobs.channelId}
+        AND ${channelMessages.requestKey} = 'opening:' || ${channelJobs.id}::text)`,
   topicId: channelJobs.topicId,
   // A trashed topic has no owner here, so its link goes with it.
   topicOwnerId: sql<string | null>`CASE WHEN ${notTrashed(topics.isDeleted)}
@@ -519,7 +526,7 @@ export const readChannelView = async (
       .select({
         actorType: channelMembers.actorType,
         agentId: channelMembers.agentId,
-        avatar: agents.avatar,
+        avatar: agentAvatarSql(),
         // The same fallback routing uses: a Channel-specific description, else the Agent's own.
         description: sql<
           string | null

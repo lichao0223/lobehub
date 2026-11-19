@@ -14,6 +14,7 @@ import {
 } from '@lobechat/heterogeneous-agents/protocol';
 import type { ClaudeCodeAccountRouting } from '@lobechat/heterogeneous-agents/quota';
 import { resolveHeteroSpawnCwd } from '@lobechat/heterogeneous-agents/workingDirectory';
+import type { HeteroPermissionMode } from '@lobechat/types';
 
 import { getTask, removeTask, saveTask } from '../daemon/taskRegistry';
 import { registerAgentRun } from './agentRunRegistry';
@@ -33,6 +34,8 @@ export interface SpawnHeteroAgentRunParams {
   imageList?: HeteroExecImageRef[];
   jwt: string;
   operationId: string;
+  /** Claude Code permission mode, forwarded in the input envelope. */
+  permissionMode?: HeteroPermissionMode;
   prompt: string;
   /** System context used only by the automatic retry without native resume. */
   resumeFallbackSystemContext?: string;
@@ -147,6 +150,7 @@ function startHeteroAgentRun(
   const stdinPayload = buildHeteroExecStdinPayload({
     imageList,
     isNewSession: !resumeSessionId,
+    permissionMode: params.permissionMode,
     prompt,
     resumeFallbackSystemContext,
     systemContext,

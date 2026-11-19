@@ -10,6 +10,19 @@ class ProjectWorkingDirectoryService {
     lambdaClient.projectWorkingDirectory.createProjectTopic.mutate(input);
   associateTopic = (input: Parameters<Client['associateTopic']['mutate']>[0]) =>
     lambdaClient.projectWorkingDirectory.associateTopic.mutate(input);
+  /**
+   * Fork (TFS): add one repository to the project's environment. Kept on the
+   * server as a compatibility procedure for the one-environment-per-project
+   * world — it adds a repository rather than linking an environment.
+   */
+  attachRepository = (input: Parameters<Client['attachRepository']['mutate']>[0]) =>
+    lambdaClient.projectWorkingDirectory.attachRepository.mutate(input);
+  /**
+   * Fork (TFS): copy another environment's repositories into the project's
+   * environment — nothing is linked.
+   */
+  attachEnvironment = (input: Parameters<Client['attachEnvironment']['mutate']>[0]) =>
+    lambdaClient.projectWorkingDirectory.attachEnvironment.mutate(input);
   listEnvironments = (projectId?: string) =>
     lambdaClient.projectWorkingDirectory.listEnvironments.query({ projectId });
   saveEnvironment = (input: Parameters<Client['saveEnvironment']['mutate']>[0]) =>

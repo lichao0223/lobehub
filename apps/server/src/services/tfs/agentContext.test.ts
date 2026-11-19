@@ -6,7 +6,7 @@ import { buildTfsAgentContext } from './agentContext';
 const mocks = vi.hoisted(() => ({
   environment: vi.fn(),
   agentVisibility: vi.fn(),
-  environments: vi.fn(),
+  projectEnvironment: vi.fn(),
   project: vi.fn(),
   status: vi.fn(),
   topic: vi.fn(),
@@ -19,7 +19,12 @@ vi.mock('@/database/models/agent', () => ({
 vi.mock('@/database/models/project', () => ({
   ProjectModel: class {
     findById = mocks.project;
-    listEnvironments = mocks.environments;
+  },
+}));
+vi.mock('@/database/repositories/projectEnvironment', () => ({
+  ProjectEnvironmentRepository: class {
+    // The project's one environment; older projects are settled to it on read.
+    get = mocks.projectEnvironment;
   },
 }));
 vi.mock('@/database/models/environment', () => ({
@@ -50,7 +55,7 @@ describe('buildTfsAgentContext', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mocks.project.mockResolvedValue({ id: 'proj-1' });
-    mocks.environments.mockResolvedValue([repository]);
+    mocks.projectEnvironment.mockResolvedValue(repository);
     mocks.environment.mockImplementation(async (id: string) =>
       id === repository.id ? repository : undefined,
     );
@@ -114,7 +119,7 @@ describe('buildTfsAgentContext', () => {
     expect(
       await buildTfsAgentContext(deps, { projectId: 'proj-1', topicId: 'unbound' }),
     ).toBeUndefined();
-    expect(mocks.environments).not.toHaveBeenCalled();
+    expect(mocks.projectEnvironment).not.toHaveBeenCalled();
   });
 
   it('never exposes another member private environment or credential-bearing URLs', async () => {
@@ -135,12 +140,10 @@ describe('buildTfsAgentContext', () => {
   });
 
   it('does not add any context or read personal TFS identity for GitHub-only projects', async () => {
-    mocks.environments.mockResolvedValue([
-      {
-        ...repository,
-        configuration: { sources: [{ kind: 'git', url: 'https://github.com/org/repo' }] },
-      },
-    ]);
+    mocks.projectEnvironment.mockResolvedValue({
+      ...repository,
+      configuration: { sources: [{ kind: 'git', url: 'https://github.com/org/repo' }] },
+    });
     expect(await buildTfsAgentContext(deps, { projectId: 'proj-1' })).toBeUndefined();
     expect(mocks.status).not.toHaveBeenCalled();
   });
@@ -154,7 +157,7 @@ describe('buildTfsAgentContext', () => {
   });
 
   it('isolates context lookup failures', async () => {
-    mocks.environments.mockRejectedValue(new Error('database unavailable'));
+    mocks.projectEnvironment.mockRejectedValue(new Error('database unavailable'));
     expect(await buildTfsAgentContext(deps, { projectId: 'proj-1' })).toBeUndefined();
   });
 
@@ -168,7 +171,7 @@ describe('buildTfsAgentContext', () => {
   it('never injects owner project metadata into an agent-share visitor topic', async () => {
     mocks.topic.mockResolvedValue({ senderId: 'visitor', projectId: 'proj-1', metadata: {} });
     expect(await buildTfsAgentContext(deps, { topicId: 'visitor-topic' })).toBeUndefined();
-    expect(mocks.environments).not.toHaveBeenCalled();
+    expect(mocks.projectEnvironment).not.toHaveBeenCalled();
   });
 
   it('excludes own private sources from shared agents, including explicitly selected environments', async () => {
@@ -225,7 +228,8 @@ describe('buildTfsAgentContext', () => {
         ],
       },
     };
-    mocks.environments.mockResolvedValue([repository, privateEnvironment]);
+    // A project has one environment; the private one is only the topic's own selection.
+    mocks.projectEnvironment.mockResolvedValue(repository);
     mocks.environment.mockImplementation(async (id: string) =>
       id === repository.id ? repository : privateEnvironment,
     );

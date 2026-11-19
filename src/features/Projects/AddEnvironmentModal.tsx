@@ -133,7 +133,7 @@ const AddEnvironmentContent = ({
         });
         environmentId = environment.id;
       } else {
-        await attachEnvironment(projectId, existing!.id);
+        await attachEnvironment({ environmentId: existing!.id, projectId });
         environmentId = existing!.id;
       }
       close();

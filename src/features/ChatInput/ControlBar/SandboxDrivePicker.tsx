@@ -221,7 +221,14 @@ const SandboxDrivePicker = memo<SandboxDrivePickerProps>(
 
     const pickRepository = async (environment: SandboxRepositoryOption) => {
       try {
-        await onChange(repositorySelection(environment));
+        await onChange(
+          repositorySelection(environment, {
+            projectId,
+            // A workspace-public agent applies published environments only, on the public drive.
+            published: sharedAgent,
+            workspace: !!workspaceId,
+          }),
+        );
         void revalidatePlacement();
       } catch {
         // The topic kept its place; said rather than left looking changed.

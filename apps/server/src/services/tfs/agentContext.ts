@@ -7,6 +7,7 @@ import { AgentModel } from '@/database/models/agent';
 import { EnvironmentModel } from '@/database/models/environment';
 import { ProjectModel } from '@/database/models/project';
 import { TopicModel } from '@/database/models/topic';
+import { ProjectEnvironmentRepository } from '@/database/repositories/projectEnvironment';
 
 import { TfsConnectionService } from './connection';
 
@@ -39,7 +40,14 @@ export const buildTfsAgentContext = async (
     const selectedId = topic?.metadata?.sandboxEnvironmentId;
     const projectModel = new ProjectModel(deps.db, deps.userId, deps.workspaceId);
     const project = projectId ? await projectModel.findById(projectId) : undefined;
-    const linked = project && projectId ? await projectModel.listEnvironments(projectId) : [];
+    // A project has one environment, settled from any older links on first read.
+    const projectEnvironment =
+      project && projectId
+        ? await new ProjectEnvironmentRepository(deps.db, deps.userId, deps.workspaceId).get(
+            projectId,
+          )
+        : undefined;
+    const linked = projectEnvironment ? [projectEnvironment] : [];
     const candidateIds = new Set(
       linked
         .filter((environment) =>

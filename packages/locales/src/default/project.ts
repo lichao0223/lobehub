@@ -505,6 +505,14 @@ export default {
   'onboarding.connect.goal.title': 'Goals',
   'onboarding.connect.goal.description': 'Set a goal you can sign off',
   'onboarding.connect.goal.count': '{{count}} set',
+  'environment.add.action': 'Add',
+  'environment.add.existing': 'Add an existing one',
+  'environment.add.failed': "Couldn't add the environment to this project",
+  'environment.add.github': 'New from GitHub',
+  'environment.add.noExisting': 'All of your environments are already in this project.',
+  'environment.add.noPublished':
+    'No published environments to add. A shared project only uses published environments.',
+  'environment.add.title': 'Add environment',
   'environment.configure': 'Configure environment',
   'settings.environmentIntro':
     'Every conversation in this project runs in this environment: its repositories are cloned, the setup command runs, and its variables are set.',
