@@ -4,14 +4,17 @@ import { Button, DropdownMenu, Flexbox, Icon, SearchBar, Text, Tooltip } from '@
 import { cssVar } from '@lobehub/ui/stylex/cssVar.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { ChevronDown, Grid2x2Plus, Import, Plus, Store } from 'lucide-react';
-import { memo, useCallback, useState } from 'react';
+import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CustomConnectorModal } from '@/features/Connectors';
-import { createSkillStoreModal } from '@/features/SkillStore';
+import { NavPanelDensityContext } from '@/features/NavPanel/density';
+import { createMarketSkillStoreModal, createSkillStoreModal } from '@/features/SkillStore';
 import { openSkillImportModal } from '@/features/SkillStore/SkillImportModal';
 import { useConnectorManageable } from '@/hooks/useConnectorManagePolicy';
 import { usePermission } from '@/hooks/usePermission';
+import { useInterfaceDensity } from '@/styles/density';
+import { sidebarRow } from '@/styles/density.stylex';
 
 import ConnectorManagePolicy from './ConnectorManagePolicy';
 import { type ToolDetailType } from './SkillDetail';
@@ -63,7 +66,7 @@ const styles = stylex.create({
     gap: '8px',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: '42px',
+    height: sidebarRow.headerHeight,
     paddingInline: '16px',
     borderBlockEndWidth: '1px',
     borderBlockEndStyle: 'solid',
@@ -96,14 +99,12 @@ interface LeftPanelProps {
 const LeftPanel = memo<LeftPanelProps>(
   ({ fullWidth, onDeleteSelected, onSelect, page, selectedIdentifier, viewMode }) => {
     const { t } = useTranslation(['setting', 'tool']);
+    const interfaceDensity = useInterfaceDensity();
     const [showAddConnector, setShowAddConnector] = useState(false);
     const [keyword, setKeyword] = useState('');
 
-    const handleOpenStore = useCallback(() => {
-      createSkillStoreModal();
-    }, []);
-
     const isConnectorView = viewMode === 'connector';
+    const handleOpenStore = isConnectorView ? createSkillStoreModal : createMarketSkillStoreModal;
     const { allowed: canCreate } = usePermission('create_content');
     // Adding a workspace connector follows the same member policy as editing one.
     const { canManage: canAddConnector, isPending: isPolicyPending } = useConnectorManageable();
@@ -129,7 +130,9 @@ const LeftPanel = memo<LeftPanelProps>(
             ]
           : []),
         {
-          desc: t('connectorMarket.add.browseStoreDesc'),
+          desc: t(
+            isConnectorView ? 'connectorMarket.add.browseStoreDesc' : 'skillView.browseStoreDesc',
+          ),
           icon: <Icon icon={Store} />,
           key: 'store',
           label: t('connectorMarket.add.browseStore'),
@@ -210,13 +213,13 @@ const LeftPanel = memo<LeftPanelProps>(
     }
 
     return (
-      <>
+      <NavPanelDensityContext value={fullWidth ? null : interfaceDensity}>
         <div
           className={stylex.props(styles.root).className}
           style={fullWidth ? { borderInlineEnd: 'none', width: '100%' } : undefined}
         >
           <div {...stylex.props(styles.header)}>
-            <Text strong style={{ fontSize: 14 }}>
+            <Text strong style={{ fontSize: 'var(--lobe-density-font-size)' }}>
               {isConnectorView
                 ? t('skillView.connectors', 'Connectors')
                 : t('skillView.skills', 'Skills')}
@@ -275,7 +278,7 @@ const LeftPanel = memo<LeftPanelProps>(
           </div>
         </div>
         <CustomConnectorModal open={showAddConnector} onClose={() => setShowAddConnector(false)} />
-      </>
+      </NavPanelDensityContext>
     );
   },
 );

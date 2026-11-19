@@ -2,6 +2,7 @@
 
 import { isOnDemandBuiltinTool, onDemandBuiltinToolIds } from '@lobechat/builtin-tools';
 import { getConnectorCatalog } from '@lobechat/const';
+import { getImplicitBuiltinSkillIds } from '@lobechat/mecha/builtinSkillGate';
 import {
   getDisabledPluginIds,
   getOptedInPluginIds,
@@ -66,9 +67,9 @@ export interface AgentToolProps {
   agentId?: string;
   /**
    * Hide identifiers that are agent-owned/linked connectors from the rendered
-   * chips. ONLY the two-section agent profile sets this (it renders those
-   * connectors in a separate "Agent Tools" section above, so showing them here
-   * too would duplicate them — as an "uninstalled" chip lacking a base manifest).
+   * chips. ONLY the agent profile sets this (its Tools page lists those
+   * connectors itself, so showing them here too would duplicate them — as an
+   * "uninstalled" chip lacking a base manifest).
    * Consumers that render `AgentTool` as the SOLE tool list (e.g. the group
    * member profile) MUST leave this off, otherwise the enabled agent tool would
    * disappear entirely with no way to see or remove it.
@@ -93,7 +94,7 @@ export interface AgentToolProps {
   onOpenDetail?: (detail: ItemDetail) => void;
   /**
    * Show an "authorized by X" avatar on each connector chip. Set by the
-   * two-section agent profile in a workspace so a teammate can see whose
+   * agent profile in a workspace so a teammate can see whose
    * credentials each shared tool runs under. Off elsewhere (personal mode has a
    * single authorizer — always the caller — so the tag would be noise).
    * @default false
@@ -166,15 +167,30 @@ const AgentTool = memo<AgentToolProps>(
       (s) => getConnectedConnectorIds(s, effectiveAgentId),
       isEqual,
     );
+    const installedBuiltinSkills = useToolStore(
+      builtinToolSelectors.installedBuiltinSkills,
+      isEqual,
+    );
+    const createdAt = useAgentStore((s) => s.agentMap[effectiveAgentId]?.createdAt);
+    const implicitSkills = getImplicitBuiltinSkillIds(createdAt, config?.chatConfig);
     const implicitToolIds = useMemo(
       () =>
         resolveToolMode(config?.chatConfig) === 'agent'
           ? [
               ...profileBuiltinList.map((tool) => tool.identifier).filter(isOnDemandBuiltinTool),
               ...connectedIds,
+              ...installedBuiltinSkills
+                .map((skill) => skill.identifier)
+                .filter((id) => implicitSkills.includes(id)),
             ]
           : [],
-      [config?.chatConfig, profileBuiltinList, connectedIds],
+      [
+        config?.chatConfig,
+        profileBuiltinList,
+        connectedIds,
+        installedBuiltinSkills,
+        implicitSkills,
+      ],
     );
     const enabledIds = useMemo(() => {
       const ids = new Set([...implicitToolIds, ...getOptedInPluginIds(config?.plugins)]);
@@ -201,10 +217,6 @@ const AgentTool = memo<AgentToolProps>(
     const isLobehubSkillEnabled = useServerConfigStore(serverConfigSelectors.enableLobehubSkill);
 
     // Agent Skills-related state
-    const installedBuiltinSkills = useToolStore(
-      builtinToolSelectors.installedBuiltinSkills,
-      isEqual,
-    );
     const marketAgentSkills = useToolStore(agentSkillsSelectors.getMarketAgentSkills, isEqual);
     const userAgentSkills = useToolStore(agentSkillsSelectors.getUserAgentSkills, isEqual);
 
@@ -236,8 +248,8 @@ const AgentTool = memo<AgentToolProps>(
     // MCP connectors the user added: custom ones and marketplace installs
     const customConnectors = useToolStore(connectorSelectors.userMcpConnectors, isEqual);
     // Agent-owned / linked connectors: when `excludeAgentConnectors` is set (the
-    // two-section agent profile), these are rendered in the dedicated "Agent
-    // Tools" section above, so they must be dropped from THIS base/user list —
+    // agent profile), these are listed by the profile's Tools page, so they must
+    // be dropped from THIS base/user list —
     // otherwise the identifier, pinned into `config.plugins` for runtime gating,
     // would surface here too and, lacking a base-dimension manifest, render as an
     // "uninstalled" chip. When the prop is off (e.g. the group member profile,
@@ -290,7 +302,9 @@ const AgentTool = memo<AgentToolProps>(
         // dropped from the array.
         await updateAgentConfigById(effectiveAgentId, {
           plugins:
-            isOnDemandBuiltinTool(pluginId) || connectorIds.has(pluginId)
+            isOnDemandBuiltinTool(pluginId) ||
+            connectorIds.has(pluginId) ||
+            implicitSkills.includes(pluginId)
               ? upsertConnectorEnabled(config?.plugins, pluginId, shouldEnable)
               : shouldEnable && allSkillIdentifiers.has(pluginId)
                 ? upsertConnectorEnabled(config?.plugins, pluginId, true)
@@ -302,6 +316,7 @@ const AgentTool = memo<AgentToolProps>(
         effectiveAgentId,
         enabledIds,
         connectorIds,
+        implicitSkills,
         allSkillIdentifiers,
         config?.plugins,
         updateAgentConfigById,
