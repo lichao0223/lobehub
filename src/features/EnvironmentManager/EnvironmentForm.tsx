@@ -546,8 +546,13 @@ const EnvironmentForm = memo<EnvironmentFormProps>(({ environment, hideBasics, o
           </Flexbox>
         ) : pickingTfsRepository ? (
           <Flexbox gap={8}>
+            {/* `onClear` means the picker's previous choice no longer applies,
+                not "leave this section": changing the project, or typing a
+                repository URL, must not unmount the picker mid-flow. Nothing
+                is saved until a repository is chosen, so there is no pending
+                selection for it to clear here. */}
             <TfsRepositoryPicker
-              onClear={() => setPickingTfsRepository(false)}
+              onClear={() => undefined}
               onLeave={() => setPickingTfsRepository(false)}
               onSelect={addTfsRepository}
             />

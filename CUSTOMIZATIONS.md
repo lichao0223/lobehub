@@ -15,6 +15,7 @@
 | CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → 集成绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览     | 独立 `tfs` 模块及现有入口接点；[详细维护说明](TFS_CUSTOMIZATION.md)          | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成    |
 | CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                  | 本次新增；需要 Fork 自己的 npm Token                        |
 | CUST-007 | 统一认证平台 SSO_TICKET 接入        | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话               | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)      | 开发中；单测已交付，待与真实认证中心联调                      |
+| CUST-008 | 管理员控制台（设计阶段）            | `/admin`：用户列表、新用户默认配置、按人策略（是否允许改模型/实验室）                        | [设计与原型](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`           | 仅设计 / 原型，未改产品代码；待评审后实施                     |
 
 ## CUST-001：自定义镜像
 
@@ -96,6 +97,12 @@
 - 主要实现位于 `apps/server/src/services/tfs/{agentContext,cloudAgentContext,projectCheckout}.ts`；共享运行链路只增加调用接点。桌面 / 浏览器通过 workspace-aware 的 `tfs.agentContext` RPC 获取无凭据上下文，RPC 保留 topic 可见性和 agent-share 访客隔离检查。
 - 上下文区分 “项目已关联来源”“对话选中环境” 和 “实际已检出代码”；不宣称元数据等于克隆成功，不把密码 / PAT 或环境变量发给模型。调用者自己的网关管理设备只在空工作目录首次调用时用一次性凭据初始化，初始化成功后同一运行上下文的普通 Git 命令继承临时配置；共享设备、桌面直连和其他未完成个人初始化的命令继续使用设备自身凭据管理器。
 - 尚无实际部署的页面 /agent 对话验收；自动化验证及当前边界见 TFS 详细说明。合并时保留浏览器上下文、桌面本地 CLI、服务端运行和云端 / 设备分发的所有接点。
+
+## CUST-008：管理员控制台（设计阶段）
+
+完整方案、数据模型、侵入清单与分阶段计划见 [ADMIN_CONSOLE_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。
+
+当前只交付设计与原型，**没有修改产品代码**。实施时按设计文档第 9 节控制共享文件改动面：新增独立的 `adminConsole` 表 / model / service / router / 前端模块，只在 `initUser`、用户设置写入口、路由注册和设置页面加最小接点。合并上游后按设计文档第 11 节逐条复查。
 
 ## 上游合并统一流程
 

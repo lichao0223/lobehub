@@ -1,0 +1,1500 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>管理员控制台 · 用户设置模板原型</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --border: #e6e8ec;
+        --border-strong: #d5d9e0;
+        --text: #1f2329;
+        --muted: #6b7280;
+        --muted-2: #9098a6;
+        --primary: #1677ff;
+        --primary-weak: #eef4ff;
+        --danger: #d93025;
+        --danger-weak: #fef1f0;
+        --success: #1a7f37;
+        --success-weak: #edf7ef;
+        --warning: #b26a00;
+        --warning-weak: #fff7e6;
+        --radius: 10px;
+        --shadow: 0 8px 30px rgba(20, 28, 45, 0.08);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        color: var(--text);
+        background: var(--bg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      button, input, select { font: inherit; color: inherit; }
+      .app { display: flex; min-height: 100vh; }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        width: 232px;
+        height: 100vh;
+        padding: 18px 14px;
+        background: var(--panel);
+        border-right: 1px solid var(--border);
+      }
+
+      .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+      .brand-mark {
+        display: grid; place-items: center; width: 32px; height: 32px;
+        border-radius: 9px; background: linear-gradient(135deg, #1677ff, #4f9dff);
+        color: white; font-weight: 700;
+      }
+      .brand-name { font-weight: 650; letter-spacing: 0.2px; }
+      .brand-sub { color: var(--muted-2); font-size: 12px; }
+      .nav { display: flex; flex-direction: column; gap: 4px; }
+      .nav-item {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        padding: 9px 10px; border: 0; border-radius: 8px; background: transparent;
+        color: var(--muted); cursor: pointer; text-align: left;
+      }
+      .nav-item:hover { background: #f2f4f7; color: var(--text); }
+      .nav-item.active { background: var(--primary-weak); color: var(--primary); font-weight: 600; }
+      .nav-icon { width: 18px; text-align: center; opacity: 0.9; }
+      .sidebar-foot { margin-top: auto; padding: 12px 10px 4px; border-top: 1px solid var(--border); color: var(--muted-2); font-size: 12px; }
+      .sidebar-foot strong { display: block; color: var(--text); font-weight: 600; }
+
+      .main { flex: 1; min-width: 0; }
+      .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 26px 34px 18px; }
+      .topbar h1 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -0.2px; }
+      .topbar p { margin: 4px 0 0; color: var(--muted); }
+      .top-actions { display: flex; align-items: center; gap: 10px; padding-top: 4px; }
+      .admin-chip { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); color: var(--muted); font-size: 12px; }
+      .avatar { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #e8efff; color: var(--primary); font-weight: 650; }
+      .page { display: none; padding: 0 34px 40px; }
+      .page.active { display: block; }
+
+      .card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); }
+      .card-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-bottom: 1px solid var(--border); }
+      .card-title { margin: 0; font-size: 15px; font-weight: 650; }
+      .card-desc { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+      .card-body { padding: 18px; }
+
+      .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+      .metric { padding: 16px 18px; }
+      .metric-label { color: var(--muted); font-size: 12px; }
+      .metric-value { margin-top: 8px; font-size: 28px; font-weight: 650; letter-spacing: -0.5px; }
+      .metric-foot { margin-top: 6px; color: var(--muted-2); font-size: 12px; }
+      .metric-foot.up { color: var(--success); }
+
+      .grid-2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr); gap: 16px; margin-top: 16px; }
+      .summary-list { display: grid; gap: 12px; }
+      .summary-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 12px; border-radius: 8px; background: #f8f9fb; }
+      .summary-row span { color: var(--muted); }
+      .summary-row strong { font-weight: 600; }
+      .activity { display: grid; gap: 14px; }
+      .activity-item { display: flex; gap: 12px; }
+      .activity-dot { flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--primary); }
+      .activity-item p { margin: 0; }
+      .activity-item time { color: var(--muted-2); font-size: 12px; }
+
+      .toolbar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+      .search { flex: 1; min-width: 200px; max-width: 360px; height: 36px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: #fbfcfd; outline: none; }
+      .search:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12); }
+      .filters { display: flex; gap: 6px; }
+      .chip { padding: 6px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel); color: var(--muted); cursor: pointer; }
+      .chip.active { border-color: var(--primary); background: var(--primary-weak); color: var(--primary); }
+
+      .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; padding: 0 14px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--panel); cursor: pointer; white-space: nowrap; }
+      .btn:hover { border-color: #c3c9d4; background: #fafbfc; }
+      .btn-primary { border-color: var(--primary); background: var(--primary); color: white; }
+      .btn-primary:hover { border-color: #0f62d9; background: #0f62d9; }
+      .btn-danger { border-color: #f2c6c2; background: var(--danger-weak); color: var(--danger); }
+      .btn-sm { height: 30px; padding: 0 10px; font-size: 13px; }
+
+      table { width: 100%; border-collapse: collapse; }
+      th { padding: 11px 16px; border-bottom: 1px solid var(--border); background: #fafbfc; color: var(--muted); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
+      td { padding: 13px 16px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+      tbody tr { cursor: pointer; }
+      tbody tr:hover { background: #f8faff; }
+      tbody tr:last-child td { border-bottom: 0; }
+      .user-cell { display: flex; align-items: center; gap: 10px; }
+      .user-avatar { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: 9px; background: #eef2f7; color: #4b5563; font-weight: 600; }
+      .user-name { font-weight: 600; }
+      .user-mail { color: var(--muted-2); font-size: 12px; }
+
+      .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+      .badge-neutral { background: #f2f4f7; color: var(--muted); }
+      .badge-success { background: var(--success-weak); color: var(--success); }
+      .badge-warning { background: var(--warning-weak); color: var(--warning); }
+      .badge-danger { background: var(--danger-weak); color: var(--danger); }
+      .badge-primary { background: var(--primary-weak); color: var(--primary); }
+      .badge-alpha { background: #f4f0ff; color: #6d4aff; }
+      .badge-beta { background: #eaf7f3; color: #137a5b; }
+
+      .muted { color: var(--muted); }
+      .tiny { font-size: 12px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+      /* settings template layout */
+      .settings-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 16px; align-items: start; }
+      .settings-nav { position: sticky; top: 16px; max-height: calc(100vh - 120px); overflow: auto; padding: 10px; }
+      .settings-nav-group + .settings-nav-group { margin-top: 12px; }
+      .settings-nav-title { padding: 4px 10px; color: var(--muted-2); font-size: 11px; font-weight: 600; letter-spacing: 0.4px; }
+      .settings-nav-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; text-align: left; font-size: 13px; }
+      .settings-nav-item:hover { background: #f5f7fa; color: var(--text); }
+      .settings-nav-item.active { background: var(--primary-weak); color: var(--primary); font-weight: 600; }
+      .settings-nav-icon { width: 16px; text-align: center; opacity: 0.8; }
+
+      .settings-panel { min-width: 0; }
+      .settings-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+      .settings-panel-head h2 { margin: 0; font-size: 17px; font-weight: 650; }
+      .settings-panel-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+      .summary-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+      .summary-chip { padding: 2px 8px; border-radius: 999px; background: #f2f4f7; color: var(--muted); font-size: 11px; }
+      .summary-chip.primary { background: var(--primary-weak); color: var(--primary); }
+
+      .policy-card { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 16px 20px 0; padding: 14px 16px; border: 1px solid #dbe7ff; border-radius: 9px; background: #f6f9ff; }
+      .policy-card h4 { margin: 0; font-size: 13px; }
+      .policy-card p { margin: 3px 0 0; color: var(--muted); font-size: 12px; max-width: 720px; }
+
+      .sub-section { padding: 4px 20px 0; }
+      .sub-section + .sub-section { margin-top: 8px; }
+      .sub-section-title { display: flex; align-items: center; gap: 8px; padding: 16px 0 8px; font-size: 12px; font-weight: 650; color: var(--muted); letter-spacing: 0.3px; }
+      .sub-section-title::after { content: ""; flex: 1; height: 1px; background: #f0f2f5; }
+
+      .setting-row { display: grid; grid-template-columns: minmax(0, 1fr) 210px 86px 170px; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f4f7; }
+      .setting-row:last-child { border-bottom: 0; }
+      .setting-label { font-weight: 550; }
+      .setting-path { margin-top: 2px; color: var(--muted-2); font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .setting-desc { margin-top: 2px; color: var(--muted); font-size: 12px; }
+      .setting-control { display: flex; justify-content: flex-end; }
+      .setting-control select, .setting-control input[type="text"], .setting-control input[type="number"] { width: 100%; height: 34px; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--panel); }
+      .setting-control select:disabled, .setting-control input:disabled { background: #f7f8fa; color: var(--muted-2); }
+      .cap { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+      .cap-server { background: var(--primary-weak); color: var(--primary); }
+      .cap-device { background: #fff7e6; color: var(--warning); }
+      .cap-private { background: #f4f0ff; color: #6d4aff; }
+      .cap-data { background: #f2f4f7; color: var(--muted); }
+      .cap-serveronly { background: #eef7f6; color: #0f766e; }
+      .cap-readonly { background: #f2f4f7; color: var(--muted-2); }
+      .policy-toggles { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+      .mini-check { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; cursor: pointer; }
+      .mini-check input { margin: 0; }
+
+      .switch { position: relative; display: inline-flex; width: 40px; height: 22px; }
+      .switch input { position: absolute; opacity: 0; pointer-events: none; }
+      .switch span { width: 100%; height: 100%; border-radius: 999px; background: #d7dbe2; cursor: pointer; transition: background 0.15s ease; }
+      .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: transform 0.15s ease; }
+      .switch input:checked + span { background: var(--primary); }
+      .switch input:checked + span::after { transform: translateX(18px); }
+      .switch input:disabled + span { opacity: 0.45; cursor: not-allowed; }
+
+      .form-footer { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 18px 20px 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(8px); }
+      .form-footer .left { margin-right: auto; color: var(--muted-2); font-size: 12px; }
+
+      .note-page { padding: 22px; }
+      .note-box { display: flex; gap: 14px; padding: 18px; border-radius: 10px; background: #f8f9fb; }
+      .note-icon { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 9px; background: var(--panel); border: 1px solid var(--border); }
+      .note-box h3 { margin: 0; font-size: 14px; }
+      .note-box p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+      .note-list { margin: 14px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+      .note-list li + li { margin-top: 6px; }
+
+      /* drawer */
+      .drawer-backdrop { position: fixed; inset: 0; z-index: 20; background: rgba(15, 23, 42, 0.28); opacity: 0; pointer-events: none; transition: opacity 0.18s ease; }
+      .drawer-backdrop.show { opacity: 1; pointer-events: auto; }
+      .drawer { position: fixed; top: 0; right: 0; z-index: 30; display: flex; flex-direction: column; width: min(640px, 96vw); height: 100vh; background: var(--panel); box-shadow: var(--shadow); transform: translateX(104%); transition: transform 0.22s ease; }
+      .drawer.show { transform: translateX(0); }
+      .drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px 0; }
+      .drawer-title { margin: 8px 0 0; font-size: 18px; font-weight: 650; }
+      .drawer-sub { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+      .icon-btn { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--muted); cursor: pointer; }
+      .tabs { display: flex; gap: 4px; padding: 16px 22px 0; border-bottom: 1px solid var(--border); }
+      .tab { padding: 8px 10px 10px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); cursor: pointer; }
+      .tab.active { border-bottom-color: var(--primary); color: var(--primary); font-weight: 600; }
+      .drawer-body { flex: 1; overflow: auto; padding: 18px 22px 28px; }
+      .tab-panel { display: none; }
+      .tab-panel.active { display: block; }
+      .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .info-item { padding: 12px; border-radius: 8px; background: #f8f9fb; }
+      .info-item span { display: block; color: var(--muted-2); font-size: 12px; }
+      .info-item strong { display: block; margin-top: 4px; font-weight: 600; }
+      .policy-box { margin-top: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 8px; }
+      .policy-box h4 { margin: 0 0 4px; font-size: 13px; }
+      .policy-box p { margin: 0; color: var(--muted); font-size: 12px; }
+      .radio-row { display: flex; gap: 16px; margin-top: 10px; }
+      .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+      .drawer-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+      .drawer-toolbar select { height: 34px; padding: 0 9px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--panel); }
+      .user-setting-row { display: grid; grid-template-columns: minmax(0, 1fr) 120px 120px 90px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #f2f4f7; font-size: 13px; }
+      .user-setting-row:last-child { border-bottom: 0; }
+      .value-pill { display: inline-block; max-width: 120px; padding: 2px 7px; border-radius: 6px; background: #f2f4f7; color: var(--text); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .value-pill.default { background: #f8f9fb; color: var(--muted); }
+      .drawer-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; }
+
+      /* modal */
+      .modal-backdrop { position: fixed; inset: 0; z-index: 50; display: none; place-items: center; padding: 20px; background: rgba(15, 23, 42, 0.32); }
+      .modal-backdrop.show { display: grid; }
+      .modal { width: min(560px, 100%); border-radius: 12px; background: var(--panel); box-shadow: var(--shadow); }
+      .modal-head { padding: 20px 22px 0; }
+      .modal-head h3 { margin: 0; font-size: 17px; }
+      .modal-head p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+      .modal-body { padding: 18px 22px; }
+      .option { display: flex; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 9px; cursor: pointer; }
+      .option + .option { margin-top: 10px; }
+      .option.selected { border-color: var(--primary); background: var(--primary-weak); }
+      .option strong { display: block; font-weight: 600; }
+      .option span { color: var(--muted); font-size: 12px; }
+      .apply-summary { margin-top: 16px; padding: 12px 14px; border-radius: 8px; background: #f8f9fb; font-size: 13px; }
+      .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 0 22px 20px; }
+
+      #toast { position: fixed; left: 50%; bottom: 28px; z-index: 80; padding: 10px 16px; border-radius: 9px; background: #1f2329; color: white; opacity: 0; pointer-events: none; transform: translate(-50%, 8px); transition: all 0.2s ease; }
+      #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+      @media (max-width: 1180px) {
+        .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-2 { grid-template-columns: 1fr; }
+        .setting-row { grid-template-columns: minmax(0, 1fr) 180px 80px; }
+        .setting-row .policy-toggles { grid-column: 1 / -1; flex-direction: row; gap: 14px; }
+      }
+      @media (max-width: 900px) {
+        .settings-layout { grid-template-columns: 1fr; }
+        .settings-nav { position: static; max-height: none; }
+        .sidebar { display: none; }
+        .topbar, .page { padding-left: 18px; padding-right: 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">L</div>
+          <div>
+            <div class="brand-name">管理员控制台</div>
+            <div class="brand-sub">LobeHub · 交互原型</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item active" data-page="overview"><span class="nav-icon">◎</span>总览</button>
+          <button class="nav-item" data-page="users"><span class="nav-icon">☷</span>用户</button>
+          <button class="nav-item" data-page="settings"><span class="nav-icon">⚙</span>用户设置模板</button>
+          <button class="nav-item" data-page="audit"><span class="nav-icon">⌁</span>审计日志 <span class="badge badge-neutral" style="margin-left:auto">P2</span></button>
+        </nav>
+        <div class="sidebar-foot">
+          <strong>A000001 · 系统管理员</strong>
+          统一认证平台 · SSO_TICKET
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1 id="pageTitle">总览</h1>
+            <p id="pageDesc">部署用户、默认配置与权限策略的集中管理入口。</p>
+          </div>
+          <div class="top-actions">
+            <span class="badge badge-primary">管理员</span>
+            <div class="admin-chip"><span class="avatar">张</span>张伟</div>
+          </div>
+        </header>
+
+        <!-- ================= overview ================= -->
+        <section class="page active" id="page-overview">
+          <div class="metrics">
+            <div class="card metric">
+              <div class="metric-label">用户总数</div>
+              <div class="metric-value">1,284</div>
+              <div class="metric-foot up">近 7 天 +37</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-label">近 7 天活跃</div>
+              <div class="metric-value">612</div>
+              <div class="metric-foot">47.7% 的账号</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-label">实验室默认开启</div>
+              <div class="metric-value">0 / 18</div>
+              <div class="metric-foot">全部按代码默认关闭</div>
+            </div>
+            <div class="card metric">
+              <div class="metric-label">已禁用</div>
+              <div class="metric-value">6</div>
+              <div class="metric-foot">来自统一认证平台或本控制台</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2 class="card-title">当前部署默认值</h2>
+                  <p class="card-desc">来自真实代码默认值；保存后只影响新用户，存量用户需手动应用。</p>
+                </div>
+                <button class="btn btn-sm" onclick="go('settings')">去配置</button>
+              </div>
+              <div class="card-body">
+                <div class="summary-list">
+                  <div class="summary-row"><span>默认对话模型</span><strong>deepseek / deepseek-v4-flash（DeepSeek V4 Flash）</strong></div>
+                  <div class="summary-row"><span>默认启用的 Provider</span><strong>DeepSeek、OpenAI、Anthropic、Google</strong></div>
+                  <div class="summary-row"><span>Flash / 验收模型</span><strong>openai/gpt-5.6-luna · zhipu/glm-5.3-flash</strong></div>
+                  <div class="summary-row"><span>记忆</span><strong>开启 · 强度中</strong></div>
+                  <div class="summary-row"><span>允许用户修改模型配置</span><strong>是（可改为禁止）</strong></div>
+                  <div class="summary-row"><span>可下发设置项</span><strong id="deployableSummary">按真实设置矩阵统计</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <div>
+                  <h2 class="card-title">最近管理动作</h2>
+                  <p class="card-desc">P2 接入完整审计表。</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="activity">
+                  <div class="activity-item">
+                    <span class="activity-dot"></span>
+                    <div><p>张伟 将「自进化」设为新用户默认关闭</p><time>今天 09:42</time></div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot" style="background:#b26a00"></span>
+                    <div><p>张伟 禁止 李娜 修改 AI 服务商配置</p><time>今天 09:18</time></div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot" style="background:#1a7f37"></span>
+                    <div><p>张伟 将主模型默认值设为 deepseek/deepseek-v4-flash</p><time>昨天 17:26</time></div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot" style="background:#9098a6"></span>
+                    <div><p>张伟 禁用用户 王强（A100877）</p><time>昨天 14:03</time></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= users ================= -->
+        <section class="page" id="page-users">
+          <div class="card">
+            <div class="toolbar">
+              <input class="search" id="userSearch" placeholder="搜索工号、姓名或邮箱…" oninput="renderUsers()" />
+              <div class="filters">
+                <button class="chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
+                <button class="chip" data-filter="admin" onclick="setFilter('admin', this)">管理员</button>
+                <button class="chip" data-filter="banned" onclick="setFilter('banned', this)">已禁用</button>
+                <button class="chip" data-filter="custom" onclick="setFilter('custom', this)">已自定义</button>
+              </div>
+              <div style="margin-left:auto">
+                <button class="btn btn-sm" onclick="toast('导出功能在 P2 提供')">导出</button>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>工号</th>
+                  <th>状态</th>
+                  <th>实验室</th>
+                  <th>默认模型</th>
+                  <th>模型权限</th>
+                  <th>最后活跃</th>
+                </tr>
+              </thead>
+              <tbody id="userRows"></tbody>
+            </table>
+            <div class="table-foot">
+              <span id="userCount">共 8 位用户</span>
+              <span>第 1 / 161 页</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= settings template ================= -->
+        <section class="page" id="page-settings">
+          <div class="settings-layout">
+            <aside class="card settings-nav" id="settingsNav"></aside>
+            <div class="card settings-panel">
+              <div class="settings-panel-head">
+                <div>
+                  <h2 id="settingsTitle">外观</h2>
+                  <p id="settingsIntro"></p>
+                  <div class="summary-chips" id="settingsSummary"></div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-sm" id="resetDefaultsBtn" onclick="toast('已恢复为代码默认值')">恢复代码默认</button>
+                </div>
+              </div>
+              <div id="settingsBody"></div>
+              <div class="form-footer">
+                <span class="left" id="settingsFootNote">模板只影响新用户；存量用户需手动应用。</span>
+                <button class="btn" onclick="toast('已还原未保存的修改')">还原</button>
+                <button class="btn" onclick="toast('已保存用户设置模板，未应用到存量用户')">保存模板</button>
+                <button class="btn btn-primary" onclick="openApply()">保存并应用…</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= audit ================= -->
+        <section class="page" id="page-audit">
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">审计日志</h2>
+                <p class="card-desc">记录管理员对默认值、用户策略与账号状态的操作。</p>
+              </div>
+              <span class="badge badge-neutral">P2</span>
+            </div>
+            <div class="card-body muted">
+              原型阶段不实现。字段建议：操作者、动作、目标用户、设置路径、变更前后值、时间、来源 IP。
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ================= drawer ================= -->
+    <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <div>
+          <span class="badge badge-primary" id="drawerBadge">成员</span>
+          <h2 class="drawer-title" id="drawerName">张伟</h2>
+          <p class="drawer-sub" id="drawerSub">A100231 · a100231@tellhow.com</p>
+        </div>
+        <button class="icon-btn" onclick="closeDrawer()" aria-label="关闭">✕</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="profile" onclick="setTab('profile', this)">概览</button>
+        <button class="tab" data-tab="settings" onclick="setTab('settings', this)">用户设置</button>
+        <button class="tab" data-tab="policy" onclick="setTab('policy', this)">权限</button>
+        <button class="tab" data-tab="actions" onclick="setTab('actions', this)">操作</button>
+      </div>
+
+      <div class="drawer-body">
+        <div class="tab-panel active" id="tab-profile">
+          <div class="info-grid">
+            <div class="info-item"><span>用户 ID</span><strong class="mono">user_3f9a2c71</strong></div>
+            <div class="info-item"><span>来源</span><strong>统一认证平台 SSO</strong></div>
+            <div class="info-item"><span>角色</span><strong id="infoRole">成员</strong></div>
+            <div class="info-item"><span>状态</span><strong id="infoStatus">正常</strong></div>
+            <div class="info-item"><span>创建时间</span><strong>2026-03-18 10:22</strong></div>
+            <div class="info-item"><span>最后活跃</span><strong id="infoActive">今天 09:12</strong></div>
+          </div>
+          <div class="policy-box">
+            <h4>生效配置摘要</h4>
+            <p id="infoSummary">实验室开启 0 项；默认模型 DeepSeek V4 Flash；允许修改模型配置。</p>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-settings">
+          <div class="drawer-toolbar">
+            <span class="tiny muted">设置页</span>
+            <select id="drawerPageSelect" onchange="setDrawerPage(this.value)"></select>
+            <span class="tiny muted" style="margin-left:auto">当前值 vs 模板默认</span>
+          </div>
+          <div id="drawerSettingsBody"></div>
+        </div>
+
+        <div class="tab-panel" id="tab-policy">
+          <div class="policy-box">
+            <h4>模型与 Provider 配置</h4>
+            <p>关闭后，该用户不能修改 Provider、API Key 与默认模型；服务端写入同样被拒绝。</p>
+            <div class="radio-row">
+              <label><input type="radio" name="modelPolicy" value="inherit" checked /> 继承模板（允许）</label>
+              <label><input type="radio" name="modelPolicy" value="allow" /> 允许</label>
+              <label><input type="radio" name="modelPolicy" value="deny" /> 禁止</label>
+            </div>
+          </div>
+          <div class="policy-box">
+            <h4>实验室开关</h4>
+            <p>控制该用户能否修改实验室开关；单个开关可在「用户设置 → 实验室」里锁定。</p>
+            <div class="radio-row">
+              <label><input type="radio" name="labPolicy" value="inherit" checked /> 继承模板（允许）</label>
+              <label><input type="radio" name="labPolicy" value="allow" /> 允许</label>
+              <label><input type="radio" name="labPolicy" value="deny" /> 禁止</label>
+            </div>
+          </div>
+          <div class="policy-box">
+            <h4>其他设置</h4>
+            <p>服务模型、记忆、工具渠道、外观等按行控制；数据/资源类页面不提供默认值。</p>
+            <div class="radio-row">
+              <label><input type="checkbox" checked /> 允许修改服务模型</label>
+              <label><input type="checkbox" checked /> 允许修改记忆设置</label>
+              <label><input type="checkbox" checked /> 允许调整搜索/抓取渠道顺序</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel" id="tab-actions">
+          <div class="drawer-actions">
+            <button class="btn btn-primary" onclick="toast('已保存该用户的策略')">保存策略</button>
+            <button class="btn" onclick="toast('已按「仅补齐未设置项」应用模板')">应用模板</button>
+            <button class="btn" onclick="toast('已将该用户恢复为模板默认')">恢复默认</button>
+            <button class="btn" onclick="toast('已发送重置密码邮件（若启用）')">发送重置密码</button>
+            <button class="btn" onclick="toast('已设为管理员')">设为管理员</button>
+            <button class="btn btn-danger" onclick="toast('已禁用该用户，现有会话将被吊销')">禁用用户</button>
+          </div>
+          <p class="tiny muted" style="margin-top:16px">
+            账号类操作复用 Better Auth admin 插件；设置模板与策略走 Fork 自有 RPC。
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================= apply modal ================= -->
+    <div class="modal-backdrop" id="applyModal">
+      <div class="modal">
+        <div class="modal-head">
+          <h3>应用用户设置模板到存量用户</h3>
+          <p>只下发「可下发」字段；设备本地、用户私有与数据类字段自动跳过。</p>
+        </div>
+        <div class="modal-body">
+          <label class="option selected" id="optUnset" onclick="selectApplyMode('unset')">
+            <input type="radio" name="applyMode" checked />
+            <div>
+              <strong>仅补齐未设置项（推荐）</strong>
+              <span>用户已自定义的字段保持不变；只写入用户从未设置过的字段。</span>
+            </div>
+          </label>
+          <label class="option" id="optForce" onclick="selectApplyMode('force')">
+            <input type="radio" name="applyMode" />
+            <div>
+              <strong>强制覆盖</strong>
+              <span>用模板值覆盖所有选中用户的对应字段；锁定项始终覆盖。</span>
+            </div>
+          </label>
+          <div class="apply-summary" id="applySummary">
+            预计影响 <strong>1,284</strong> 位用户：补齐 <strong>1,196</strong> 位，跳过 <strong>88</strong> 位（已自定义）。
+            <br /><span class="tiny muted" id="applySkipNote">不可下发字段会自动跳过。</span>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn" onclick="closeApply()">取消</button>
+          <button class="btn btn-primary" onclick="confirmApply()">确认应用</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"></div>
+
+    <script>
+      /* ------------------------------------------------------------------
+       * 真实设置项与默认值（来自本仓库代码）
+       * - general / preference / languageModel / systemAgent / memory / tool
+       * - 默认值来源：packages/const/src/settings、packages/config/src/index.ts、
+       *   packages/business/config/src/llm.ts、packages/business/const/src/llm.ts
+       * ------------------------------------------------------------------ */
+
+      const CAP = {
+        server: { label: '可下发', cls: 'cap-server' },
+        device: { label: '设备本地', cls: 'cap-device' },
+        private: { label: '用户私有', cls: 'cap-private' },
+        data: { label: '用户数据', cls: 'cap-data' },
+        serverOnly: { label: '服务端配置', cls: 'cap-serveronly' },
+        readonly: { label: '只读', cls: 'cap-readonly' },
+      };
+
+      const S = (label, path, value, desc, extra = {}) => ({
+        label, path, value, desc, type: 'switch', capability: 'server', editable: true, lock: false, ...extra,
+      });
+      const Q = (label, path, value, options, desc, extra = {}) => ({
+        label, path, value, options, desc, type: 'select', capability: 'server', editable: true, lock: false, ...extra,
+      });
+      const T = (label, path, value, desc, extra = {}) => ({
+        label, path, value, desc, type: 'text', capability: 'server', editable: true, lock: false, ...extra,
+      });
+      const N = (label, path, value, desc, extra = {}) => ({
+        label, path, value, desc, type: 'number', capability: 'server', editable: true, lock: false, ...extra,
+      });
+      const MODEL = (label, path, value, options, desc, extra = {}) => ({
+        label, path, value, options, desc, type: 'model', capability: 'server', editable: true, lock: false, ...extra,
+      });
+      const RAW = (label, path, value, desc, extra = {}) => ({
+        label, path, value, desc, type: 'none', capability: 'server', editable: true, lock: false, ...extra,
+      });
+
+      const OPT = {
+        animation: [['agile', '灵动'], ['elegant', '优雅'], ['disabled', '关闭']],
+        density: [['loose', '宽松'], ['compact', '紧凑']],
+        contextMenu: [['default', '开启'], ['disabled', '关闭']],
+        language: [['auto', '跟随系统'], ['zh-CN', '简体中文'], ['en-US', 'English']],
+        theme: [['system', '跟随系统'], ['light', '浅色'], ['dark', '深色']],
+        transition: [['fadeIn', '淡入'], ['smooth', '平滑'], ['none', '关闭']],
+        primary: [['', '默认（跟随主题）'], ['blue', '蓝色'], ['geekblue', '极客蓝'], ['purple', '紫色'], ['green', '绿色'], ['red', '红色'], ['orange', '橙色'], ['gold', '金色']],
+        neutral: [['', '默认（跟随主题）'], ['slate', '石板灰'], ['mauve', '淡紫'], ['olive', '橄榄'], ['sage', '鼠尾草'], ['sand', '沙色']],
+        responseLang: [['', '跟随系统'], ['zh-CN', '简体中文'], ['en-US', 'English']],
+        highlighter: [['lobe-theme', 'Lobe Theme'], ['github', 'GitHub'], ['one-dark', 'One Dark']],
+        mermaid: [['lobe-theme', 'Lobe Theme'], ['default', 'Default'], ['dark', 'Dark']],
+        topicGroup: [['byTime', '按时间'], ['byProject', '按项目'], ['flat', '平铺'], ['byStatus', '按状态'], ['byAgent', '按助理'], ['byDevice', '按设备']],
+        topicSort: [['updatedAt', '按更新时间'], ['createdAt', '按创建时间']],
+        effort: [['low', '低'], ['medium', '中'], ['high', '高']],
+      };
+
+      const MODELS = {
+        main: [
+          ['deepseek / deepseek-v4-flash', 'deepseek / deepseek-v4-flash（DeepSeek V4 Flash）'],
+          ['deepseek / deepseek-v4-pro', 'deepseek / deepseek-v4-pro'],
+          ['deepseek / deepseek-flash', 'deepseek / deepseek-flash（DeepSeek V4.1 Flash）'],
+          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna'],
+        ],
+        flash: [
+          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna（默认）'],
+          ['deepseek / deepseek-v4-flash', 'deepseek / deepseek-v4-flash'],
+          ['deepseek / deepseek-flash', 'deepseek / deepseek-flash'],
+          ['google / gemini-3-flash-preview', 'google / gemini-3-flash-preview'],
+        ],
+        embedding: [
+          ['openai / text-embedding-3-small', 'openai / text-embedding-3-small（默认）'],
+          ['openai / text-embedding-3-large', 'openai / text-embedding-3-large'],
+        ],
+        verify: [
+          ['zhipu / glm-5.3-flash', 'zhipu / glm-5.3-flash（默认，支持视觉）'],
+          ['google / gemini-3.8-flash', 'google / gemini-3.8-flash（支持视觉）'],
+          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna（支持视觉）'],
+        ],
+        slot: [
+          ['tier:main', '跟随主模型'],
+          ['tier:flash', '跟随 Flash 模型'],
+          ['tier:embedding', '跟随记忆向量化模型'],
+          ['tier:verify', '跟随验收模型'],
+          ['deepseek / deepseek-v4-flash', 'deepseek / deepseek-v4-flash'],
+          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna'],
+          ['openai / gpt-4o-mini-transcribe', 'openai / gpt-4o-mini-transcribe'],
+          ['typesafe / jev-1.14.0', 'typesafe / jev-1.14.0'],
+        ],
+      };
+
+      const PAGES = [
+        {
+          key: 'appearance', group: '账号', label: '外观', icon: '◐',
+          intro: '对应「设置 → 外观」。主题与语言是设备本地设置，无法由服务端下发；其余外观与聊天外观字段可设默认。',
+          sections: [
+            {
+              title: '主题与语言',
+              rows: [
+                Q('主题模式', 'client.nextThemes.theme', 'system', OPT.theme, '存储在本机 next-themes，不进入 user_settings。', { capability: 'device', editable: false }),
+                Q('界面语言', 'client.globalStore.language', 'auto', OPT.language, '存储在本机全局 store，不进入 user_settings。', { capability: 'device', editable: false }),
+                Q('动画模式', 'general.animationMode', 'agile', OPT.animation, '页面切换与消息出现的动效。'),
+                Q('界面密度', 'general.interfaceDensity', 'loose', OPT.density, '列表与表单的间距。'),
+                Q('右键菜单', 'general.contextMenuMode', 'disabled', OPT.contextMenu, 'Web 默认关闭；桌面端默认开启。'),
+                Q('主色', 'general.primaryColor', '', OPT.primary, '空值表示跟随主题默认。'),
+                Q('中性色', 'general.neutralColor', '', OPT.neutral, '空值表示跟随主题默认。'),
+                Q('回复语言', 'general.responseLanguage', '', OPT.responseLang, '留空时跟随系统语言。'),
+              ],
+            },
+            {
+              title: '字体',
+              rows: [
+                T('界面字体', 'preference.fontFamily', '', '系统默认字体栈；实际可用字体取决于设备。', { note: '按设备可用字体' }),
+                T('终端字体', 'preference.terminalFontFamily', '', '桌面端内置终端使用的等宽字体。', { note: '仅桌面端' }),
+                N('字号', 'general.fontSize', 14, '聊天与界面的基础字号。'),
+                S('字体抗锯齿', 'general.fontAntialiasing', true, 'macOS 灰度抗锯齿。'),
+              ],
+            },
+            {
+              title: '聊天外观',
+              rows: [
+                Q('消息过渡', 'general.transitionMode', 'fadeIn', OPT.transition, '消息流式输出时的过渡效果。'),
+                S('自动滚动', 'general.enableAutoScrollOnStreaming', true, '流式输出时自动滚动到底部。'),
+                S('流式展开工作流', 'general.expandWorkflowWhileStreaming', false, '运行中默认展开工具工作流。'),
+                S('图片读取预览', 'general.showImageReadPreview', true, '工具读取图片时单独展示图片行。'),
+                S('链接图标', 'general.enableMessageLinkIcon', true, '在消息链接前显示站点图标。'),
+                S('粘贴自动转换', 'general.enablePasteAutoConvert', true, '粘贴 Markdown 时转换为富文本。'),
+                Q('跟进行为', 'general.followUpBehavior', 'steer', [['steer', '插话'], ['queue', '排队']], '仅在「更好的编码体验」开启时生效。'),
+                Q('代码高亮主题', 'general.highlighterTheme', 'lobe-theme', OPT.highlighter, '代码块高亮主题。'),
+                Q('Mermaid 主题', 'general.mermaidTheme', 'lobe-theme', OPT.mermaid, 'Mermaid 图表的主题。'),
+              ],
+            },
+            {
+              title: '话题列表',
+              rows: [
+                S('发送快捷键', 'preference.useCmdEnterToSend', false, '开启后使用 Cmd/Ctrl + Enter 发送。'),
+                Q('话题分组', 'preference.topicGroupMode', 'byTime', OPT.topicGroup, '个人空间话题列表的默认分组。'),
+                Q('话题排序', 'preference.topicSortBy', 'updatedAt', OPT.topicSort, '话题列表的默认排序。'),
+                S('显示已完成话题', 'preference.topicIncludeCompleted', false, '默认在话题列表中包含已完成话题。'),
+                Q('项目话题分组', 'preference.projectTopicGroupMode', 'byAgent', OPT.topicGroup, '项目空间话题列表的默认分组。'),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'hotkey', group: '账号', label: '快捷键', icon: '⌨',
+          intro: '对应「设置 → 快捷键」。热键保存在 user_settings.hotkey；系统保留键位不可修改。',
+          sections: [
+            {
+              title: '常用快捷键',
+              rows: [
+                T('命令面板', 'hotkey.commandPalette', 'mod+K', 'mod 在 macOS 为 ⌘，其他平台为 Ctrl。'),
+                T('搜索', 'hotkey.search', 'mod+J', '打开全局搜索。'),
+                T('切换左侧面板', 'hotkey.toggleLeftPanel', 'mod+[', '显示/隐藏左侧面板。'),
+                T('切换右侧面板', 'hotkey.toggleRightPanel', 'mod+]', '显示/隐藏右侧面板。'),
+                T('话题内查找', 'hotkey.findInTopic', 'mod+F', '仅在聊天范围内生效。'),
+                T('重新生成', 'hotkey.regenerateMessage', 'alt+R', '重新生成最后一条回复。'),
+                T('保存话题', 'hotkey.saveTopic', 'alt+N', '将当前话题保存为文档。'),
+                T('保存文档', 'hotkey.saveDocument', 'mod+S', '仅在文档编辑范围内生效。'),
+              ],
+            },
+            {
+              title: '不可修改的键位',
+              rows: [
+                RAW('切换标签页', 'hotkey.switchTab', 'mod+1…9', '浏览器同款标签切换，系统保留。', { capability: 'readonly', editable: false }),
+                RAW('下一个标签页', 'hotkey.nextTab', 'Ctrl+Tab', '系统保留。', { capability: 'readonly', editable: false }),
+                RAW('上一个标签页', 'hotkey.prevTab', 'Ctrl+Shift+Tab', '系统保留。', { capability: 'readonly', editable: false }),
+                RAW('编辑消息', 'hotkey.editMessage', 'Alt+双击', '系统保留。', { capability: 'readonly', editable: false }),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'stats', group: '账号', label: '数据统计', icon: '▤', kind: 'note',
+          noteTitle: '用户使用数据，只读',
+          note: '对应「设置 → 数据统计」。这里展示的是用户自己的消息数、Token 用量等统计，不是可下发配置。',
+          points: ['管理员可在用户详情里查看概览，不提供默认值。', '用量与计费数据来自服务端统计，用户不可改。'],
+        },
+        {
+          key: 'provider', group: '智能体', label: 'AI 服务商', icon: '◍',
+          intro: '对应「设置 → AI 服务商」。这里能配置 Provider 默认启停、模型范围与是否允许用户修改；API Key 属于用户私有，不下发。',
+          policy: {
+            key: 'allowModelConfig',
+            label: '允许用户修改模型与 Provider 配置',
+            desc: '关闭后，用户不能新增 Provider、填写 API Key、修改默认模型；服务端 updateSettings 会拒绝 languageModel / keyVaults / defaultAgent.config.model 的写入。',
+            value: true,
+          },
+          sections: [
+            {
+              title: '内置 Provider 默认状态',
+              rows: [
+                S('DeepSeek', 'languageModel.deepseek.enabled', true, '默认启用。'),
+                S('OpenAI', 'languageModel.openai.enabled', true, '默认启用。'),
+                S('Anthropic', 'languageModel.anthropic.enabled', true, '默认启用。'),
+                S('Google', 'languageModel.google.enabled', true, '默认启用。'),
+                S('OpenCode Zen', 'languageModel.opencodezen.enabled', false, '默认关闭；预置了官方模型列表。'),
+                S('LM Studio', 'languageModel.lmstudio.enabled', false, '默认关闭；fetchOnClient = true。'),
+                S('Ollama', 'languageModel.ollama.enabled', false, '默认关闭；fetchOnClient = true。'),
+                S('Unsloth', 'languageModel.unsloth.enabled', false, '默认关闭；fetchOnClient = true。'),
+                S('其他 Provider', 'languageModel.<provider>.enabled', false, '未在默认表中列出的 Provider 默认关闭。'),
+              ],
+            },
+            {
+              title: '模型范围',
+              rows: [
+                T('可用模型范围', 'languageModel.<provider>.enabledModels', '全部内置模型', '留空表示不限制；填写后只展示白名单内的模型。'),
+                S('自动获取模型列表', 'languageModel.<provider>.autoFetchModelLists', false, '默认跟随 Provider 能力，不强制开启。'),
+                RAW('用户自定义模型卡', 'languageModel.<provider>.customModelCards', '用户私有', '用户自己添加的模型定义，管理员不可见、不下发。', { capability: 'private', editable: false }),
+                S('允许用户添加自定义 Provider', 'policy.allowCustomProvider', true, '关闭后隐藏「添加服务商」入口，并拒绝相关写入。'),
+                S('允许用户填写 API Key', 'policy.allowUserApiKey', true, '关闭后用户只能使用服务端环境变量配置的 Provider。'),
+              ],
+            },
+            {
+              title: '凭据与服务端配置',
+              rows: [
+                RAW('API Key / Base URL', 'keyVaults.<provider>', '用户私有', '加密存储在 user_settings.keyVaults；管理员不可见。', { capability: 'private', editable: false }),
+                RAW('服务端 Provider 凭据', 'OPENAI_API_KEY 等', '服务端配置', '由部署环境变量提供，用户不可见、不可改。', { capability: 'serverOnly', editable: false }),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'serviceModel', group: '智能体', label: '服务模型', icon: '✦',
+          intro: '对应「设置 → 服务模型」。四个层级模型是后台任务默认值；高级任务可跟随层级，也可单独指定。',
+          policy: {
+            key: 'allowServiceModel',
+            label: '允许用户修改服务模型',
+            desc: '关闭后，用户端服务模型页面只读；服务端仍按已保存的值执行。',
+            value: true,
+          },
+          sections: [
+            {
+              title: '层级模型',
+              rows: [
+                MODEL('主模型', 'systemAgent.tiers.main', 'deepseek / deepseek-v4-flash', MODELS.main, '创作、推理等看重质量的任务。'),
+                MODEL('Flash 模型', 'systemAgent.tiers.flash', 'openai / gpt-5.6-luna', MODELS.flash, '命名、翻译、压缩、记忆等高频任务。'),
+                MODEL('记忆向量化', 'systemAgent.tiers.embedding', 'openai / text-embedding-3-small', MODELS.embedding, '将记忆转为向量；文件向量化由 DEFAULT_FILES_CONFIG 控制。'),
+                MODEL('验收模型', 'systemAgent.tiers.verify', 'zhipu / glm-5.3-flash', MODELS.verify, '任务与目标验收，必须支持视觉。'),
+              ],
+            },
+            {
+              title: '高级任务（17 项，默认跟随层级）',
+              rows: [
+                MODEL('话题命名', 'systemAgent.topic', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
+                MODEL('线程命名', 'systemAgent.thread', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
+                MODEL('话题自动摘要', 'systemAgent.topicAutoSummary', 'tier:main', MODELS.slot, '默认关闭；启用后跟随主模型。'),
+                MODEL('翻译', 'systemAgent.translation', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
+                MODEL('提示词改写', 'systemAgent.promptRewrite', 'tier:flash', MODELS.slot, '默认开启；跟随 Flash 模型。'),
+                MODEL('记忆分析', 'systemAgent.memoryAnalysisAgentConfig', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
+                MODEL('输入建议', 'systemAgent.inputCompletion', 'tier:flash', MODELS.slot, '默认关闭；跟随 Flash 模型。'),
+                MODEL('跟进建议', 'systemAgent.followUpAction', 'tier:flash', MODELS.slot, '默认关闭；跟随 Flash 模型。'),
+                MODEL('语音转写', 'systemAgent.asr', 'openai / gpt-4o-mini-transcribe', MODELS.slot, '仅对外部 Agent 的语音消息生效。'),
+                MODEL('频道路由', 'systemAgent.channelRouting', 'typesafe / jev-1.14.0', MODELS.slot, '仅商业版频道功能使用，默认开启。'),
+                RAW('文件向量化', 'DEFAULT_FILES_CONFIG.embedding_model', '服务端环境变量', '不在用户设置中，管理员需通过环境变量修改。', { capability: 'serverOnly', editable: false }),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'skill', group: '智能体', label: '技能', icon: '◇', kind: 'note',
+          noteTitle: '用户已安装的技能与 MCP，属于用户数据',
+          note: '对应「设置 → 技能」。这里没有“默认技能”概念：技能是用户自己安装/连接的资源。',
+          points: [
+            '管理员可查看某用户已安装的技能与 MCP，但不应替用户写入。',
+            '若要限制安装来源，应放在「权限」里做策略（P2：允许/禁止自定义 MCP、市场技能）。',
+            '内置技能由部署版本决定，不是用户设置。',
+          ],
+        },
+        {
+          key: 'tools', group: '智能体', label: '工具', icon: '⌘',
+          intro: '对应「设置 → 工具」。管理员只能设默认优先级；最终可用渠道仍由服务端环境变量 SEARCH_PROVIDERS / CRAWLER_IMPLS 决定。',
+          policy: {
+            key: 'allowToolChannels',
+            label: '允许用户调整搜索 / 抓取渠道顺序',
+            desc: '关闭后，工具页面只读；服务端按环境变量默认顺序执行。',
+            value: true,
+          },
+          sections: [
+            {
+              title: '渠道优先级',
+              rows: [
+                T('搜索渠道顺序', 'tool.searchProviders', '跟随服务端默认', '留空表示使用 SEARCH_PROVIDERS 的默认顺序。'),
+                T('抓取渠道顺序', 'tool.crawlerImpls', '跟随服务端默认', '留空表示使用 CRAWLER_IMPLS 的默认顺序。'),
+              ],
+            },
+            {
+              title: '用户私有部分',
+              rows: [
+                RAW('工具人工干预白名单', 'tool.humanIntervention.allowList', '用户私有', '用户对具体工具的“总是允许”记录，管理员不下发。', { capability: 'private', editable: false }),
+                RAW('已卸载的内置工具', 'tool.uninstalledBuiltinTools', '用户数据', '用户在个人空间隐藏的内置工具。', { capability: 'data', editable: false }),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'memory', group: '智能体', label: '记忆设置', icon: '◎',
+          intro: '对应「设置 → 记忆设置」。',
+          policy: {
+            key: 'allowMemory',
+            label: '允许用户修改记忆设置',
+            desc: '关闭后，用户端记忆开关与强度只读。',
+            value: true,
+          },
+          sections: [
+            {
+              title: '记忆',
+              rows: [
+                S('启用记忆', 'memory.enabled', true, '默认开启。'),
+                Q('记忆强度', 'memory.effort', 'medium', OPT.effort, '默认中；强度越高，后台分析与召回越积极。'),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'labels', group: '智能体', label: '标签', icon: '⌗', kind: 'note',
+          noteTitle: '用户标签，属于用户数据',
+          note: '对应「设置 → 标签」。标签用于用户自己的助理/话题分类，没有部署默认值。',
+          points: ['管理员可在用户详情里查看标签数量，但不提供默认值。', '标签的团队共享规则属于 Workspace 权限，不在个人设置模板里。'],
+        },
+        {
+          key: 'integrations', group: '连接', label: '集成', icon: '⇄',
+          intro: '对应「设置 → 集成」。目前可下发的是 GitHub 自动化开关；仓库授权与绑定关系属于用户数据。',
+          sections: [
+            {
+              title: 'GitHub 自动化',
+              rows: [
+                S('合并 PR 自动验收', 'preference.integration.github.acceptOnMerge', true, '合并关联 PR 时接受验收。'),
+                S('私有仓库评论', 'preference.integration.github.commentOnPrivateRepositories', true, '在私有仓库 PR 上回写验收与对话链接。'),
+                S('公开仓库评论', 'preference.integration.github.commentOnPublicRepositories', false, '公开仓库默认不写内部链接。'),
+                S('CI 失败唤醒', 'preference.integration.github.wakeOnCiFailure', true, '检查失败时唤醒发起 PR 的 Agent。'),
+                S('评审反馈唤醒', 'preference.integration.github.wakeOnReview', true, '收到变更请求/评论时唤醒 Agent。'),
+              ],
+            },
+            {
+              title: '绑定关系',
+              rows: [
+                RAW('GitHub 账号绑定', 'integration_accounts', '用户数据', 'OAuth 绑定关系，管理员不可见、不下发。', { capability: 'data', editable: false }),
+                RAW('仓库授权', 'integration_repositories', '用户数据', '用户选择的仓库范围。', { capability: 'data', editable: false }),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'connector', group: '连接', label: '连接器', icon: '⚯', kind: 'note',
+          noteTitle: '连接器绑定属于用户数据',
+          note: '对应「设置 → 连接器」。连接器是用户自己连接的 MCP / 外部服务，不应由管理员写入绑定。',
+          points: ['管理员可控制允许的连接器目录与安装权限（P2）。', '已连接列表、凭据与使用量属于用户私有数据。'],
+        },
+        {
+          key: 'devices', group: '运行资源', label: '设备', icon: '▣', kind: 'note',
+          noteTitle: '设备是用户资源',
+          note: '对应「设置 → 设备」。设备注册、在线状态与工作目录属于用户自己的运行资源。',
+          points: ['不提供默认值。', '若要限制“允许添加设备”，应作为权限策略（P2），不是设置默认值。'],
+        },
+        {
+          key: 'subscriptionAccounts', group: '运行资源', label: '订阅账号', icon: '◫', kind: 'note',
+          noteTitle: '编码代理订阅账号属于用户资源',
+          note: '对应「设置 → 订阅账号」。这些是用户设备登录的 Claude Code / Codex 等订阅容量。',
+          points: ['不提供默认值。', '管理员可查看容量与状态，但不应替用户登录订阅。'],
+        },
+        {
+          key: 'environments', group: '运行资源', label: '环境', icon: '▤', kind: 'note',
+          noteTitle: '环境定义属于用户资源',
+          note: '对应「设置 → 环境」。环境是运行 Agent 的容器/沙盒定义。',
+          points: ['不提供默认值。', '若要统一环境模板，应作为独立的“环境模板”功能，而不是用户设置默认值。'],
+        },
+        {
+          key: 'creds', group: '运行资源', label: '凭证管理', icon: '⚿', kind: 'note',
+          noteTitle: '凭证由用户私有',
+          note: '对应「设置 → 凭证管理」。Agent 运行时读取的密钥属于用户私有数据。',
+          points: ['管理员不可见、不可下发。', '部署级密钥应放在服务端环境变量，而不是这个页面。'],
+        },
+        {
+          key: 'storage', group: '系统与开发者', label: '存储', icon: '▥', kind: 'note',
+          noteTitle: '存储由服务端配置',
+          note: '对应「设置 → 存储」。S3、向量库等由部署环境变量配置；个人页只有用量与账户删除。',
+          points: ['不提供用户默认值。', '管理员应通过服务端配置修改，而不是用户设置模板。'],
+        },
+        {
+          key: 'trash', group: '系统与开发者', label: '回收站', icon: '⌫', kind: 'note',
+          noteTitle: '回收站是用户数据',
+          note: '对应「设置 → 回收站」。',
+          points: ['不提供默认值。', '管理员可在用户详情里查看删除量，但不应替用户恢复/清空。'],
+        },
+        {
+          key: 'advanced', group: '系统与开发者', label: '高级', icon: '⚒',
+          intro: '对应「设置 → 高级」。开发者模式与网关模式可下发；诊断、远程调试、更新通道是设备本地。',
+          sections: [
+            {
+              title: '工具与诊断',
+              rows: [
+                S('开发者模式', 'general.isDevMode', false, '显示开发调试入口。'),
+                S('网关模式', 'defaultAgent.config.chatConfig.disableGatewayMode', false, '默认启用网关模式；关闭后走直连。'),
+                RAW('诊断信息', 'client.diagnostics', '设备本地', '浏览器/设备诊断，不进入 user_settings。', { capability: 'device', editable: false }),
+                RAW('远程调试', 'client.remoteDebugging', '设备本地', '桌面端远程调试开关。', { capability: 'device', editable: false }),
+              ],
+            },
+            {
+              title: '应用更新（桌面端）',
+              rows: [
+                RAW('更新通道', 'client.updateChannel', '设备本地', 'Stable / Canary，按设备保存。', { capability: 'device', editable: false }),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'apikey', group: '系统与开发者', label: 'API Key', icon: '⚿', kind: 'note',
+          noteTitle: 'API Key 是用户私有数据',
+          note: '对应「设置 → API Key」。API Key 用于用户自己的外部调用。',
+          points: ['不提供默认值。', '若要限制创建，应作为权限策略（P2：允许/禁止创建 API Key）。'],
+        },
+        {
+          key: 'labs', group: '系统与开发者', label: '实验室', icon: '⚗',
+          intro: '对应「设置 → 实验室」。这里是真实的 18 个实验开关（来自 LAB_FEATURES），默认全部关闭。',
+          policy: {
+            key: 'allowLabs',
+            label: '允许用户修改实验室开关',
+            desc: '关闭后，用户端实验室页面全部只读；管理员锁定项始终只读。',
+            value: true,
+          },
+          sections: [
+            {
+              title: '通用实验',
+              rows: [
+                S('Agent Graph 运行时配置', 'preference.lab.enableAgentGraphConfig', false, '在助理档案的进阶设置中显示 Graph 运行时配置。', { stage: 'alpha' }),
+                S('助理身份', 'preference.lab.enableAgentIdentity', false, '为助理开通专属邮箱地址，并查看它收到的消息。', { stage: 'alpha' }),
+                S('消息文本选择操作', 'preference.lab.enableMessageTextSelectionActions', false, '在聊天消息中选中文本时显示「引用」和「复制」。', { stage: 'alpha' }),
+                S('自进化', 'preference.lab.enableSelfLearning', false, '让 Agent 在后台从对话中学习，并在每晚复盘。', { stage: 'alpha' }),
+                S('把对话保存为评测用例', 'preference.lab.enableEvalCapture', false, '在消息动作里增加评测用例捕获。', { stage: 'alpha' }),
+                S('目标', 'preference.lab.enableGoals', false, '把目标交给助手：拆解任务、跟进进度、交付结果。', { stage: 'beta' }),
+                S('远程端口链接', 'preference.lab.enableDeviceTunnel', false, '给工作设备上的端口一个可访问链接。', { stage: 'alpha' }),
+                S('更好的编码体验', 'preference.lab.enableBetterCodingExperience', false, '改进智能体与你一起写代码、运行和审查代码的体验。', { stage: 'alpha' }),
+                S('项目工作空间', 'preference.lab.enableProjects', false, '将长期目标组织到独立工作空间中。', { stage: 'alpha' }),
+                S('OAuth 应用', 'preference.lab.enableOAuthApps', false, '在个人和工作区设置中显示 OAuth 应用管理入口。', { stage: 'beta' }),
+                S('Artifact 部署', 'preference.lab.enableArtifactDeployment', false, '将 Artifact 发布为可访问的托管链接。', { stage: 'beta' }),
+                S('Codex App Server 运行时', 'preference.lab.enableCodexAppServer', false, '通过桌面端或已连接设备的 App Server 运行 Codex。', { stage: 'alpha' }),
+              ],
+            },
+            {
+              title: '仅商业版 / 工作区',
+              rows: [
+                S('报告问题', 'preference.lab.enableTopicBugReport', false, '在话题菜单中增加「报告问题」。', { stage: 'alpha', availability: '仅商业版' }),
+                S('页面实时协作', 'preference.lab.enablePageCollab', false, '在工作区页面中与成员实时共同编辑。', { stage: 'alpha', availability: '仅商业版 · 工作区' }),
+              ],
+            },
+            {
+              title: '桌面端',
+              rows: [
+                S('标签页分栏', 'preference.lab.enableDesktopSplitView', false, '在桌面端并排显示两个标签页。', { stage: 'alpha', availability: '仅桌面端' }),
+                S('iMessage 渠道', 'preference.lab.enableImessage', false, '通过 BlueBubbles 桥接器将代理连接到 iMessage。', { stage: 'alpha', availability: '仅桌面端' }),
+                S('Claude Code SDK 运行时', 'preference.lab.enableClaudeCodeSdk', false, '通过 Claude Agent SDK 运行 Claude Code 会话。', { stage: 'alpha', availability: '仅桌面端' }),
+                S('本地 Agent 会话导入', 'preference.lab.enableHeteroSessionImport', false, '扫描本地 Claude Code / Codex CLI 会话并导入为话题。', { stage: 'beta', availability: '仅桌面端' }),
+              ],
+            },
+          ],
+        },
+        {
+          key: 'about', group: '系统与开发者', label: '关于', icon: 'ⓘ', kind: 'note',
+          noteTitle: '只读信息',
+          note: '对应「设置 → 关于」。版本、更新日志、许可信息，不提供默认值。',
+          points: ['管理员无需配置。'],
+        },
+      ];
+
+      const USERS = [
+        { id: 'u1', name: '张伟', username: 'A100231', email: 'a100231@tellhow.com', role: 'admin', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '管理员', active: '今天 09:12', custom: true, overrides: { 'client.nextThemes.theme': 'dark', 'general.interfaceDensity': 'compact' }, locked: [] },
+        { id: 'u2', name: '李娜', username: 'A100455', email: 'a100455@tellhow.com', role: 'member', status: 'active', labs: 2, model: 'DeepSeek V4 Flash', policy: '禁止改模型', active: '今天 08:47', custom: true, overrides: { 'preference.lab.enableSelfLearning': true, 'preference.lab.enableProjects': true, 'general.fontSize': 16 }, locked: ['languageModel.deepseek.enabled'] },
+        { id: 'u3', name: '王强', username: 'A100877', email: 'a100877@tellhow.com', role: 'member', status: 'banned', labs: 0, model: '—', policy: '继承模板', active: '昨天 14:03', custom: false, overrides: {}, locked: [] },
+        { id: 'u4', name: '陈静', username: 'A101002', email: 'a101002@tellhow.com', role: 'member', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '继承模板', active: '今天 09:05', custom: false, overrides: {}, locked: [] },
+        { id: 'u5', name: '刘洋', username: 'A101188', email: 'a101188@tellhow.com', role: 'member', status: 'active', labs: 4, model: 'OpenAI GPT-5.6 Luna', policy: '允许改模型', active: '昨天 18:21', custom: true, overrides: { 'preference.lab.enableBetterCodingExperience': true, 'preference.lab.enableGoals': true, 'preference.lab.enableOAuthApps': true, 'preference.lab.enableProjects': true, 'systemAgent.tiers.main': 'openai / gpt-5.6-luna' }, locked: [] },
+        { id: 'u6', name: '赵敏', username: 'A101230', email: 'a101230@tellhow.com', role: 'member', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '继承模板', active: '昨天 16:40', custom: false, overrides: {}, locked: [] },
+        { id: 'u7', name: '孙磊', username: 'A101377', email: 'a101377@tellhow.com', role: 'member', status: 'active', labs: 1, model: 'Claude Sonnet 4.6', policy: '继承模板', active: '2026-11-17', custom: true, overrides: { 'preference.lab.enableAgentGraphConfig': true, 'general.interfaceDensity': 'compact' }, locked: [] },
+        { id: 'u8', name: '周婷', username: 'A101409', email: 'a101409@tellhow.com', role: 'member', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '继承模板', active: '2026-11-17', custom: false, overrides: {}, locked: [] },
+      ];
+
+      const titles = {
+        overview: ['总览', '部署用户、默认配置与权限策略的集中管理入口。'],
+        users: ['用户', '查看所有 SSO 用户及其生效配置，按人调整策略。'],
+        settings: ['用户设置模板', '按真实设置页配置新用户默认值，并决定哪些字段允许用户修改。'],
+        audit: ['审计日志', '管理员操作的完整记录。'],
+      };
+
+      let activeFilter = 'all';
+      let currentUser = null;
+      let applyMode = 'unset';
+      let currentSettingsPage = 'appearance';
+      let currentDrawerPage = 'appearance';
+
+      /* ---------- navigation ---------- */
+      function go(page) {
+        document.querySelectorAll('.page').forEach((el) => el.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
+        const t = titles[page] || titles.overview;
+        document.getElementById('pageTitle').textContent = t[0];
+        document.getElementById('pageDesc').textContent = t[1];
+        if (page === 'users') renderUsers();
+        if (page === 'settings') renderSettingsNav();
+      }
+
+      document.querySelectorAll('.nav-item').forEach((btn) => {
+        btn.addEventListener('click', () => go(btn.dataset.page));
+      });
+
+      /* ---------- settings template ---------- */
+      function settingsGroups() {
+        const groups = [];
+        PAGES.forEach((page) => {
+          let group = groups.find((g) => g.title === page.group);
+          if (!group) { group = { title: page.group, items: [] }; groups.push(group); }
+          group.items.push(page);
+        });
+        return groups;
+      }
+
+      function renderSettingsNav() {
+        document.getElementById('settingsNav').innerHTML = settingsGroups().map((group) => `
+          <div class="settings-nav-group">
+            <div class="settings-nav-title">${group.title}</div>
+            ${group.items.map((page) => `
+              <button class="settings-nav-item ${page.key === currentSettingsPage ? 'active' : ''}" onclick="setSettingsPage('${page.key}')">
+                <span class="settings-nav-icon">${page.icon}</span>${page.label}
+              </button>`).join('')}
+          </div>`).join('');
+      }
+
+      function setSettingsPage(key) {
+        currentSettingsPage = key;
+        renderSettingsNav();
+        renderSettingsPage();
+      }
+
+      function capabilityOf(row) { return CAP[row.capability] || CAP.server; }
+
+      function countCapabilities(page) {
+        if (page.kind === 'note') return { server: 0, device: 0, private: 0, data: 0, serverOnly: 0, readonly: 0 };
+        const counts = { server: 0, device: 0, private: 0, data: 0, serverOnly: 0, readonly: 0 };
+        (page.sections || []).forEach((section) => section.rows.forEach((row) => { counts[row.capability] = (counts[row.capability] || 0) + 1; }));
+        return counts;
+      }
+
+      function capabilityTotals() {
+        const totals = { server: 0, device: 0, private: 0, data: 0, serverOnly: 0, readonly: 0 };
+        PAGES.forEach((page) => {
+          const counts = countCapabilities(page);
+          Object.keys(totals).forEach((key) => { totals[key] += counts[key] || 0; });
+        });
+        return totals;
+      }
+
+      function formatValue(row) {
+        if (row.type === 'switch') return row.value ? '开启' : '关闭';
+        if (row.type === 'model') {
+          const match = (row.options || []).find(([value]) => String(value) === String(row.value));
+          return match ? match[1] : String(row.value);
+        }
+        if (row.value === '' || row.value === undefined) return '默认';
+        return String(row.value);
+      }
+
+      function renderControl(row) {
+        const disabled = row.capability !== 'server' ? 'disabled' : '';
+        if (row.type === 'select' || row.type === 'model') {
+          return `<select ${disabled} onchange="updateRowValue('${row.path}', this.value)">
+            ${row.options.map(([value, label]) => `<option value="${value}" ${String(row.value) === String(value) ? 'selected' : ''}>${label}</option>`).join('')}
+          </select>`;
+        }
+        if (row.type === 'switch') {
+          return `<label class="switch"><input type="checkbox" ${row.value ? 'checked' : ''} ${disabled} onchange="updateRowChecked('${row.path}', this.checked)" /><span></span></label>`;
+        }
+        if (row.type === 'number') {
+          return `<input type="number" value="${row.value}" ${disabled} onchange="updateRowValue('${row.path}', Number(this.value))" />`;
+        }
+        if (row.type === 'text') {
+          return `<input type="text" value="${row.value ?? ''}" placeholder="跟随系统默认" ${disabled} onchange="updateRowValue('${row.path}', this.value)" />`;
+        }
+        return `<span class="tiny muted">${formatValue(row)}</span>`;
+      }
+
+      function findRow(path) {
+        for (const page of PAGES) {
+          for (const section of page.sections || []) {
+            const row = section.rows.find((r) => r.path === path);
+            if (row) return row;
+          }
+        }
+        return null;
+      }
+
+      function updateRowValue(path, value) {
+        const row = findRow(path);
+        if (!row) return;
+        row.value = value;
+        renderSettingsPage();
+        toast('已修改默认值，记得保存模板');
+      }
+
+      function updateRowChecked(path, checked) {
+        const row = findRow(path);
+        if (!row) return;
+        row.value = checked;
+        renderSettingsPage();
+        toast('已修改默认值，记得保存模板');
+      }
+
+      function updateEditable(path, checked) {
+        const row = findRow(path);
+        if (!row) return;
+        row.editable = checked;
+        if (!checked) row.lock = false;
+        renderSettingsPage();
+      }
+
+      function updateLock(path, checked) {
+        const row = findRow(path);
+        if (!row) return;
+        row.lock = checked;
+        if (checked) row.editable = false;
+        renderSettingsPage();
+      }
+
+      function renderRow(row) {
+        const cap = capabilityOf(row);
+        const policy = row.capability === 'server'
+          ? `<div class="policy-toggles">
+               <label class="mini-check"><input type="checkbox" ${row.editable ? 'checked' : ''} onchange="updateEditable('${row.path}', this.checked)" /> 允许修改</label>
+               <label class="mini-check"><input type="checkbox" ${row.lock ? 'checked' : ''} onchange="updateLock('${row.path}', this.checked)" /> 锁定</label>
+             </div>`
+          : `<span class="tiny muted">—</span>`;
+
+        const extras = [];
+        if (row.stage) extras.push(`<span class="badge badge-${row.stage}">${row.stage === 'alpha' ? 'Alpha' : 'Beta'}</span>`);
+        if (row.availability) extras.push(`<span class="badge badge-neutral">${row.availability}</span>`);
+        if (row.note) extras.push(`<span class="badge badge-neutral">${row.note}</span>`);
+
+        return `<div class="setting-row">
+          <div>
+            <div class="setting-label">${row.label} ${extras.join(' ')}</div>
+            <div class="setting-path">${row.path}</div>
+            <div class="setting-desc">${row.desc || ''}</div>
+          </div>
+          <div class="setting-control">${renderControl(row)}</div>
+          <div><span class="cap ${cap.cls}">${cap.label}</span></div>
+          ${policy}
+        </div>`;
+      }
+
+      function renderSettingsPage() {
+        const page = PAGES.find((p) => p.key === currentSettingsPage) || PAGES[0];
+        document.getElementById('settingsTitle').textContent = page.label;
+        document.getElementById('settingsIntro').textContent = page.intro || '';
+        const counts = countCapabilities(page);
+        const chips = [];
+        if (counts.server) chips.push(`<span class="summary-chip primary">可下发 ${counts.server} 项</span>`);
+        if (counts.device) chips.push(`<span class="summary-chip">设备本地 ${counts.device} 项</span>`);
+        if (counts.private) chips.push(`<span class="summary-chip">用户私有 ${counts.private} 项</span>`);
+        if (counts.data) chips.push(`<span class="summary-chip">用户数据 ${counts.data} 项</span>`);
+        if (counts.serverOnly) chips.push(`<span class="summary-chip">服务端配置 ${counts.serverOnly} 项</span>`);
+        if (counts.readonly) chips.push(`<span class="summary-chip">只读 ${counts.readonly} 项</span>`);
+        document.getElementById('settingsSummary').innerHTML = chips.join('');
+
+        const footer = document.querySelector('#page-settings .form-footer');
+        const resetBtn = document.getElementById('resetDefaultsBtn');
+        footer.style.display = page.kind === 'note' ? 'none' : 'flex';
+        resetBtn.style.display = page.kind === 'note' ? 'none' : '';
+
+        const body = document.getElementById('settingsBody');
+        if (page.kind === 'note') {
+          body.innerHTML = `<div class="note-page">
+            <div class="note-box">
+              <div class="note-icon">${page.icon}</div>
+              <div>
+                <h3>${page.noteTitle}</h3>
+                <p>${page.note}</p>
+                <ul class="note-list">${(page.points || []).map((p) => `<li>${p}</li>`).join('')}</ul>
+              </div>
+            </div>
+          </div>`;
+          document.getElementById('settingsFootNote').textContent = '此页面不提供默认值，保存按钮不会写入任何用户设置。';
+          return;
+        }
+
+        const policy = page.policy ? `<div class="policy-card">
+          <div>
+            <h4>${page.policy.label}</h4>
+            <p>${page.policy.desc}</p>
+          </div>
+          <label class="switch"><input type="checkbox" ${page.policy.value ? 'checked' : ''} onchange="updatePagePolicy('${page.key}', this.checked)" /><span></span></label>
+        </div>` : '';
+
+        body.innerHTML = policy + page.sections.map((section) => `
+          <div class="sub-section">
+            <div class="sub-section-title">${section.title}</div>
+            ${section.rows.map(renderRow).join('')}
+          </div>`).join('');
+        document.getElementById('settingsFootNote').textContent = '模板只影响新用户；存量用户需手动应用。';
+      }
+
+      function updatePagePolicy(pageKey, checked) {
+        const page = PAGES.find((p) => p.key === pageKey);
+        if (!page || !page.policy) return;
+        page.policy.value = checked;
+        renderSettingsPage();
+        toast('已修改页面权限，记得保存模板');
+      }
+
+      /* ---------- users ---------- */
+      function statusBadge(user) {
+        if (user.status === 'banned') return '<span class="badge badge-danger">已禁用</span>';
+        if (user.role === 'admin') return '<span class="badge badge-primary">管理员</span>';
+        return '<span class="badge badge-success">正常</span>';
+      }
+
+      function policyBadge(user) {
+        if (user.policy === '禁止改模型') return '<span class="badge badge-warning">禁止改模型</span>';
+        if (user.policy === '允许改模型') return '<span class="badge badge-success">允许改模型</span>';
+        if (user.policy === '管理员') return '<span class="badge badge-primary">管理员</span>';
+        return '<span class="badge badge-neutral">继承模板</span>';
+      }
+
+      function renderUsers() {
+        const query = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+        const rows = USERS.filter((u) => {
+          const matchQuery = !query || [u.name, u.username, u.email].some((v) => v.toLowerCase().includes(query));
+          const matchFilter =
+            activeFilter === 'all' ||
+            (activeFilter === 'admin' && u.role === 'admin') ||
+            (activeFilter === 'banned' && u.status === 'banned') ||
+            (activeFilter === 'custom' && u.custom);
+          return matchQuery && matchFilter;
+        });
+
+        document.getElementById('userCount').textContent = '共 ' + rows.length + ' 位用户';
+        document.getElementById('userRows').innerHTML = rows.map((u) => `
+          <tr onclick="openDrawer('${u.id}')">
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">${u.name.slice(0, 1)}</div>
+                <div>
+                  <div class="user-name">${u.name}</div>
+                  <div class="user-mail">${u.email}</div>
+                </div>
+              </div>
+            </td>
+            <td class="mono">${u.username}</td>
+            <td>${statusBadge(u)}</td>
+            <td><span class="badge badge-neutral">${u.labs} / 18</span></td>
+            <td>${u.model}</td>
+            <td>${policyBadge(u)}</td>
+            <td class="muted tiny">${u.active}</td>
+          </tr>`).join('');
+      }
+
+      function setFilter(filter, el) {
+        activeFilter = filter;
+        document.querySelectorAll('.chip[data-filter]').forEach((c) => c.classList.remove('active'));
+        el.classList.add('active');
+        renderUsers();
+      }
+
+      /* ---------- drawer ---------- */
+      function openDrawer(id) {
+        currentUser = USERS.find((u) => u.id === id);
+        if (!currentUser) return;
+        document.getElementById('drawerName').textContent = currentUser.name;
+        document.getElementById('drawerSub').textContent = currentUser.username + ' · ' + currentUser.email;
+        document.getElementById('drawerBadge').textContent = currentUser.role === 'admin' ? '管理员' : '成员';
+        document.getElementById('infoRole').textContent = currentUser.role === 'admin' ? '管理员' : '成员';
+        document.getElementById('infoStatus').textContent = currentUser.status === 'banned' ? '已禁用' : '正常';
+        document.getElementById('infoActive').textContent = currentUser.active;
+        document.getElementById('infoSummary').textContent =
+          '实验室开启 ' + currentUser.labs + ' 项；默认模型 ' + currentUser.model + '；' + currentUser.policy + '。';
+        const drawerPages = PAGES.filter((p) => p.kind !== 'note');
+        if (!drawerPages.some((p) => p.key === currentDrawerPage)) currentDrawerPage = drawerPages[0].key;
+        document.getElementById('drawerPageSelect').innerHTML = drawerPages
+          .map((p) => `<option value="${p.key}" ${p.key === currentDrawerPage ? 'selected' : ''}>${p.label}</option>`).join('');
+        renderDrawerSettings();
+        setTab('profile', document.querySelector('.tab[data-tab="profile"]'));
+        document.getElementById('drawer').classList.add('show');
+        document.getElementById('drawerBackdrop').classList.add('show');
+        document.getElementById('drawer').setAttribute('aria-hidden', 'false');
+      }
+
+      function closeDrawer() {
+        document.getElementById('drawer').classList.remove('show');
+        document.getElementById('drawerBackdrop').classList.remove('show');
+        document.getElementById('drawer').setAttribute('aria-hidden', 'true');
+      }
+
+      function setTab(tab, el) {
+        document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+        if (el) el.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+      }
+
+      function setDrawerPage(key) {
+        currentDrawerPage = key;
+        renderDrawerSettings();
+      }
+
+      function userValue(user, row) {
+        if (Object.prototype.hasOwnProperty.call(user.overrides, row.path)) return user.overrides[row.path];
+        if (row.path.startsWith('preference.lab.')) return false;
+        return row.value;
+      }
+
+      function formatUserValue(row, value) {
+        if (row.type === 'switch') return value ? '开启' : '关闭';
+        if (row.type === 'model') {
+          const match = (row.options || []).find(([optionValue]) => String(optionValue) === String(value));
+          return match ? match[1] : String(value);
+        }
+        if (value === '' || value === undefined) return '默认';
+        return String(value);
+      }
+
+      function renderDrawerSettings() {
+        const page = PAGES.find((p) => p.key === currentDrawerPage);
+        if (!page || page.kind === 'note' || !currentUser) {
+          document.getElementById('drawerSettingsBody').innerHTML = '<p class="tiny muted">该页面不提供默认值。</p>';
+          return;
+        }
+        document.getElementById('drawerSettingsBody').innerHTML = page.sections.map((section) => `
+          <div class="sub-section-title" style="padding-top:14px">${section.title}</div>
+          ${section.rows.map((row) => {
+            const current = userValue(currentUser, row);
+            const locked = currentUser.locked.includes(row.path);
+            const editable = row.capability === 'server' && row.editable && !locked;
+            return `<div class="user-setting-row">
+              <div>
+                <div class="setting-label">${row.label}</div>
+                <div class="setting-path">${row.path}</div>
+              </div>
+              <div><span class="value-pill">${formatUserValue(row, current)}</span></div>
+              <div><span class="value-pill default">${formatUserValue(row, row.value)}</span></div>
+              <div>
+                ${row.capability === 'server'
+                  ? `<label class="mini-check"><input type="checkbox" ${locked ? 'checked' : ''} onchange="toggleUserLock('${row.path}', this.checked)" /> 锁定</label>
+                     <div class="tiny muted">${editable ? '可修改' : '只读'}</div>`
+                  : `<span class="tiny muted">${capabilityOf(row).label}</span>`}
+              </div>
+            </div>`;
+          }).join('')}`).join('');
+      }
+
+      function toggleUserLock(path, checked) {
+        if (!currentUser) return;
+        if (checked) {
+          if (!currentUser.locked.includes(path)) currentUser.locked.push(path);
+        } else {
+          currentUser.locked = currentUser.locked.filter((p) => p !== path);
+        }
+        renderDrawerSettings();
+        toast(checked ? '已锁定该字段，将按模板值强制生效' : '已解除锁定');
+      }
+
+      /* ---------- apply modal ---------- */
+      function openApply() {
+        document.getElementById('applyModal').classList.add('show');
+        selectApplyMode('unset');
+      }
+
+      function closeApply() { document.getElementById('applyModal').classList.remove('show'); }
+
+      function selectApplyMode(mode) {
+        applyMode = mode;
+        const totals = capabilityTotals();
+        const skipNote = `可下发 ${totals.server} 项；设备本地 ${totals.device} 项、用户私有 ${totals.private} 项、用户数据 ${totals.data} 项不会写入。`;
+        document.getElementById('optUnset').classList.toggle('selected', mode === 'unset');
+        document.getElementById('optForce').classList.toggle('selected', mode === 'force');
+        document.querySelector('#optUnset input').checked = mode === 'unset';
+        document.querySelector('#optForce input').checked = mode === 'force';
+        document.getElementById('applySummary').innerHTML = mode === 'unset'
+          ? `预计影响 <strong>1,284</strong> 位用户：补齐 <strong>1,196</strong> 位，跳过 <strong>88</strong> 位（已自定义）。<br /><span class="tiny muted">${skipNote}</span>`
+          : `预计影响 <strong>1,284</strong> 位用户：全部覆盖，用户已有的自定义值将丢失。<br /><span class="tiny muted">锁定项始终覆盖；${skipNote}</span>`;
+      }
+
+      function confirmApply() {
+        closeApply();
+        toast(applyMode === 'unset' ? '已开始应用：仅补齐未设置项' : '已开始应用：强制覆盖');
+      }
+
+      /* ---------- toast / init ---------- */
+      let toastTimer;
+      function toast(message) {
+        const el = document.getElementById('toast');
+        el.textContent = message;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+      }
+
+      document.getElementById('applyModal').addEventListener('click', (e) => {
+        if (e.target.id === 'applyModal') closeApply();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { closeDrawer(); closeApply(); }
+      });
+
+      renderSettingsNav();
+      renderSettingsPage();
+      renderUsers();
+      const totals = capabilityTotals();
+      document.getElementById('deployableSummary').textContent =
+        `可下发 ${totals.server} 项；设备本地 ${totals.device} 项；用户私有 ${totals.private} 项；用户数据 ${totals.data} 项`;
+    </script>
+  </body>
+</html>
