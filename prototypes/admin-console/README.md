@@ -40,7 +40,7 @@ AI 两页是现有「设置 → AI 服务商」页的 **1:1 复刻**，不是另
 
 ## 服务模型
 
-- 四个层级（main /flash/verify /embedding，按 `SERVICE_MODEL_TIER_SLOTS` 展开到 19 个槽位），写入 `system_agent` 的托管槽位；
+- 四个层级（main /flash/verify /embedding，按 `SERVICE_MODEL_TIER_SLOTS` 展开到 15 个槽位），写入 `system_agent` 的托管槽位；
 - 每行 = 槽位名 + 说明 + 模型下拉（按已启用服务商分组，无空组）；记忆类槽位额外带条数上限与提示词；
 - 高级槽位默认折叠（`toggleAdvanced`），主模型改动后「保存并同步」弹出变更摘要与影响人数，「还原」回到上次保存状态。
 
