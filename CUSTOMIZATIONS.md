@@ -63,6 +63,7 @@
 - `.github/workflows/deploy-workbench.yml`
 - `.github/workflows/release-desktop-canary.yml`
 - `.github/workflows/release-model-bank.yml`
+- `.github/workflows/release-sdk.yml`
 - `.github/workflows/preview-cli.yml`
 
 历史依据：`f0512669c3`、`2b97b25170`。上游重命名或拆分这些工作流时迁移条件；启用开关前配置相应发布凭据。不要把此限制加到本 Fork 自己的 Docker 镜像发布或常规代码测试上。
