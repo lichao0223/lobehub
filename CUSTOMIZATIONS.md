@@ -15,7 +15,7 @@
 | CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → 集成绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览     | 独立 `tfs` 模块及现有入口接点；[详细维护说明](TFS_CUSTOMIZATION.md)          | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成    |
 | CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                  | 本次新增；需要 Fork 自己的 npm Token                        |
 | CUST-007 | 统一认证平台 SSO_TICKET 接入        | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话               | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)      | 开发中；单测已交付，待与真实认证中心联调                      |
-| CUST-008 | 管理员控制台（设计阶段）            | `/admin`：用户管理与审计、AI 服务统一托管（Provider / 默认模型 / 服务模型，非管理员隐藏菜单）、设备池注册与分配 | [设计与原型](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`           | 仅设计 / 原型（第六版），未改产品代码；本轮补齐管理员引导、凭据冻结、设备 owner 变更等链路缺口，待评审后实施           |
+| CUST-008 | 管理员控制台（设计阶段）            | `/admin`：用户管理与审计、模型服务（Tellhow 企业内置厂商：地址 / 密钥 / 模型目录，不下发模型） | [设计与原型](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`           | 仅设计 / 原型（第七版），未改产品代码；待评审后按 P1 → P2 实施           |
 
 ## CUST-001：自定义镜像
 
@@ -102,9 +102,13 @@
 
 完整方案、数据模型、侵入清单与分阶段计划见 [ADMIN_CONSOLE_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。
 
-范围由产品方确认为三块，按阶段独立上线：**用户管理 + 审计日志**（P1，先交付，`/admin` 只渲染这两页）、**AI 服务统一托管**（P2：Provider 默认值与模型白名单、默认模型、服务模型四层；非管理员隐藏「AI 服务商」「服务模型」两个菜单，服务端同时拒绝其写入）、**设备池**（P3：管理员把设备全局注册进池，再分配为全员或指定人；CLI `lh device pool register/list/grant/revoke/owner/remove`）。明确不做外观 / 快捷键 / 数据统计，也不做实验室等全量设置模板与逐字段策略。
+范围由产品方确认为两块，按阶段独立上线：**用户管理 + 审计日志**（P1，先交付，`/admin` 只渲染这两页）、**模型服务**（P2，Tellhow 企业内置厂商：管理员维护服务地址、加密保存的 API Key 与模型目录；用户侧表现为常驻已启用的内置服务商，无需填 Key，自行勾选模型，也可继续添加自己的厂商）。
 
-当前只交付设计与原型，**没有修改产品代码**。实施时按设计文档第 9 节控制改动面：优先落在上游预留扩展槽（`businessDeviceRouter`、`getHiddenBuiltinModelsForUser`、`initNewUserForBusiness`、business 层 trpc 中间件桩），共享文件只加单点接点（`getServerGlobalConfig` 默认值覆盖、`configRouter` 菜单合成 4 行、两个 AI base procedure 各一行守卫、`settingsRouter.updateSettings` 两行策略、设备链 6 处）。`businessConfigEndpoints` 在 `configRouter` 里是末尾整体 spread，写同名过程会整段替换 `getGlobalConfig`，因此菜单合成**不**走这个槽；同样地 `businessDeviceRouter` 只新增过程、不覆盖上游过程。设备池保持 `devices.userId`（gateway 寻址 principal）不变，只加 `pool` 标记与授权表，避免改注册唯一键与派发路径。注意 `deviceId` 派生混入 `userId`，**owner 变更不能只改一行**，必须按设计文档 §6.8 的两阶段流程；禁用账号时还要同时禁用其 API Key（§14.3），否则 CLI 仍可调用。合并上游后按设计文档第 11 节逐条复查。
+「不下发模型」是本轮的核心边界：控制台只写 `admin_console_settings.config.ai`，不写任何用户的 `user_settings`；模型目录是唯一事实源，用户的启用 / 停用属于用户自己的行。
+
+当前只交付设计与原型，**没有修改产品代码**。实施时按设计文档第 8 节控制改动面：新增独立目录（`adminConsole` router、`src/features/AdminConsole`、`packages/business-server/src/companyProvider.ts`、model-bank 的 tellhow 定义），共享文件只加单点接点并控制在 10 行内 —— `ModelRuntime` 默认分支注入业务层凭据（`getParamsFromPayload` 随之改 async）、`getServerGlobalConfig` 合并 tellhow 模型目录、`routers/lambda/index.ts` 挂载、`desktopRouter.shared.tsx` 注册路由、用户菜单加入口、model-bank 两个 index 导出。**不改** `aiProvider` / `aiModel` 任何 mutation、`updateSettings` 策略与 feature flags。
+
+密钥不变量：非管理员任何接口都不返回明文或密文；用户侧运行时状态不含 `keyVaults`；`fetchOnClient = false`，请求全部经服务端转发；审计只记 `ai.keyUpdate` 动作，不记内容。禁用账号时仍要同时禁用其 API Key（§12.3），否则 CLI 仍可调用。合并上游后按设计文档第 10 节逐条复查。
 
 ## 上游合并统一流程
 

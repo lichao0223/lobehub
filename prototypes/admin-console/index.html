@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>管理员控制台 · 第五版原型（用户 / 审计 / AI 服务商 / 服务模型 / 设备）</title>
+    <title>管理员控制台 · 第七版原型（用户 / 审计 / 模型服务）</title>
     <style>
       /* ==========================================================================
        * 管理员控制台原型 — 视觉基线对齐「设置」页真实实现
@@ -71,7 +71,7 @@
         --lobe-header-height: 44px;
         --lobe-nav-width: 280px;
         --lobe-row-height: 36px;
-        --lobe-control-height: 32px;
+        --lobe-control-height: 36px;
 
         /* 卡片阴影：Form filled group 的 bodyFilled 四层投影 */
         --lobe-shadow-card:
@@ -200,7 +200,7 @@
       }
 
       .tiny {
-        font-size: 11px;
+        font-size: 12px;
         line-height: 18px;
       }
 
@@ -235,8 +235,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2px;
-        padding: 0 6px;
+        gap: 4px;
+        padding: 0 8px;
       }
 
       /* 面包屑 12px / normal / colorTextDescription，hover 取 colorText */
@@ -246,7 +246,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        padding-inline: 6px;
+        padding-inline: 8px;
         overflow: hidden;
       }
 
@@ -352,14 +352,14 @@
         flex: none;
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 4px;
       }
 
       .nav-search {
         flex: none;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         margin: 0 4px 2px;
         height: 32px;
         padding: 0 8px;
@@ -374,7 +374,7 @@
         border: 0;
         outline: 0;
         background: transparent;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
       }
@@ -405,7 +405,7 @@
       .nav-section {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
       }
 
       /* sectionHeaderHeight = controlHeight(32)；trigger paddingBlock = (32 − 24) / 2 = 4 */
@@ -581,7 +581,7 @@
         flex: none;
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 4px;
       }
 
       /* 设置页标题由 NavHeader 居中绘制（SettingsContent：<Text weight={500}>） */
@@ -696,7 +696,7 @@
       }
 
       .setting-desc {
-        margin: 4px 0 0;
+        margin: 0;
         font-size: 14px;
         line-height: 22px;
         color: var(--lobe-color-text-secondary);
@@ -720,7 +720,7 @@
       .summary-chips {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px;
         margin-top: 8px;
       }
 
@@ -780,7 +780,7 @@
       }
 
       .form-group-desc {
-        margin-top: 2px;
+        margin-top: 4px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-secondary);
@@ -824,7 +824,7 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         font-size: 14px;
         line-height: 22px;
         font-weight: 500;
@@ -841,7 +841,7 @@
       .form-label-path {
         margin-top: 4px;
         font-family: var(--font-mono);
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-text-tertiary);
         word-break: break-all;
@@ -908,8 +908,8 @@
         width: 100%;
         max-width: 200px;
         height: var(--lobe-control-height);
-        padding: 0 8px;
-        border-radius: var(--lobe-radius);
+        padding: 0 12px;
+        border-radius: var(--lobe-radius-sm);
         border: 1px solid var(--lobe-color-border);
         background: var(--lobe-color-bg-container);
         font-size: 14px;
@@ -931,7 +931,7 @@
         background-position: calc(100% - 14px) 14px, calc(100% - 9px) 14px;
         background-size: 5px 5px, 5px 5px;
         background-repeat: no-repeat;
-        padding-inline-end: 26px;
+        padding-inline-end: 24px;
       }
 
       .control:disabled {
@@ -1003,7 +1003,7 @@
       .mini-check {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-secondary);
@@ -1024,10 +1024,10 @@
         display: inline-flex;
         align-items: center;
         flex: none;
-        height: 20px;
-        padding: 0 6px;
-        border-radius: var(--lobe-radius-sm);
-        font-size: 11px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: var(--lobe-radius-xs);
+        font-size: 12px;
         line-height: 1;
         font-weight: 500;
         white-space: nowrap;
@@ -1068,10 +1068,10 @@
       .cap {
         display: inline-flex;
         align-items: center;
-        height: 20px;
-        padding: 0 6px;
-        border-radius: var(--lobe-radius-sm);
-        font-size: 11px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: var(--lobe-radius-xs);
+        font-size: 12px;
         line-height: 1;
         white-space: nowrap;
         background: var(--lobe-fill-quaternary);
@@ -1113,14 +1113,14 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        height: 32px;
-        padding: 0 12px;
+        gap: 8px;
+        height: 36px;
+        padding: 0 16px;
         border-radius: var(--lobe-radius);
         border: 1px solid transparent;
         background: transparent;
         color: var(--lobe-color-text);
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         white-space: nowrap;
         transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -1162,7 +1162,7 @@
 
       .btn-sm {
         height: 28px;
-        padding: 0 10px;
+        padding: 0 12px;
         font-size: 12px;
         border-radius: var(--lobe-radius-sm);
       }
@@ -1187,11 +1187,11 @@
       .search {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         height: var(--lobe-control-height);
         width: 260px;
         max-width: 100%;
-        padding: 0 10px;
+        padding: 0 12px;
         border-radius: var(--lobe-radius);
         background: var(--lobe-fill-quaternary);
         border: 1px solid transparent;
@@ -1210,7 +1210,7 @@
         border: 0;
         outline: 0;
         background: transparent;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
       }
@@ -1220,9 +1220,9 @@
       }
 
       .chip {
-        height: 26px;
-        padding: 0 10px;
-        border-radius: var(--lobe-radius-sm);
+        height: 28px;
+        padding: 0 12px;
+        border-radius: var(--lobe-radius-xs);
         font-size: 12px;
         line-height: 1;
         color: var(--lobe-color-text-secondary);
@@ -1319,7 +1319,7 @@
 
       .activity-item time {
         display: block;
-        margin-top: 2px;
+        margin-top: 4px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-tertiary);
@@ -1339,8 +1339,10 @@
 
       .filters {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
-        gap: 2px;
+        gap: 4px;
+        margin-inline-start: auto;
       }
 
       .list {
@@ -1368,13 +1370,31 @@
 
       .list-row {
         padding-block: 12px;
-        border-radius: var(--lobe-radius);
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
         cursor: pointer;
         transition: background 0.12s ease;
       }
 
+      .list-row:last-child {
+        border-bottom: 0;
+      }
+
       .list-row:hover {
-        background: var(--lobe-fill-tertiary);
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .user-list .list-header,
+      .user-list .list-row {
+        grid-template-columns: minmax(0, 1fr) 120px 92px 92px 116px 36px;
+      }
+
+      .model-list .list-header,
+      .model-list .list-row {
+        grid-template-columns: minmax(0, 1fr) 190px 88px 104px 64px;
+      }
+
+      .model-list .list-row {
+        cursor: default;
       }
 
       .list-row.active {
@@ -1383,7 +1403,7 @@
 
       .list-empty {
         padding: 24px 12px;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -1391,7 +1411,7 @@
       .user-cell {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         min-width: 0;
       }
 
@@ -1403,6 +1423,28 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      .user-id {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .user-last {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .user-chevron {
+        color: var(--lobe-color-text-tertiary);
+        text-align: end;
+      }
+
+      .user-list .list-row:focus-visible {
+        outline: 2px solid var(--lobe-color-primary);
+        outline-offset: -2px;
       }
 
       .user-mail {
@@ -1432,26 +1474,26 @@
       .alert {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
-        padding: 12px 14px;
+        gap: 12px;
+        padding: 12px 16px;
         border-radius: var(--lobe-radius-lg);
         background: var(--lobe-color-info-bg);
       }
 
       .alert > .icon {
-        margin-top: 2px;
+        margin-top: 4px;
         color: var(--lobe-color-info);
       }
 
       .alert-title {
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         font-weight: 600;
         color: var(--lobe-color-text);
       }
 
       .alert-desc {
-        margin-top: 2px;
+        margin-top: 4px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-secondary);
@@ -1459,11 +1501,11 @@
 
       .note-list {
         margin: 8px 0 0;
-        padding-inline-start: 18px;
+        padding-inline-start: 16px;
       }
 
       .note-list li {
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text-secondary);
       }
@@ -1539,7 +1581,7 @@
       .tabs {
         flex: none;
         display: flex;
-        gap: 2px;
+        gap: 4px;
         margin: 0 16px 12px;
         padding: 3px;
         border-radius: var(--lobe-radius);
@@ -1600,22 +1642,22 @@
       }
 
       .info-item {
-        padding: 10px 12px;
+        padding: 12px;
         border-radius: var(--lobe-radius);
         background: var(--lobe-fill-quaternary);
       }
 
       .info-item > span {
         display: block;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-text-tertiary);
       }
 
       .info-item > strong {
         display: block;
-        margin-top: 2px;
-        font-size: 13px;
+        margin-top: 4px;
+        font-size: 14px;
         line-height: 20px;
         font-weight: 500;
         color: var(--lobe-color-text);
@@ -1637,14 +1679,14 @@
 
       .policy-box {
         margin-top: 12px;
-        padding: 12px 14px;
+        padding: 12px 16px;
         border: 1px solid var(--lobe-color-border-secondary);
         border-radius: var(--lobe-radius);
       }
 
       .policy-box h4 {
         margin: 0;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         font-weight: 500;
         color: var(--lobe-color-text);
@@ -1661,13 +1703,13 @@
         display: flex;
         flex-wrap: wrap;
         gap: 12px;
-        margin-top: 10px;
+        margin-top: 12px;
       }
 
       .radio-row label {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-secondary);
@@ -1715,11 +1757,11 @@
       }
 
       .user-setting-row .form-label-title {
-        font-size: 13px;
+        font-size: 14px;
       }
 
       .user-setting-row .form-label-path {
-        margin-top: 2px;
+        margin-top: 4px;
       }
 
       /* ==========================================================================
@@ -1779,7 +1821,7 @@
       .option {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
+        gap: 12px;
         padding: 12px;
         border: 1px solid var(--lobe-color-border-secondary);
         border-radius: var(--lobe-radius);
@@ -1803,7 +1845,7 @@
 
       .option strong {
         display: block;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         font-weight: 500;
         color: var(--lobe-color-text);
@@ -1811,7 +1853,7 @@
 
       .option span {
         display: block;
-        margin-top: 2px;
+        margin-top: 4px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-secondary);
@@ -1819,7 +1861,7 @@
 
       .apply-summary {
         margin-top: 12px;
-        padding: 10px 12px;
+        padding: 12px;
         border-radius: var(--lobe-radius);
         background: var(--lobe-fill-quaternary);
         font-size: 12px;
@@ -1845,11 +1887,11 @@
         bottom: 24px;
         left: 50%;
         z-index: 60;
-        padding: 8px 14px;
+        padding: 8px 16px;
         border-radius: var(--lobe-radius);
         background: var(--lobe-color-text);
         color: var(--lobe-color-bg-container);
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         box-shadow: var(--lobe-shadow-popup);
         opacity: 0;
@@ -1877,8 +1919,8 @@
       .stat-card {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        padding: 14px 16px 16px;
+        gap: 4px;
+        padding: 16px 16px 16px;
         border: 1px solid var(--lobe-color-border-secondary);
         border-radius: var(--lobe-radius);
         background: var(--lobe-color-bg-container);
@@ -1918,7 +1960,7 @@
       table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
       }
 
@@ -1934,7 +1976,7 @@
       }
 
       td {
-        padding: 10px 12px;
+        padding: 12px;
         border-bottom: 1px solid var(--lobe-color-border-secondary);
         color: var(--lobe-color-text);
         vertical-align: middle;
@@ -1965,6 +2007,197 @@
       }
 
       /* ==========================================================================
+       * 模型服务
+       * ========================================================================== */
+
+      .cm-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+        align-items: start;
+        gap: 16px;
+        padding: 16px 0;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .cm-row:first-child {
+        border-top: 0;
+      }
+
+      .cm-input {
+        max-width: none;
+      }
+
+      .cm-inline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .cm-inline .control {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .cm-inline-end {
+        justify-content: flex-end;
+      }
+
+      .cm-test {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        min-height: var(--lobe-control-height);
+      }
+
+      .cm-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .cm-toolbar .search {
+        max-width: 240px;
+      }
+
+      .cm-table tbody tr {
+        cursor: default;
+      }
+
+      .cm-model-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .cm-chip-count {
+        margin-inline-start: 4px;
+        font-size: 12px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .chip.is-empty {
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .cm-type-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .cm-sync-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .cm-sync-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .cm-sync-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px;
+        border-radius: var(--lobe-radius-sm);
+      }
+
+      .cm-sync-row:hover {
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .cm-sync-main {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        font-size: 14px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+      }
+
+      .cm-select-sm {
+        width: 96px;
+        min-width: 96px;
+      }
+
+      .cm-danger {
+        color: var(--lobe-color-error);
+      }
+
+      .cm-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .cm-field-label {
+        font-size: 14px;
+        line-height: 22px;
+        color: var(--lobe-color-text);
+      }
+
+      #modelEditModal .checklist {
+        gap: 4px;
+      }
+
+      #modelEditModal .check-row {
+        min-height: 30px;
+        padding: 4px 8px;
+        font-size: 14px;
+        line-height: 22px;
+      }
+
+      #modelEditModal .check-row input[type='checkbox'] {
+        flex: none;
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        accent-color: var(--lobe-color-primary);
+      }
+
+      .cm-switch-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 4px;
+        padding-top: 12px;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .cm-switch-row-title {
+        font-size: 14px;
+        line-height: 22px;
+        color: var(--lobe-color-text);
+      }
+
+      .cm-switch-row-desc {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+
+      @media (max-width: 900px) {
+        .cm-row {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 8px;
+        }
+
+
+      }
+
+      /* ==========================================================================
        * 响应式
        * ========================================================================== */
 
@@ -1979,12 +2212,6 @@
 
         .grid-2 {
           grid-template-columns: minmax(0, 1fr);
-        }
-
-        .list-header,
-        .list-row {
-          grid-template-columns: minmax(0, 1.4fr) 80px 76px minmax(0, 1fr) 96px 88px;
-          gap: 8px;
         }
 
         .user-setting-row {
@@ -2007,7 +2234,7 @@
           max-width: none;
           flex: 1;
           justify-content: flex-start;
-          padding-inline: 6px;
+          padding-inline: 8px;
         }
 
         .header-left {
@@ -2062,24 +2289,6 @@
           width: 100%;
         }
 
-        .list {
-          margin-inline: 0;
-        }
-
-        .list-header {
-          display: none;
-        }
-
-        .list-row {
-          grid-template-columns: minmax(0, 1fr) 84px;
-        }
-
-        .list-row > :nth-child(2),
-        .list-row > :nth-child(4),
-        .list-row > :nth-child(5),
-        .list-row > :nth-child(6) {
-          display: none;
-        }
       }
 
       /* ==========================================================================
@@ -2157,7 +2366,7 @@
 
       .setting-row-title {
         display: block;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
       }
@@ -2172,7 +2381,7 @@
       .provider-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
-        gap: 10px;
+        gap: 12px;
         padding: 4px 0 8px;
       }
 
@@ -2180,7 +2389,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding: 10px 12px;
+        padding: 12px;
         border: 1px solid var(--lobe-color-border-secondary);
         border-radius: var(--lobe-radius);
         background: var(--lobe-color-bg-container);
@@ -2203,16 +2412,16 @@
       .provider-name {
         display: flex;
         align-items: baseline;
-        gap: 6px;
+        gap: 8px;
         min-width: 0;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
       }
 
       .provider-models {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px;
+        gap: 8px;
       }
 
       .provider-foot {
@@ -2220,7 +2429,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -2232,7 +2441,7 @@
         border-radius: var(--lobe-radius-xs);
         background: transparent;
         color: var(--lobe-color-text-tertiary);
-        font-size: 11px;
+        font-size: 12px;
         line-height: 1;
         transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
       }
@@ -2265,7 +2474,7 @@
         align-items: center;
         gap: 8px;
         margin-top: 4px;
-        padding: 6px 6px 6px 10px;
+        padding: 8px 6px 6px 10px;
         border-radius: var(--lobe-radius);
         background: var(--lobe-fill-quaternary);
       }
@@ -2295,7 +2504,7 @@
       }
 
       .empty strong {
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         font-weight: 500;
         color: var(--lobe-color-text-secondary);
@@ -2311,9 +2520,9 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 8px;
+        padding: 8px 8px;
         border-radius: var(--lobe-radius-sm);
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
         cursor: pointer;
@@ -2325,31 +2534,105 @@
 
       .check-row .meta {
         margin-inline-start: auto;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-warning);
+      }
+
+      .audit-list .list-header,
+      .audit-list .list-row {
+        grid-template-columns: 152px 120px 148px minmax(0, 1fr) 124px 36px;
       }
 
       .audit-row {
         cursor: pointer;
       }
 
+      .audit-row:focus-visible {
+        outline: 2px solid var(--lobe-color-primary);
+        outline-offset: -2px;
+      }
+
+      .audit-row.open {
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .audit-row.open {
+        border-bottom-color: transparent;
+      }
+
+      .audit-time {
+        color: var(--lobe-color-text-secondary);
+        white-space: nowrap;
+      }
+
+      .audit-actor,
+      .audit-target {
+        color: var(--lobe-color-text);
+      }
+
+      .audit-ip {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .audit-chevron {
+        color: var(--lobe-color-text-tertiary);
+        text-align: end;
+      }
+
+      .audit-chevron svg {
+        vertical-align: middle;
+        transition: transform 0.15s ease;
+      }
+
+      .audit-row.open .audit-chevron svg {
+        transform: rotate(90deg);
+      }
+
       .audit-detail[hidden] {
         display: none;
       }
 
-      .audit-detail > td {
-        padding: 0 12px 12px;
+      .audit-detail {
+        padding: 12px;
         background: var(--lobe-fill-quaternary);
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
       }
 
-      .audit-detail pre {
-        margin: 0;
-        overflow-x: auto;
+      .audit-diff {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .audit-diff-row {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+      }
+
+      .audit-diff-label {
+        font-size: 12px;
+        line-height: 20px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .audit-diff code {
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-        font-size: 11px;
-        line-height: 17px;
+        font-size: 12px;
+        line-height: 20px;
         color: var(--lobe-color-text-secondary);
+        overflow-wrap: anywhere;
+      }
+
+      .audit-detail-note {
+        margin-top: 8px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
       }
       /* ==========================================================================
        * AI 服务商 —— 复刻 Settings/provider
@@ -2419,16 +2702,16 @@
       }
 
       .pv-section + .pv-section {
-        margin-top: 2px;
+        margin-top: 4px;
       }
 
       .pv-section-head {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         width: 100%;
         height: 30px;
-        padding: 0 6px;
+        padding: 0 8px;
         border-radius: var(--lobe-radius-sm);
         font-size: 12px;
         line-height: 18px;
@@ -2495,7 +2778,7 @@
         gap: 8px;
         width: 100%;
         height: 36px;
-        padding: 0 6px;
+        padding: 0 8px;
         border-radius: var(--lobe-radius);
         color: var(--lobe-color-text-secondary);
         transition: background 0.15s ease, color 0.15s ease;
@@ -2519,7 +2802,7 @@
         height: 22px;
         border-radius: 6px;
         overflow: hidden;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 600;
         line-height: 1;
         color: #fff;
@@ -2539,7 +2822,7 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
       }
 
@@ -2606,7 +2889,7 @@
 
       .pv-sort-title {
         padding: 4px 8px;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -2614,7 +2897,7 @@
       .pv-sort-item {
         display: block;
         width: 100%;
-        padding: 6px 8px;
+        padding: 8px 8px;
         border-radius: 6px;
         text-align: start;
         font-size: 12px;
@@ -2643,7 +2926,7 @@
         flex: none;
         padding: 8px 12px;
         border-top: 1px solid var(--lobe-color-border-secondary);
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -2688,7 +2971,7 @@
       .pv-grid-head {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         margin-bottom: 12px;
       }
 
@@ -2726,7 +3009,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        padding: 14px 16px 12px;
+        padding: 16px 16px 12px;
         border-radius: 12px;
         background: var(--lobe-color-bg-container);
         box-shadow:
@@ -2752,7 +3035,7 @@
       .pv-card-head {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         min-width: 0;
       }
 
@@ -2786,7 +3069,7 @@
         gap: 8px;
         padding-top: 10px;
         border-top: 1px solid var(--lobe-color-border-secondary);
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -2839,7 +3122,7 @@
         grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
         align-items: start;
         gap: 16px;
-        padding: 14px 0;
+        padding: 16px 0;
         border-top: 1px solid var(--lobe-color-border-secondary);
       }
 
@@ -2850,7 +3133,7 @@
 
       .pv-config-label strong {
         display: block;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         font-weight: 500;
         color: var(--lobe-color-text);
@@ -2858,7 +3141,7 @@
 
       .pv-config-label span {
         display: block;
-        margin-top: 2px;
+        margin-top: 4px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-tertiary);
@@ -2867,11 +3150,11 @@
       .pv-input {
         width: 100%;
         height: 32px;
-        padding: 0 10px;
+        padding: 0 12px;
         border: 1px solid var(--lobe-color-border);
         border-radius: var(--lobe-radius);
         background: var(--lobe-color-bg-container);
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
         outline: 0;
@@ -2903,7 +3186,7 @@
       .ml-tabs {
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 4px;
         margin: 0 0 4px -6px;
         flex-wrap: wrap;
       }
@@ -2957,7 +3240,7 @@
       .ml-head strong {
         flex: 1;
         min-width: 0;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         font-weight: 500;
         color: var(--lobe-color-text);
@@ -2972,7 +3255,7 @@
         align-items: center;
         gap: 8px;
         min-height: 44px;
-        padding: 6px 4px;
+        padding: 8px 4px;
         border-bottom: 1px solid var(--lobe-color-border-secondary);
       }
 
@@ -2990,7 +3273,7 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
       }
@@ -3033,9 +3316,9 @@
       .sm-save {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         height: 24px;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 16px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -3054,7 +3337,7 @@
       }
 
       .sm-tier-desc {
-        margin-top: 2px;
+        margin-top: 4px;
         font-size: 12px;
         line-height: 18px;
         color: var(--lobe-color-text-secondary);
@@ -3071,7 +3354,7 @@
         align-items: center;
         gap: 16px;
         min-height: 44px;
-        padding: 6px 0;
+        padding: 8px 0;
         border-top: 1px solid var(--lobe-color-border-secondary);
       }
 
@@ -3082,8 +3365,8 @@
       .sm-row-title {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 13px;
+        gap: 8px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
       }
@@ -3091,7 +3374,7 @@
       .sm-row-desc {
         display: block;
         margin-top: 1px;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 17px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -3108,7 +3391,7 @@
       .sm-advanced > summary {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         padding: 8px 0;
         font-size: 12px;
         line-height: 18px;
@@ -3136,7 +3419,7 @@
       .sm-note {
         margin: 0;
         padding-bottom: 8px;
-        font-size: 11px;
+        font-size: 12px;
         line-height: 17px;
         color: var(--lobe-color-text-tertiary);
       }
@@ -3185,7 +3468,7 @@
       .sm-row-control {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
         min-width: 0;
       }
 
@@ -3193,7 +3476,7 @@
       .sm-select {
         width: 100%;
         height: 32px;
-        padding: 0 26px 0 8px;
+        padding: 0 24px 0 8px;
         border: 1px solid transparent;
         border-radius: var(--lobe-radius);
         background-color: transparent;
@@ -3203,7 +3486,7 @@
         background-size: 12px;
         appearance: none;
         font-family: inherit;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 20px;
         color: var(--lobe-color-text);
         outline: 0;
@@ -3236,7 +3519,7 @@
       .sm-prompt {
         height: auto;
         min-height: 56px;
-        padding: 6px 10px;
+        padding: 8px 10px;
         font-family: inherit;
         font-size: 12px;
         line-height: 18px;
@@ -3246,7 +3529,7 @@
       .ml-group-head {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         padding: 12px 4px 6px;
         font-size: 12px;
         line-height: 18px;
@@ -3326,35 +3609,16 @@
                 </span>
                 <span class="nav-title">审计日志</span>
               </button>
-              <button class="nav-item" data-page="provider" data-label="AI 服务商" onclick="go('provider')">
+              <button class="nav-item" data-page="model-service" data-label="模型服务" onclick="go('model-service')">
                 <span class="nav-icon">
                   <svg class="icon" viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="7" rx="2" />
-                    <rect x="3" y="14" width="18" height="7" rx="2" />
-                    <path d="M7 7.5h.01M7 17.5h.01M12 7.5h5M12 17.5h5" />
+                    <path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z" />
+                    <path d="M4 7.5 12 12l8-4.5M12 12v9" />
                   </svg>
                 </span>
-                <span class="nav-title">AI 服务商</span>
+                <span class="nav-title">模型服务</span>
               </button>
-              <button class="nav-item" data-page="service-model" data-label="服务模型" onclick="go('service-model')">
-                <span class="nav-icon">
-                  <svg class="icon" viewBox="0 0 24 24">
-                    <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
-                    <circle cx="16" cy="7" r="2" />
-                    <circle cx="10" cy="17" r="2" />
-                  </svg>
-                </span>
-                <span class="nav-title">服务模型</span>
-              </button>
-              <button class="nav-item" data-page="devices" data-label="设备" onclick="go('devices')">
-                <span class="nav-icon">
-                  <svg class="icon" viewBox="0 0 24 24">
-                    <rect x="2" y="4" width="20" height="13" rx="2" />
-                    <path d="M8 21h8M12 17v4" />
-                  </svg>
-                </span>
-                <span class="nav-title">设备</span>
-              </button>
+
             </div>
           </div>
         </nav>
@@ -3398,11 +3662,7 @@
               <div class="setting-header">
                 <div class="setting-header-main">
                   <div class="setting-header-text">
-                    <h1 class="setting-title">用户管理</h1>
                     <p class="setting-desc">账号来自统一认证（SSO）。这里只做查看与管控：角色、禁用、会话失效。</p>
-                  </div>
-                  <div class="setting-header-actions">
-                    <span class="tag">Better Auth admin()</span>
                   </div>
                 </div>
                 <div class="divider"></div>
@@ -3412,11 +3672,8 @@
                 <div class="form-group-card">
                   <div class="form-group-header">
                     <div>
-                      <div class="form-group-title">全部用户</div>
+                      <div class="form-group-title">用户列表</div>
                       <div class="form-group-desc" id="userCount">共 8 位用户</div>
-                    </div>
-                    <div class="form-group-extra">
-                      <span class="tag">SSO 同步</span>
                     </div>
                   </div>
                   <div class="form-group-body">
@@ -3434,23 +3691,19 @@
                         <button class="chip" data-filter="banned" onclick="setUserFilter('banned', this)">已禁用</button>
                       </div>
                     </div>
-                    <div class="table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>用户</th>
-                            <th>工号</th>
-                            <th>角色</th>
-                            <th>状态</th>
-                            <th>分配到的设备</th>
-                            <th>最后活跃</th>
-                          </tr>
-                        </thead>
-                        <tbody id="userRows"></tbody>
-                      </table>
+                    <div class="list user-list">
+                      <div class="list-header" aria-hidden="true">
+                        <span>用户</span>
+                        <span>工号</span>
+                        <span>角色</span>
+                        <span>状态</span>
+                        <span>最后活跃</span>
+                        <span></span>
+                      </div>
+                      <div id="userRows"></div>
                     </div>
                     <div class="table-foot">
-                      <span>按工号排序</span>
+                      <span>按工号升序</span>
                       <span id="userFoot">第 1 / 1 页</span>
                     </div>
                   </div>
@@ -3458,110 +3711,191 @@
               </div>
             </section>
 
-<!-- ============================== AI 服务商 ============================== -->
-            <section class="page" id="page-provider">
-              <aside class="provider-menu">
-                <div class="provider-menu-head">
-                  <label class="search">
-                    <svg class="icon-sm" viewBox="0 0 24 24" style="flex: none">
-                      <circle cx="11" cy="11" r="7" />
-                      <path d="m20 20-3.5-3.5" />
-                    </svg>
-                    <input
-                      id="providerSearch"
-                      type="search"
-                      placeholder="搜索服务商"
-                      autocomplete="off"
-                      oninput="setProviderSearch(this.value)"
-                    />
-                  </label>
-                  <button
-                    class="icon-btn"
-                    title="添加自定义服务商"
-                    aria-label="添加自定义服务商"
-                    onclick="toast('原型仅演示：添加自定义服务商')"
-                  >
-                    <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
-                  </button>
-                </div>
-                <div class="provider-menu-body" id="providerMenuBody"></div>
-                <div class="pv-menu-foot" id="providerMenuFoot"></div>
-              </aside>
-              <div class="provider-content">
-                <div class="provider-inner" id="providerPane"></div>
-              </div>
-            </section>
-
-            <!-- =============================== 服务模型 =============================== -->
-            <section class="page" id="page-service-model">
+            <!-- ============================== 模型服务 ============================== -->
+            <section class="page" id="page-model-service">
               <div class="setting-header">
                 <div class="setting-header-main">
                   <div class="setting-header-text">
-                    <h1 class="setting-title">服务模型</h1>
-                    <p class="setting-desc">为每类任务指定模型。这里是全局默认，用户端只读，不能自行覆盖。</p>
-                    <p class="setting-note" id="smFootNote">
-                      保存后立即对全部 1,284 位用户生效；未单独指定的任务跟随所在层的主模型。
-                    </p>
-                  </div>
-                  <div class="setting-header-actions">
-                    <button class="btn btn-sm btn-text" onclick="resetServiceModel()">还原</button>
-                  </div>
-                </div>
-                <div class="divider"></div>
-              </div>
-              <div id="serviceModelForm"></div>
-            </section>
-            <!-- ================================ 设备 ================================ -->
-            <section class="page" id="page-devices">
-              <div class="setting-header">
-                <div class="setting-header-main">
-                  <div class="setting-header-text">
-                    <h1 class="setting-title">设备</h1>
                     <p class="setting-desc">
-                      机器由管理员注册进池，再决定它给全员还是指定人使用；用户不能自己接管别人注册的机器。
+                      公司统一维护 Tellhow 的服务地址与密钥。用户在设置里看到的是一个内置服务商：不用填 Key，自己勾选模型。
+                    </p>
+                    <p class="setting-note">
+                      保存只更新这里的全局配置，不写入任何用户设置；地址与密钥也不会下发到浏览器。
                     </p>
                   </div>
                   <div class="setting-header-actions">
-                    <button class="btn btn-sm btn-text" id="emptyToggleBtn" onclick="toggleDeviceEmpty()">预览空态</button>
-                    <button class="btn btn-sm btn-outline" onclick="openCliModal()">注册设备…</button>
+                    <button class="btn btn-sm btn-text" onclick="resetCompanyConfig()">还原</button>
+                    <button class="btn btn-sm btn-primary" onclick="saveCompanyConfig()">保存配置</button>
                   </div>
                 </div>
                 <div class="divider"></div>
               </div>
 
-              <div class="form-group">
-                <div class="form-group-card">
-                  <div class="form-group-header">
-                    <div>
-                      <div class="form-group-title">设备池</div>
-                      <div class="form-group-desc" id="deviceCount">共 3 台设备</div>
+              <div class="form">
+                <!-- 服务连接 -->
+                <div class="form-group">
+                  <div class="form-group-card">
+                    <div class="form-group-header">
+                      <div>
+                        <div class="form-group-title">服务连接</div>
+                        <div class="form-group-desc">地址与密钥由公司统一下发，只保存在服务端；用户侧只负责挑模型。</div>
+                      </div>
+                      <div class="form-group-extra">
+                        <span class="tag">Tellhow 网关</span>
+                      </div>
                     </div>
-                    <div class="form-group-extra">
-                      <span class="tag">lh device pool</span>
+                    <div class="form-group-body">
+                      <div class="cm-row">
+                        <div class="form-label">
+                          <div class="form-label-title">服务地址</div>
+                          <div class="form-label-desc">用户侧看不到，也不能改；换地址后下一次请求即生效。</div>
+                        </div>
+                        <input
+                          class="control cm-input mono"
+                          id="cmBaseUrl"
+                          value="https://ai.tellhow.com/v1"
+                          spellcheck="false"
+                        />
+                      </div>
+                      <div class="cm-row">
+                        <div class="form-label">
+                          <div class="form-label-title">访问密钥</div>
+                          <div class="form-label-desc">
+                            在 Tellhow 网关生成后粘贴到这里，随「保存配置」一起生效；页面不再回显完整密钥。
+                          </div>
+                          <div class="form-label-path" id="cmKeyMeta">上次更新：11-19 17:26 · 张伟 · 末四位 3f9c</div>
+                        </div>
+                        <input
+                          class="control cm-input mono"
+                          id="cmApiKey"
+                          type="password"
+                          value="sk-tellhow-demo-3f9c"
+                          autocomplete="new-password"
+                          spellcheck="false"
+                          onfocus="this.select()"
+                        />
+                      </div>
+                      <div class="cm-row">
+                        <div class="form-label">
+                          <div class="form-label-title">最近一次检测</div>
+                          <div class="form-label-desc">用已保存的密钥请求一次 /models，只回显状态、延迟与模型数。</div>
+                        </div>
+                        <div class="cm-test">
+                          <span class="tag tag-success" id="cmTestTag">连接正常</span>
+                          <span class="tiny muted" id="cmTestText">312ms · 8 个可用模型 · 11-20 09:12</span>
+                          <button class="btn btn-sm btn-outline" id="cmTestBtn" onclick="testCompanyConnection()">测试连接</button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div class="form-group-body">
-                    <div class="table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>设备</th>
-                            <th>主机</th>
-                            <th>平台</th>
-                            <th>在线</th>
-                            <th>授权范围</th>
-                            <th>最近活跃</th>
-                          </tr>
-                        </thead>
-                        <tbody id="deviceRows"></tbody>
-                      </table>
-                    </div>
-                    <p class="tiny muted" style="margin-top: 12px">
-                      池设备的 <span class="mono">userId</span> 是注册它的管理员，用户侧通过授权表可见；撤销后下一次刷新即消失，
-                      运行中的任务不强制中断。workspace 会话不出现池设备（保持 fail closed）。
-                    </p>
                   </div>
                 </div>
+
+                <!-- 模型目录 -->
+                <div class="form-group">
+                  <div class="form-group-card">
+                    <div class="form-group-header">
+                      <div>
+                        <div class="form-group-title">模型目录</div>
+                        <div class="form-group-desc" id="cmModelCount">共 12 个模型 · 7 个对全员开放</div>
+                      </div>
+                      <div class="form-group-extra">
+                        <button class="btn btn-sm btn-text" onclick="openSyncModal()">从服务拉取</button>
+                        <button class="btn btn-sm btn-outline" onclick="openModelModal()">手工添加</button>
+                      </div>
+                    </div>
+                    <div class="form-group-body">
+                      <div class="cm-toolbar">
+                        <label class="search">
+                          <svg class="icon-sm" viewBox="0 0 24 24" style="flex: none">
+                            <circle cx="11" cy="11" r="7" />
+                            <path d="m20 20-3.5-3.5" />
+                          </svg>
+                          <input
+                            id="cmModelSearch"
+                            type="search"
+                            placeholder="搜索模型 id 或名称"
+                            autocomplete="off"
+                            oninput="setCompanyQuery(this.value)"
+                          />
+                        </label>
+                        <div class="filters" id="cmTypeChips"></div>
+                      </div>
+                      <div class="list model-list" style="margin-top: 8px">
+                        <div class="list-header" aria-hidden="true">
+                          <span>模型</span>
+                          <span>类型</span>
+                          <span>上下文</span>
+                          <span>对全员开放</span>
+                          <span>操作</span>
+                        </div>
+                        <div id="cmModelRows"></div>
+                      </div>
+                      <p class="tiny muted" style="margin-top: 12px">
+                        「开放」只决定用户侧模型列表里有没有它，不写任何用户数据。关闭正在被使用的模型时会先提示影响面。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 默认值 -->
+                <div class="form-group">
+                  <div class="form-group-card">
+                    <div class="form-group-header">
+                      <div>
+                        <div class="form-group-title">默认值</div>
+                        <div class="form-group-desc">可选。只影响新用户的初始选择与系统任务，用户随时可以自己改。</div>
+                      </div>
+                      <div class="form-group-extra">
+                        <span class="tag">可选</span>
+                      </div>
+                    </div>
+                    <div class="form-group-body">
+                      <div class="cm-row">
+                        <div class="form-label">
+                          <div class="form-label-title">新用户默认对话模型</div>
+                          <div class="form-label-desc">首次进入会话时预选；不会写入用户设置。</div>
+                        </div>
+                        <select class="control cm-input" id="cmDefaultChat">
+                          <option>tellhow-chat-pro</option>
+                          <option>tellhow-chat-flash</option>
+                          <option>tellhow-reasoner</option>
+                          <option>qwen3-32b</option>
+                        </select>
+                      </div>
+                      <div class="cm-row">
+                        <div class="form-label">
+                          <div class="form-label-title">记忆向量</div>
+                          <div class="form-label-desc">用户记忆与知识库检索使用；换模型会让已入库向量失效，需重新索引。</div>
+                        </div>
+                        <select class="control cm-input" id="cmDefaultEmbedding">
+                          <option>tellhow-embedding-v3</option>
+                          <option>（不指定，跟随用户设置）</option>
+                        </select>
+                      </div>
+                      <div class="cm-row">
+                        <div class="form-label">
+                          <div class="form-label-title">历史压缩 / 标题生成</div>
+                          <div class="form-label-desc">后台任务用的轻量模型。</div>
+                        </div>
+                        <select class="control cm-input">
+                          <option>tellhow-chat-flash</option>
+                          <option>（跟随主模型）</option>
+                        </select>
+                      </div>
+                      <div class="cm-row">
+                        <div class="form-label">
+                          <div class="form-label-title">任务校验</div>
+                          <div class="form-label-desc">校验类任务用的模型。</div>
+                        </div>
+                        <select class="control cm-input">
+                          <option>tellhow-reasoner</option>
+                          <option>（跟随主模型）</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </section>
 
@@ -3570,7 +3904,6 @@
               <div class="setting-header">
                 <div class="setting-header-main">
                   <div class="setting-header-text">
-                    <h1 class="setting-title">审计日志</h1>
                     <p class="setting-desc">每次管理写操作落一条，含操作前后值；操作失败不记录。</p>
                   </div>
                   <div class="setting-header-actions">
@@ -3604,19 +3937,20 @@
                         <button class="chip" data-filter="device" onclick="setAuditFilter('device', this)">设备</button>
                       </div>
                     </div>
-                    <div class="table-wrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>时间</th>
-                            <th>操作者</th>
-                            <th>动作</th>
-                            <th>目标</th>
-                            <th>来源 IP</th>
-                          </tr>
-                        </thead>
-                        <tbody id="auditRows"></tbody>
-                      </table>
+                    <div class="list audit-list">
+                      <div class="list-header" aria-hidden="true">
+                        <span>时间</span>
+                        <span>操作者</span>
+                        <span>动作</span>
+                        <span>目标</span>
+                        <span>来源 IP</span>
+                        <span></span>
+                      </div>
+                      <div id="auditRows"></div>
+                    </div>
+                    <div class="table-foot">
+                      <span>按时间倒序，最新在前</span>
+                      <span id="auditFoot">第 1 / 1 页</span>
                     </div>
                   </div>
                 </div>
@@ -3645,7 +3979,6 @@
 
       <div class="tabs">
         <button class="tab active" onclick="setTab('u-profile', this)">概览</button>
-        <button class="tab" onclick="setTab('u-access', this)">设备授权</button>
         <button class="tab" onclick="setTab('u-actions', this)">操作</button>
       </div>
 
@@ -3654,78 +3987,140 @@
           <div class="info-grid" id="userInfo"></div>
           <div class="policy-box">
             <h4>生效配置</h4>
-            <p>模型与服务模型由管理员统一托管；用户的实验室开关与个人偏好不受影响。</p>
+            <p>公司模型由管理员在「模型服务」统一维护；用户可以选用，也可以继续添加自己的服务商。</p>
           </div>
-        </div>
-
-        <div class="tab-panel" id="u-access">
-          <div id="userAccess"></div>
-          <p class="tiny muted" style="margin-top: 12px">
-            授权在「设备」页按设备分配；这里只读。撤销授权不影响正在运行的任务。
-          </p>
         </div>
 
         <div class="tab-panel" id="u-actions">
           <div class="drawer-actions" id="userActions"></div>
           <p class="tiny muted" style="margin-top: 16px">
-            账号类操作复用 Better Auth admin 插件，每次成功操作落一条审计。
+            每次成功操作都会写入审计日志；禁用账号会同时撤销其全部会话与 API Key。
           </p>
         </div>
       </div>
     </aside>
 
-    <!-- ============================== 设备分配抽屉 ============================== -->
-    <div class="drawer-backdrop" id="deviceBackdrop" onclick="closeDeviceDrawer()"></div>
-    <aside class="drawer" id="deviceDrawer" aria-hidden="true">
-      <div class="drawer-head">
-        <div style="min-width: 0">
-          <h2 class="drawer-title" id="deviceName">A100 训练机</h2>
-          <p class="drawer-sub" id="deviceSub">gpu-node-01 · linux/amd64 · 在线</p>
-        </div>
-        <button class="icon-btn" onclick="closeDeviceDrawer()" aria-label="关闭">
-          <svg class="icon-sm" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></svg>
-        </button>
-      </div>
-      <div class="drawer-body" id="deviceDrawerBody"></div>
-    </aside>
-
-    <!-- ============================== 注册设备命令 ============================== -->
-    <div class="modal-backdrop" id="cliModal">
+    <!-- ============================== 拉取模型 ============================== -->
+    <div class="modal-backdrop" id="syncModal">
       <div class="modal">
         <div class="modal-head">
-          <h3>把当前机器注册进设备池</h3>
-          <p>在要共享的机器上执行；需要管理员账号登录的 CLI。</p>
+          <h3>从服务拉取模型</h3>
+          <p>上游 /v1/models 只返回模型 id；类型按命名规则推断，导入后仍需补全上下文与能力。</p>
         </div>
         <div class="modal-body">
-          <div class="stack-8">
-            <div>
-              <div class="tiny muted">1 · 注册（设备归当前管理员所有，pool = admin）</div>
-              <div class="cmd">
-                <code>lh device pool register --name "A100 训练机"</code>
-                <button class="btn btn-sm btn-text" onclick="copyCmd(this, 'lh device pool register --name &quot;A100 训练机&quot;')">复制</button>
-              </div>
-            </div>
-            <div>
-              <div class="tiny muted">2 · 分配给全员</div>
-              <div class="cmd">
-                <code>lh device pool grant A100 --all</code>
-                <button class="btn btn-sm btn-text" onclick="copyCmd(this, 'lh device pool grant A100 --all')">复制</button>
-              </div>
-            </div>
-            <div>
-              <div class="tiny muted">3 · 或只分配给指定人（工号 / 邮箱）</div>
-              <div class="cmd">
-                <code>lh device pool grant A100 --user A100877</code>
-                <button class="btn btn-sm btn-text" onclick="copyCmd(this, 'lh device pool grant A100 --user A100877')">复制</button>
-              </div>
-            </div>
-          </div>
-          <p class="tiny muted" style="margin-top: 12px">
-            注册成功后刷新本页即可看到设备；也可以在设备页的分配抽屉里改授权范围。非管理员执行上述命令返回 FORBIDDEN。
+          <div class="cm-sync-summary" id="cmSyncSummary"></div>
+          <div class="cm-sync-list" id="cmSyncRows"></div>
+          <p class="tiny muted" style="margin-top: 8px">
+            已移除的模型不会自动删除：先标记「上游已移除」，确认没人使用后再手动移除。
           </p>
         </div>
         <div class="modal-foot">
-          <button class="btn btn-sm btn-primary" onclick="closeCliModal()">知道了</button>
+          <button class="btn btn-sm btn-text" onclick="closeSyncModal()">取消</button>
+          <button class="btn btn-sm btn-primary" onclick="applySync()">导入所选</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== 编辑模型 ============================== -->
+    <div class="modal-backdrop" id="modelEditModal">
+      <div class="modal">
+        <div class="modal-head">
+          <h3>编辑模型</h3>
+          <p>类型、上下文与能力无法从 /v1/models 获取，需要在这里补齐。</p>
+        </div>
+        <div class="modal-body">
+          <div class="stack-8">
+            <div class="cm-field">
+              <div class="cm-field-label">显示名称</div>
+              <input class="control cm-input" id="cmEditName" />
+            </div>
+            <div class="cm-field">
+              <div class="cm-field-label">模型 id</div>
+              <input class="control cm-input mono" id="cmEditId" readonly />
+            </div>
+            <div class="cm-field">
+              <div class="cm-field-label">类型</div>
+              <select class="control cm-input" id="cmEditType">
+                <option value="chat">对话</option>
+                <option value="image">图片</option>
+                <option value="video">视频</option>
+                <option value="embedding">向量化</option>
+                <option value="asr">ASR</option>
+                <option value="tts">TTS</option>
+                <option value="text2music">音乐</option>
+                <option value="realtime">实时</option>
+                <option value="decision">决策</option>
+              </select>
+            </div>
+            <div class="cm-field">
+              <div class="cm-field-label">上下文长度</div>
+              <input class="control cm-input mono" id="cmEditCtx" placeholder="128K" />
+            </div>
+            <div class="cm-field">
+              <div class="cm-field-label">能力</div>
+              <div class="checklist">
+                <label class="check-row"><input type="checkbox" value="工具" data-cap /> 工具调用</label>
+                <label class="check-row"><input type="checkbox" value="推理" data-cap /> 深度推理</label>
+                <label class="check-row"><input type="checkbox" value="视觉" data-cap /> 视觉理解</label>
+              </div>
+            </div>
+            <div class="cm-switch-row">
+              <div>
+                <div class="cm-switch-row-title">对全员开放</div>
+                <div class="cm-switch-row-desc">关闭后用户侧模型列表里看不到它，仅管理员可见</div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="cmEditOpen" />
+                <span></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-sm btn-text cm-danger" onclick="deleteEditModel()">从目录移除</button>
+          <span style="flex: 1"></span>
+          <button class="btn btn-sm btn-text" onclick="closeEditModel()">取消</button>
+          <button class="btn btn-sm btn-primary" onclick="saveEditModel()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== 手工添加模型 ============================== -->
+    <div class="modal-backdrop" id="modelModal">
+      <div class="modal">
+        <div class="modal-head">
+          <h3>手工添加模型</h3>
+          <p>用于网关没有暴露 /models 的情况；添加后默认不对全员开放。</p>
+        </div>
+        <div class="modal-body">
+          <div class="stack-8">
+            <div class="cm-field">
+              <div class="cm-field-label">模型 id（请求体里的 model 字段）</div>
+              <input class="control cm-input mono" id="cmNewId" placeholder="tellhow-chat-pro" spellcheck="false" />
+            </div>
+            <div class="cm-field">
+              <div class="cm-field-label">显示名称（用户侧看到的）</div>
+              <input class="control cm-input" id="cmNewName" placeholder="Tellhow Chat Pro" />
+            </div>
+            <div class="cm-field">
+              <div class="cm-field-label">类型</div>
+              <select class="control cm-input" id="cmNewType">
+                <option value="chat">对话</option>
+                <option value="image">图片</option>
+                <option value="video">视频</option>
+                <option value="embedding">向量化</option>
+                <option value="asr">ASR</option>
+                <option value="tts">TTS</option>
+                <option value="text2music">音乐</option>
+                <option value="realtime">实时</option>
+                <option value="decision">决策</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-sm btn-text" onclick="closeModelModal()">取消</button>
+          <button class="btn btn-sm btn-primary" onclick="submitModelModal()">添加</button>
         </div>
       </div>
     </div>
@@ -3733,12 +4128,12 @@
     <div id="toast"></div>
     <script>
       /* ------------------------------------------------------------------
-       * 管理员控制台原型（第五版）
-       * 设计依据：ADMIN_CONSOLE_DESIGN.md
+       * 管理员控制台原型（第七版：模型服务）
+       * 设计依据：ADMIN_CONSOLE_DESIGN.md（正文待同步到本版口径）
        *   - 用户管理 / 审计日志   → Better Auth admin() + admin_console_audit_logs
-       *   - AI 服务商 / 服务模型  → 1:1 复刻 Settings/provider 与 Settings/service-model；
-       *     写入目标从「个人」换成「全局策略」（全局密钥行 + 全局服务模型）
-       *   - 设备池                → devices.pool='admin' + admin_console_device_grants
+       *   - 模型服务              → Tellhow 内置厂商：地址 / 密钥 / 模型目录只在服务端维护，
+       *     不写用户设置、不下发模型；用户侧表现为常驻已启用的内置服务商
+       *   - 设备池                → 本轮暂不实现
        * 纯静态：数据是 mock，交互只用于说明产品行为。
        * ------------------------------------------------------------------ */
 
@@ -3845,9 +4240,7 @@
 
       const PAGES = {
         users: ['用户管理', '账号、角色与状态；账号能力复用 Better Auth admin()。'],
-        provider: ['AI 服务商', '服务商与模型白名单由管理员统一配置；全局密钥只留在服务端。'],
-        'service-model': ['服务模型', '每类任务用哪个模型；用户端只读，不能自行覆盖。'],
-        devices: ['设备', '管理员注册机器进池，再分配给全员或指定人。'],
+        'model-service': ['模型服务', 'Tellhow 的地址、密钥与模型目录；不向用户下发模型。'],
         audit: ['审计日志', '每次管理写操作落一条，含前后值。'],
       };
 
@@ -3864,13 +4257,10 @@
           item.classList.toggle('active', item.dataset.page === page);
         });
 
-        document.querySelector('.main').classList.toggle('is-provider', page === 'provider');
-
         $('pageTitle').textContent = PAGES[page][0];
         $('scroll').scrollTop = 0;
 
-        if (page === 'provider') enterProvider();
-        if (page === 'service-model') renderServiceModel();
+        if (page === 'model-service') renderCompanyModel();
       }
 
       /* ------------------------------------------------------------ 数据 */
@@ -3897,8 +4287,8 @@
         'user.unban': { label: '启用用户', cat: 'account', cls: 'tag tag-success' },
         'user.setRole': { label: '变更角色', cat: 'account', cls: 'tag tag-primary' },
         'user.revokeSessions': { label: '会话失效', cat: 'account', cls: 'tag' },
-        'ai.update': { label: '更新 AI 配置', cat: 'config', cls: 'tag tag-primary' },
-        'ai.menu': { label: '菜单可见性', cat: 'config', cls: 'tag' },
+        'ai.update': { label: '更新模型服务', cat: 'config', cls: 'tag tag-primary' },
+        'ai.testConnection': { label: '测试模型服务', cat: 'config', cls: 'tag' },
         'device.register': { label: '注册池设备', cat: 'device', cls: 'tag' },
         'device.grant': { label: '分配设备', cat: 'device', cls: 'tag tag-success' },
         'device.revoke': { label: '撤销授权', cat: 'device', cls: 'tag tag-warning' },
@@ -3908,14 +4298,14 @@
       let auditSeq = 8;
 
       const AUDIT = [
-        { id: 'a8', at: '11-19 17:26', actor: '张伟', action: 'ai.update', target: '全局 AI 配置', ip: '10.10.10.118', detail: { before: 'defaultModel = deepseek/deepseek-v4-flash', after: 'defaultModel = anthropic/claude-sonnet-5' } },
-        { id: 'a7', at: '11-19 15:02', actor: '张伟', action: 'device.grant', target: 'A100 训练机', ip: '10.10.10.118', detail: { before: 'audience = users (2 人)', after: 'audience = all' } },
-        { id: 'a6', at: '11-19 11:40', actor: '赵敏', action: 'user.setRole', target: '赵敏（A000006）', ip: '10.10.9.31', detail: { before: 'role = member', after: 'role = admin' } },
-        { id: 'a5', at: '11-18 18:12', actor: '张伟', action: 'device.revoke', target: '测试机 · 上海', ip: '10.10.10.118', detail: { before: 'granted: 李娜、王强、陈晨', after: 'granted: 李娜、王强' } },
-        { id: 'a4', at: '11-18 16:30', actor: '张伟', action: 'user.ban', target: '王强（A100878）', ip: '10.10.10.118', detail: { before: 'banned = false', after: 'banned = true · 已吊销 2 个会话' } },
-        { id: 'a3', at: '11-18 10:04', actor: '赵敏', action: 'ai.menu', target: '菜单可见性', ip: '10.10.9.31', detail: { before: 'hideServiceModel = false', after: 'hideServiceModel = true' } },
-        { id: 'a2', at: '11-17 17:48', actor: '赵敏', action: 'device.register', target: '设计部 Mac mini', ip: '10.10.9.31', detail: { before: '—', after: 'pool = admin · deviceId = DESIGNMINI' } },
-        { id: 'a1', at: '11-17 09:20', actor: '张伟', action: 'user.revokeSessions', target: '陈晨（A100879）', ip: '10.10.10.118', detail: { before: 'sessions = 3', after: 'sessions = 0' } },
+        { id: 'a8', at: '2026-11-19 17:26', actor: '张伟', action: 'ai.update', target: 'Tellhow 服务连接', ip: '10.10.10.118', detail: { before: 'baseUrl = https://ai.tellhow.com/v1', after: 'baseUrl = https://gw.tellhow.com/v1' } },
+        { id: 'a7', at: '2026-11-19 15:02', actor: '张伟', action: 'device.grant', target: 'A100 训练机', ip: '10.10.10.118', detail: { before: 'audience = users (2 人)', after: 'audience = all' } },
+        { id: 'a6', at: '2026-11-19 11:40', actor: '赵敏', action: 'user.setRole', target: '赵敏（A000006）', ip: '10.10.9.31', detail: { before: 'role = member', after: 'role = admin' } },
+        { id: 'a5', at: '2026-11-18 18:12', actor: '张伟', action: 'device.revoke', target: '测试机 · 上海', ip: '10.10.10.118', detail: { before: 'granted: 李娜、王强、陈晨', after: 'granted: 李娜、王强' } },
+        { id: 'a4', at: '2026-11-18 16:30', actor: '张伟', action: 'user.ban', target: '王强（A100878）', ip: '10.10.10.118', detail: { before: 'banned = false', after: 'banned = true · 已吊销 2 个会话' } },
+        { id: 'a3', at: '2026-11-18 10:04', actor: '赵敏', action: 'ai.testConnection', target: 'Tellhow 服务连接', ip: '10.10.9.31', detail: { before: 'lastTest = failed · timeout', after: 'lastTest = ok · 312ms · 8 models' } },
+        { id: 'a2', at: '2026-11-17 17:48', actor: '赵敏', action: 'device.register', target: '设计部 Mac mini', ip: '10.10.9.31', detail: { before: '—', after: 'pool = admin · deviceId = DESIGNMINI' } },
+        { id: 'a1', at: '2026-11-17 09:20', actor: '张伟', action: 'user.revokeSessions', target: '陈晨（A100879）', ip: '10.10.10.118', detail: { before: 'sessions = 3', after: 'sessions = 0' } },
       ];
 
       function logAudit(entry) {
@@ -4758,6 +5148,372 @@ const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1
         renderServiceModel();
       }
 
+      /* ---------------------------------------------------------- 模型服务 */
+
+      // 与 packages/model-bank 的 AiModelType 一致
+      const CM_TYPES = [
+        'chat',
+        'image',
+        'video',
+        'embedding',
+        'asr',
+        'tts',
+        'text2music',
+        'realtime',
+        'decision',
+      ];
+
+      const CM_TYPE_LABEL = {
+        chat: '对话',
+        image: '图片',
+        video: '视频',
+        embedding: '向量化',
+        asr: 'ASR',
+        tts: 'TTS',
+        text2music: '音乐',
+        realtime: '实时',
+        decision: '决策',
+      };
+
+      const COMPANY_MODELS = [
+        { id: 'tellhow-chat-pro', name: 'Tellhow Chat Pro', type: 'chat', ctx: '128K', on: true, caps: ['工具'] },
+        { id: 'tellhow-chat-flash', name: 'Tellhow Chat Flash', type: 'chat', ctx: '128K', on: true, caps: ['工具'] },
+        { id: 'tellhow-reasoner', name: 'Tellhow Reasoner', type: 'chat', ctx: '256K', on: true, caps: ['推理'] },
+        { id: 'tellhow-vl-72b', name: 'Tellhow VL 72B', type: 'chat', ctx: '128K', on: true, caps: ['视觉', '工具'] },
+        { id: 'tellhow-embedding-v3', name: 'Tellhow Embedding V3', type: 'embedding', ctx: '8K', on: true, caps: [] },
+        { id: 'tellhow-image-v2', name: 'Tellhow Image V2', type: 'image', ctx: '—', on: true, caps: [] },
+        { id: 'tellhow-tts-v1', name: 'Tellhow TTS V1', type: 'tts', ctx: '—', on: false, caps: [] },
+        { id: 'tellhow-asr-v1', name: 'Tellhow ASR V1', type: 'asr', ctx: '—', on: false, caps: [] },
+        { id: 'tellhow-video-v1', name: 'Tellhow Video V1', type: 'video', ctx: '—', on: false, caps: [] },
+        { id: 'tellhow-music-v1', name: 'Tellhow Music V1', type: 'text2music', ctx: '—', on: false, caps: [] },
+        { id: 'qwen3-32b', name: 'Qwen3 32B（网关代理）', type: 'chat', ctx: '32K', on: true, caps: ['工具', '推理'] },
+        { id: 'deepseek-v3.2', name: 'DeepSeek V3.2（网关代理）', type: 'chat', ctx: '128K', on: false, caps: ['工具'], removed: true },
+      ];
+
+      // 模拟上游 /v1/models：只返回 id，类型靠规则推断，上下文/能力需人工补
+      const UPSTREAM_NEW_MODELS = [
+        { id: 'tellhow-coder-32b', name: 'Tellhow Coder 32B', ctx: '64K' },
+        { id: 'bge-m3', name: 'BGE M3', ctx: '8K' },
+        { id: 'tellhow-audio-asr', name: 'Tellhow ASR', ctx: '—' },
+        { id: 'tellhow-video-v1', name: 'Tellhow Video V1', ctx: '—' },
+        { id: 'tellhow-music-v1', name: 'Tellhow Music V1', ctx: '—' },
+      ];
+
+      let companyQuery = '';
+      let companyType = 'all';
+
+      function renderCompanyModel() {
+        renderCompanyModels();
+      }
+
+      function setCompanyQuery(value) {
+        companyQuery = value;
+        renderCompanyModels();
+      }
+
+      function setCompanyFilter(type, element) {
+        companyType = type;
+        document
+          .querySelectorAll('#page-model-service .filters .chip')
+          .forEach((chip) => chip.classList.toggle('active', chip === element));
+        renderCompanyModels();
+      }
+
+      function toggleCompanyModel(id, checked) {
+        const model = COMPANY_MODELS.find((item) => item.id === id);
+        if (!model) return;
+        model.on = checked;
+        renderCompanyModels();
+        toast(checked ? `已对全员开放：${model.name}` : `已从用户侧隐藏：${model.name}`);
+      }
+
+      function renderTypeChips() {
+        $('cmTypeChips').innerHTML = ['all', ...CM_TYPES]
+          .map((type) => {
+            const count = COMPANY_MODELS.filter(
+              (model) => type === 'all' || model.type === type,
+            ).length;
+            const label = type === 'all' ? '全部' : CM_TYPE_LABEL[type];
+            const classes = ['chip'];
+
+            if (companyType === type) classes.push('active');
+            if (count === 0) classes.push('is-empty');
+
+            return `<button class="${classes.join(' ')}" onclick="setCompanyFilter('${type}', this)">
+              ${esc(label)}<span class="cm-chip-count">${count}</span>
+            </button>`;
+          })
+          .join('');
+      }
+
+      function renderCompanyModels() {
+        renderTypeChips();
+        const keyword = companyQuery.trim().toLowerCase();
+        const rows = COMPANY_MODELS.filter((model) => {
+          const hitType = companyType === 'all' || model.type === companyType;
+          const hitKeyword =
+            !keyword || `${model.id} ${model.name}`.toLowerCase().includes(keyword);
+          return hitType && hitKeyword;
+        });
+
+        const openCount = COMPANY_MODELS.filter((model) => model.on).length;
+        $('cmModelCount').textContent = `共 ${COMPANY_MODELS.length} 个模型 · ${openCount} 个对全员开放`;
+
+        $('cmModelRows').innerHTML = rows.length
+          ? rows
+              .map(
+                (model) => `<div class="list-row">
+                  <div class="cm-model-cell">
+                    <span>
+                      ${esc(model.name)}
+                      ${model.pending ? '<span class="tag tag-warning">待确认</span>' : ''}
+                      ${model.removed ? '<span class="tag tag-danger">上游已移除</span>' : ''}
+                    </span>
+                    <span class="mono tiny muted">${esc(model.id)}</span>
+                  </div>
+                  <div class="cm-type-cell">
+                    <span class="tag">${esc(CM_TYPE_LABEL[model.type] || model.type)}</span>
+                    ${(model.caps || []).map((cap) => `<span class="tag">${esc(cap)}</span>`).join('')}
+                  </div>
+                  <div class="mono user-id">${esc(model.ctx)}</div>
+                  <div>
+                    <label class="switch">
+                      <input type="checkbox" ${model.on ? 'checked' : ''}
+                        onchange="toggleCompanyModel('${esc(model.id)}', this.checked)" />
+                      <span></span>
+                    </label>
+                  </div>
+                  <div>
+                    <button class="btn btn-sm btn-text" onclick="openEditModel('${esc(model.id)}')">编辑</button>
+                  </div>
+                </div>`,
+              )
+              .join('')
+          : `<div class="list-empty"><div class="tiny muted">${esc(
+              keyword
+                ? '没有匹配的模型'
+                : companyType === 'all'
+                  ? '模型目录为空，可从服务拉取或手工添加'
+                  : `${CM_TYPE_LABEL[companyType] || '该'}类型下暂无模型，可从服务拉取或手工添加`,
+            )}</div></div>`;
+
+      }
+
+      function inferModelType(id) {
+        const value = id.toLowerCase();
+        if (/embed|bge|gte|text-embedding/.test(value)) return 'embedding';
+        if (/music|suno|melody|text2music/.test(value)) return 'text2music';
+        if (/tts|speech|voice/.test(value)) return 'tts';
+        if (/whisper|asr|stt|transcribe|audio/.test(value)) return 'asr';
+        if (/dall-?e|flux|diffusion|image|sd-/.test(value)) return 'image';
+        if (/video|sora|veo|kling/.test(value)) return 'video';
+        if (/realtime/.test(value)) return 'realtime';
+        if (/decision/.test(value)) return 'decision';
+        return 'chat';
+      }
+
+      const CM_INFER_REASON = {
+        chat: '默认按对话处理，需人工确认',
+        image: 'id 命中 image / flux / diffusion → 图片',
+        video: 'id 命中 video / sora / veo → 视频',
+        embedding: 'id 命中 embed / bge / gte → 向量化',
+        asr: 'id 命中 asr / whisper / transcribe → ASR',
+        tts: 'id 命中 tts / speech / voice → TTS',
+        text2music: 'id 命中 music / suno / melody → 音乐',
+        realtime: 'id 命中 realtime → 实时',
+        decision: 'id 命中 decision → 决策',
+      };
+
+      function inferModelReason(id, type) {
+        if (type === 'chat' && /vl|vision|multimodal/.test(id.toLowerCase())) {
+          return 'id 含 vl / vision → 对话（视觉能力待确认）';
+        }
+
+        return CM_INFER_REASON[type];
+      }
+
+      function openSyncModal() {
+        const candidates = UPSTREAM_NEW_MODELS.filter(
+          (model) => !COMPANY_MODELS.some((item) => item.id === model.id),
+        );
+
+        if (!candidates.length) {
+          toast('没有发现新模型');
+          return;
+        }
+
+        $('cmSyncSummary').innerHTML = `
+          <span class="tag tag-success">新增 ${candidates.length}</span>
+          <span class="tag">已存在 ${COMPANY_MODELS.length}</span>
+          <span class="tag tag-warning">上游已移除 ${COMPANY_MODELS.filter((item) => item.removed).length}</span>`;
+
+        const rows = candidates.map((model) => {
+          const type = inferModelType(model.id);
+          return `<label class="cm-sync-row">
+            <input type="checkbox" checked data-sync-id="${esc(model.id)}" />
+            <div class="cm-sync-main">
+              <div>${esc(model.name)}</div>
+              <div class="mono tiny muted">${esc(model.id)} · ${esc(inferModelReason(model.id, type))}</div>
+            </div>
+            <select class="control cm-select-sm" data-sync-type="${esc(model.id)}">
+              ${CM_TYPES.map(
+                (key) =>
+                  `<option value="${key}" ${key === type ? 'selected' : ''}>${esc(CM_TYPE_LABEL[key])}</option>`,
+              ).join('')}
+            </select>
+          </label>`;
+        });
+
+        $('cmSyncRows').innerHTML = rows.join('');
+        $('syncModal').classList.add('show');
+      }
+
+      function closeSyncModal() {
+        $('syncModal').classList.remove('show');
+      }
+
+      function applySync() {
+        const picked = [];
+
+        document.querySelectorAll('#cmSyncRows [data-sync-id]').forEach((checkbox) => {
+          if (!checkbox.checked) return;
+          const id = checkbox.dataset.syncId;
+          const source = UPSTREAM_NEW_MODELS.find((model) => model.id === id);
+          const typeSelect = document.querySelector(`[data-sync-type="${id}"]`);
+          picked.push({
+            id,
+            name: source ? source.name : id,
+            type: typeSelect ? typeSelect.value : inferModelType(id),
+            ctx: source ? source.ctx : '—',
+            on: false,
+            pending: true,
+            caps: [],
+          });
+        });
+
+        if (!picked.length) {
+          toast('没有选择任何模型');
+          return;
+        }
+
+        COMPANY_MODELS.push(...picked);
+        closeSyncModal();
+        renderCompanyModels();
+        toast(`已导入 ${picked.length} 个模型：默认不开放，需补全类型与上下文`);
+      }
+
+      let editingModelId = null;
+
+      function openEditModel(id) {
+        const model = COMPANY_MODELS.find((item) => item.id === id);
+        if (!model) return;
+
+        editingModelId = id;
+        $('cmEditName').value = model.name;
+        $('cmEditId').value = model.id;
+        $('cmEditType').value = model.type;
+        $('cmEditCtx').value = model.ctx;
+        $('cmEditOpen').checked = model.on;
+        document.querySelectorAll('#modelEditModal [data-cap]').forEach((input) => {
+          input.checked = (model.caps || []).includes(input.value);
+        });
+        $('modelEditModal').classList.add('show');
+      }
+
+      function closeEditModel() {
+        $('modelEditModal').classList.remove('show');
+        editingModelId = null;
+      }
+
+      function saveEditModel() {
+        const model = COMPANY_MODELS.find((item) => item.id === editingModelId);
+        if (!model) return;
+
+        model.name = $('cmEditName').value.trim() || model.id;
+        model.type = $('cmEditType').value;
+        model.ctx = $('cmEditCtx').value.trim() || '—';
+        model.on = $('cmEditOpen').checked;
+        model.caps = Array.from(document.querySelectorAll('#modelEditModal [data-cap]'))
+          .filter((input) => input.checked)
+          .map((input) => input.value);
+        model.pending = false;
+
+        closeEditModel();
+        renderCompanyModels();
+        toast('模型信息已更新；只影响用户侧可见性，不改用户设置');
+      }
+
+      function deleteEditModel() {
+        const index = COMPANY_MODELS.findIndex((item) => item.id === editingModelId);
+        if (index < 0) return;
+
+        const name = COMPANY_MODELS[index].name;
+        COMPANY_MODELS.splice(index, 1);
+        closeEditModel();
+        renderCompanyModels();
+        toast(`已从目录移除：${name}`);
+      }
+
+      function testCompanyConnection() {
+        const button = $('cmTestBtn');
+        button.disabled = true;
+        $('cmTestTag').textContent = '检测中…';
+        $('cmTestTag').className = 'tag';
+        $('cmTestText').textContent = '正在请求 /models';
+
+        setTimeout(() => {
+          $('cmTestTag').textContent = '连接正常';
+          $('cmTestTag').className = 'tag tag-success';
+          $('cmTestText').textContent = '286ms · 8 个可用模型 · 刚刚检测';
+          button.disabled = false;
+          toast('连接正常');
+        }, 800);
+      }
+
+      function saveCompanyConfig() {
+        logAudit({
+          action: 'ai.update',
+          target: 'Tellhow 服务连接',
+          detail: { before: 'baseUrl = https://ai.tellhow.com/v1', after: 'baseUrl = https://ai.tellhow.com/v1 · 未修改用户设置' },
+        });
+        toast('已保存地址、密钥与默认值；未修改任何用户设置');
+      }
+
+      function resetCompanyConfig() {
+        toast('已还原到上次保存的状态');
+      }
+
+      function openModelModal() {
+        $('modelModal').classList.add('show');
+      }
+
+      function closeModelModal() {
+        $('modelModal').classList.remove('show');
+      }
+
+      function submitModelModal() {
+        const id = $('cmNewId').value.trim();
+        const name = $('cmNewName').value.trim() || id;
+        const type = $('cmNewType').value;
+
+        if (!id) {
+          toast('请填写模型 id');
+          return;
+        }
+
+        if (COMPANY_MODELS.some((model) => model.id === id)) {
+          toast('该模型已存在');
+          return;
+        }
+
+        COMPANY_MODELS.push({ id, name, type, ctx: '—', on: false });
+        $('cmNewId').value = '';
+        $('cmNewName').value = '';
+        closeModelModal();
+        renderCompanyModels();
+        toast('已添加模型；默认不对全员开放');
+      }
+
       /* ------------------------------------------------------------ 用户 */
 
       function deviceGrantedTo(username) {
@@ -4818,30 +5574,47 @@ const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1
         $('userRows').innerHTML = rows.length
           ? rows
               .map((user) => {
-                const devices = deviceGrantedTo(user.username);
-                const deviceText = devices.length
-                  ? devices.map((device) => esc(device.name)).join('、')
-                  : '—';
-
-                return `<tr onclick="openUserDrawer('${user.id}')">
-                  <td>
-                    <div class="user-cell">
-                      <span class="avatar avatar-28">${pixelAvatar(user.name)}</span>
-                      <div>
-                        <div class="user-name">${esc(user.name)}</div>
-                        <div class="user-mail">${esc(user.email)}</div>
-                      </div>
+                return `<div class="list-row" tabindex="0" role="button"
+                  onclick="openUserDrawer('${user.id}')"
+                  onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openUserDrawer('${user.id}'); }">
+                  <div class="user-cell">
+                    <span class="avatar avatar-28">${pixelAvatar(user.name)}</span>
+                    <div>
+                      <div class="user-name">${esc(user.name)}</div>
+                      <div class="user-mail">${esc(user.email)}</div>
                     </div>
-                  </td>
-                  <td class="mono tiny">${esc(user.username)}</td>
-                  <td>${userRoleBadge(user)}</td>
-                  <td>${userStatusBadge(user)}</td>
-                  <td class="tiny muted">${deviceText}</td>
-                  <td class="tiny muted">${esc(user.last)}</td>
-                </tr>`;
+                  </div>
+                  <div class="mono user-id">${esc(user.username)}</div>
+                  <div>${userRoleBadge(user)}</div>
+                  <div>${userStatusBadge(user)}</div>
+                  <div class="user-last">${esc(user.last)}</div>
+                  <div class="user-chevron">
+                    <svg class="icon-sm" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></svg>
+                  </div>
+                </div>`;
               })
               .join('')
-          : '<tr><td colspan="6"><div class="tiny muted" style="padding: 16px 12px">没有匹配的用户</div></td></tr>';
+          : `<div class="list-empty">
+              <div class="empty">
+                <strong>没有匹配的用户</strong>
+                <span>换个关键词，或把筛选切回「全部」。</span>
+                <button class="btn btn-sm btn-text" onclick="resetUserFilters()">清除筛选</button>
+              </div>
+            </div>`;
+      }
+
+      function resetUserFilters() {
+        state.userQuery = '';
+        state.userFilter = 'all';
+
+        const input = $('userSearch');
+        if (input) input.value = '';
+
+        document
+          .querySelectorAll('#page-users .filters .chip')
+          .forEach((chip) => chip.classList.toggle('active', chip.dataset.filter === 'all'));
+
+        renderUsers();
       }
 
       function openUserDrawer(id) {
@@ -4868,23 +5641,6 @@ const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1
               `<div class="info-item"><span>${label}</span><strong>${esc(value)}</strong></div>`,
           )
           .join('');
-
-        const devices = deviceGrantedTo(user.username);
-        $('userAccess').innerHTML = devices.length
-          ? devices
-              .map(
-                (device) => `<div class="setting-row">
-                  <div>
-                    <span class="setting-row-title">${esc(device.name)}</span>
-                    <span class="setting-row-desc mono">${esc(device.host)} · ${esc(device.platform)}</span>
-                  </div>
-                  <span class="tag tag-alpha" style="justify-self: end">${
-                    device.audience === 'all' ? '全员可用' : '指定授权'
-                  }</span>
-                </div>`,
-              )
-              .join('')
-          : '<div class="empty"><strong>没有分配设备</strong><span>在「设备」页按设备分配后，这里会出现。</span></div>';
 
         $('userActions').innerHTML = `
           <button class="btn btn-sm btn-outline" onclick="toggleUserRole()">${
@@ -5211,13 +5967,31 @@ const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1
           const openDetail = $(`detail-${state.openAudit}`);
           const openRow = $(`row-${state.openAudit}`);
           if (openDetail) openDetail.hidden = true;
-          if (openRow) openRow.classList.remove('open');
+          if (openRow) {
+            openRow.classList.remove('open');
+            openRow.setAttribute('aria-expanded', 'false');
+          }
         }
 
         const next = detail.hidden;
         detail.hidden = !next;
         row.classList.toggle('open', next);
+        row.setAttribute('aria-expanded', String(next));
         state.openAudit = next ? id : null;
+      }
+
+      function resetAuditFilters() {
+        state.auditQuery = '';
+        state.auditFilter = 'all';
+
+        const input = $('auditSearch');
+        if (input) input.value = '';
+
+        document
+          .querySelectorAll('#page-audit .filters .chip')
+          .forEach((chip) => chip.classList.toggle('active', chip.dataset.filter === 'all'));
+
+        renderAudit();
       }
 
       function renderAudit() {
@@ -5233,7 +6007,11 @@ const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1
           return hitFilter && hitKeyword;
         });
 
-        $('auditCount').textContent = `共 ${rows.length} 条`;
+        const filtered = keyword || state.auditFilter !== 'all';
+        $('auditCount').textContent = filtered
+          ? `筛选出 ${rows.length} / ${AUDIT.length} 条`
+          : `共 ${AUDIT.length} 条`;
+        $('auditFoot').textContent = `第 1 / ${Math.max(1, Math.ceil(rows.length / 20))} 页`;
 
         $('auditRows').innerHTML = rows.length
           ? rows
@@ -5243,25 +6021,42 @@ const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1
                   cat: 'other',
                   cls: 'tag',
                 };
-                return `<tr id="row-${entry.id}" class="audit-row" onclick="toggleAudit('${entry.id}')">
-                    <td class="mono tiny">${esc(entry.at)}</td>
-                    <td class="tiny">${esc(entry.actor)}</td>
-                    <td><span class="${meta.cls}">${esc(meta.label)}</span></td>
-                    <td class="tiny">${esc(entry.target)}</td>
-                    <td class="mono tiny muted">${esc(entry.ip)}</td>
-                  </tr>
-                  <tr class="audit-detail" id="detail-${entry.id}" hidden>
-                    <td colspan="5">
-                      <div class="stack-8">
-                        <pre>- ${esc(entry.detail.before)}
-+ ${esc(entry.detail.after)}</pre>
-                        <div class="tiny muted">action: <span class="mono">${esc(entry.action)}</span> · detail 只存前后值与必要元信息，Key / token 不落库。</div>
+                return `<div id="row-${entry.id}" class="list-row audit-row" aria-expanded="false" tabindex="0"
+                    onclick="toggleAudit('${entry.id}')"
+                    onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleAudit('${entry.id}'); }">
+                    <div class="mono audit-time">${esc(entry.at)}</div>
+                    <div class="audit-actor">${esc(entry.actor)}</div>
+                    <div><span class="${meta.cls}">${esc(meta.label)}</span></div>
+                    <div class="audit-target">${esc(entry.target)}</div>
+                    <div class="mono audit-ip">${esc(entry.ip)}</div>
+                    <div class="audit-chevron">
+                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" /></svg>
+                    </div>
+                  </div>
+                  <div class="audit-detail" id="detail-${entry.id}" hidden>
+                    <div class="audit-diff">
+                      <div class="audit-diff-row">
+                        <span class="audit-diff-label">变更前</span>
+                        <code>${esc(entry.detail.before)}</code>
                       </div>
-                    </td>
-                  </tr>`;
+                      <div class="audit-diff-row">
+                        <span class="audit-diff-label">变更后</span>
+                        <code>${esc(entry.detail.after)}</code>
+                      </div>
+                    </div>
+                    <div class="audit-detail-note">
+                      审计只保存前后值与必要元信息，密钥、令牌等敏感内容不会写入。
+                    </div>
+                  </div>`;
               })
               .join('')
-          : '<tr><td colspan="5"><div class="tiny muted" style="padding: 16px 12px">没有匹配的记录</div></td></tr>';
+          : `<div class="list-empty">
+              <div class="empty">
+                <strong>没有匹配的记录</strong>
+                <span>换个关键词，或把筛选切回「全部」。</span>
+                <button class="btn btn-sm btn-text" onclick="resetAuditFilters()">清除筛选</button>
+              </div>
+            </div>`;
       }
 
       /* ------------------------------------------------------------ 提示 */
@@ -5283,17 +6078,17 @@ const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1
         const navAvatar = $('navAvatar');
         if (navAvatar) navAvatar.innerHTML = pixelAvatar('管理员');
         renderThemeIcon();
-        initAiSurfaces();
+        renderCompanyModel();
         renderUsers();
-        renderDevices();
         renderAudit();
         go('users');
 
         document.addEventListener('keydown', (event) => {
           if (event.key !== 'Escape') return;
           closeUserDrawer();
-          closeDeviceDrawer();
-          closeCliModal();
+          closeModelModal();
+          closeSyncModal();
+          closeEditModel();
         });
       }
 
