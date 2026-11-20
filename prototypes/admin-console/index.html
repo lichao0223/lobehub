@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>管理员控制台 · 用户设置模板原型</title>
+    <title>管理员控制台 · 第二版原型（用户 / AI 服务 / 设备 / 审计）</title>
     <style>
       /* ==========================================================================
        * 管理员控制台原型 — 视觉基线对齐「设置」页真实实现
@@ -2107,6 +2107,290 @@
         font-weight: 500;
         color: var(--lobe-color-text-secondary);
       }
+      /* ---------------- 第二版原型补充：四页结构新增组件 ---------------- */
+
+      .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
+
+      .nav-brand-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 28px;
+        height: 28px;
+        border-radius: var(--lobe-radius-sm);
+        background: var(--lobe-color-primary);
+        color: var(--lobe-color-primary-contrast);
+      }
+
+      .nav-brand-text {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 20px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .view-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .view-toggle-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+
+      .view-toggle-text strong {
+        font-size: 12px;
+        line-height: 18px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+      }
+
+      .view-toggle-text span {
+        font-size: 11px;
+        line-height: 15px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 16px;
+        padding: 10px 12px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-color-info-bg);
+        color: var(--lobe-color-info);
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .banner[hidden] {
+        display: none;
+      }
+
+      .setting-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px;
+        padding: 10px 0;
+      }
+
+      .setting-row + .setting-row {
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .setting-row-title {
+        display: block;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+      }
+
+      .setting-row-desc {
+        display: block;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .provider-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+        gap: 10px;
+        padding: 4px 0 8px;
+      }
+
+      .provider {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 1px solid var(--lobe-color-border-secondary);
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-color-bg-container);
+      }
+
+      .provider-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .provider-dot {
+        flex: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--dot, var(--lobe-color-primary));
+      }
+
+      .provider-name {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      .provider-models {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .provider-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .model-chip {
+        height: 22px;
+        padding: 0 8px;
+        border: 1px solid var(--lobe-color-border-secondary);
+        border-radius: var(--lobe-radius-xs);
+        background: transparent;
+        color: var(--lobe-color-text-tertiary);
+        font-size: 11px;
+        line-height: 1;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+
+      .model-chip.on {
+        border-color: transparent;
+        background: var(--lobe-color-primary-bg);
+        color: var(--lobe-color-primary);
+      }
+
+      .model-chip:hover:not(.on) {
+        border-color: var(--lobe-color-border);
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .inline-selects {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+        gap: 8px;
+      }
+
+      .stack-8 {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .cmd {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+        padding: 6px 6px 6px 10px;
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .cmd code {
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text);
+        white-space: nowrap;
+      }
+
+      .empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 28px 16px;
+        text-align: center;
+        color: var(--lobe-color-text-tertiary);
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .empty strong {
+        font-size: 13px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .checklist {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+
+      .check-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+        cursor: pointer;
+      }
+
+      .check-row:hover {
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .check-row .meta {
+        margin-inline-start: auto;
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-warning);
+      }
+
+      .audit-row {
+        cursor: pointer;
+      }
+
+      .audit-detail[hidden] {
+        display: none;
+      }
+
+      .audit-detail > td {
+        padding: 0 12px 12px;
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .audit-detail pre {
+        margin: 0;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 11px;
+        line-height: 17px;
+        color: var(--lobe-color-text-secondary);
+      }
     </style>
   </head>
   <body>
@@ -2114,22 +2398,17 @@
       <!-- ============================== NavPanel ============================== -->
       <aside class="nav-panel">
         <div class="nav-header">
-          <nav class="nav-breadcrumb" aria-label="面包屑">
-            <a class="crumb-home" href="#" onclick="return false" title="首页" aria-label="首页">
-              <svg class="icon-crumb" viewBox="0 0 24 24">
-                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
-                <path d="M9 22V12h6v10" />
+          <div class="nav-brand">
+            <span class="nav-brand-icon">
+              <svg class="icon-sm" viewBox="0 0 24 24">
+                <path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z" />
+                <path d="m9 12 2 2 4-4" />
               </svg>
-            </a>
-            <svg class="crumb-sep" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
-            <span class="crumb" id="pageCrumb">管理员控制台</span>
-            <svg class="crumb-sep" id="pageCrumbSep" viewBox="0 0 24 24" hidden>
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-            <span class="crumb" id="pageCrumbExtra" hidden>用户设置模板</span>
-          </nav>
+            </span>
+            <span class="nav-brand-text">管理员控制台</span>
+          </div>
           <div class="nav-header-actions">
-            <button class="icon-btn" title="收起侧栏" onclick="toggleNav()" aria-label="收起侧栏">
+            <button class="icon-btn" title="收起侧栏" aria-label="收起侧栏" onclick="toggleNav()">
               <svg class="icon-sm" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M9 3v18" />
@@ -2153,27 +2432,15 @@
               <svg class="section-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
             </button>
             <div class="nav-items">
-              <button class="nav-item active" data-page="overview" data-label="总览" onclick="go('overview')">
-                <span class="nav-icon">
-                  <svg class="icon" viewBox="0 0 24 24">
-                    <rect x="3" y="3" width="7" height="9" rx="1.5" />
-                    <rect x="14" y="3" width="7" height="5" rx="1.5" />
-                    <rect x="14" y="12" width="7" height="9" rx="1.5" />
-                    <rect x="3" y="16" width="7" height="5" rx="1.5" />
-                  </svg>
-                </span>
-                <span class="nav-title">总览</span>
-              </button>
-              <button class="nav-item" data-page="users" data-label="用户" onclick="go('users')">
+              <button class="nav-item active" data-page="users" data-label="用户管理" onclick="go('users')">
                 <span class="nav-icon">
                   <svg class="icon" viewBox="0 0 24 24">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                     <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                   </svg>
                 </span>
-                <span class="nav-title">用户</span>
+                <span class="nav-title">用户管理</span>
               </button>
               <button class="nav-item" data-page="audit" data-label="审计日志" onclick="go('audit')">
                 <span class="nav-icon">
@@ -2184,27 +2451,40 @@
                   </svg>
                 </span>
                 <span class="nav-title">审计日志</span>
-                <span class="tag">P2</span>
+              </button>
+              <button class="nav-item" data-page="ai" data-label="AI 服务" data-admin-only="true" onclick="go('ai')">
+                <span class="nav-icon">
+                  <svg class="icon" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="18" height="18" rx="3" />
+                    <path d="M9 9h6v6H9zM12 3v3M12 18v3M3 12h3M18 12h3" />
+                  </svg>
+                </span>
+                <span class="nav-title">AI 服务</span>
+              </button>
+              <button class="nav-item" data-page="devices" data-label="设备" onclick="go('devices')">
+                <span class="nav-icon">
+                  <svg class="icon" viewBox="0 0 24 24">
+                    <rect x="2" y="4" width="20" height="13" rx="2" />
+                    <path d="M8 21h8M12 17v4" />
+                  </svg>
+                </span>
+                <span class="nav-title">设备</span>
               </button>
             </div>
           </div>
-
-          <!-- 设置模板的分组导航由 renderSettingsNav() 写入 -->
-          <div id="settingsNav"></div>
         </nav>
 
-        <!-- 底部身份区：与 HomeSidebar/Header/components/User 同构（avatar 28 + 名字 + ChevronDown） -->
         <div class="nav-footer">
-          <button
-            class="nav-user"
-            type="button"
-            title="张伟 · 系统管理员 · A000001"
-            onclick="toast('原型：账号菜单不在此实现')"
-          >
-            <span class="avatar avatar-28" data-avatar="张伟"></span>
-            <span class="nav-user-name">张伟</span>
-            <svg class="nav-user-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
-          </button>
+          <div class="view-toggle">
+            <label class="switch">
+              <input id="viewToggle" type="checkbox" onchange="setView(this.checked)" />
+              <span></span>
+            </label>
+            <div class="view-toggle-text">
+              <strong>普通用户视角</strong>
+              <span>预览非管理员看到的菜单</span>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -2212,7 +2492,7 @@
       <main class="main">
         <header class="page-header">
           <div class="header-left">
-            <button class="icon-btn" title="展开侧栏" onclick="toggleNav()" aria-label="展开侧栏">
+            <button class="icon-btn" title="展开侧栏" aria-label="展开侧栏" onclick="toggleNav()">
               <svg class="icon-sm" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <path d="M9 3v18" />
@@ -2220,123 +2500,37 @@
             </button>
           </div>
           <div class="header-center">
-            <span class="header-title" id="pageTitle">总览</span>
+            <span class="header-title" id="pageTitle">用户管理</span>
           </div>
           <div class="header-right">
-            <span class="tag tag-primary">管理员</span>
-            <button class="icon-btn" id="themeBtn" title="切换主题" onclick="toggleTheme()" aria-label="切换主题"></button>
+            <span class="tag tag-primary" id="viewBadge">管理员</span>
+            <button class="icon-btn" id="themeBtn" title="切换主题" aria-label="切换主题" onclick="toggleTheme()"></button>
           </div>
         </header>
 
         <div class="scroll" id="scroll">
           <div class="container">
-            <!-- ============================== 总览 ============================== -->
-            <section class="page active" id="page-overview">
+            <div class="banner" id="viewBanner" hidden>
+              <svg class="icon-sm" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5M12 16h.01" />
+              </svg>
+              <div>
+                <strong>普通用户视角</strong>：管理员把「AI 服务商」「服务模型」的菜单隐藏了，设备列表只显示分配给你的机器。
+                直达 URL 会被重定向，服务端写入同样返回 FORBIDDEN。
+              </div>
+            </div>
+
+            <!-- ============================== 用户管理 ============================== -->
+            <section class="page active" id="page-users">
               <div class="setting-header">
                 <div class="setting-header-main">
                   <div class="setting-header-text">
-                    <h1 class="setting-title">总览</h1>
-                    <p class="setting-desc">部署用户、默认配置与权限策略的集中管理入口。</p>
+                    <h1 class="setting-title">用户管理</h1>
+                    <p class="setting-desc">账号来自统一认证（SSO）。这里只做查看与管控：角色、禁用、会话失效。</p>
                   </div>
                   <div class="setting-header-actions">
-                    <button class="btn btn-sm btn-text" onclick="go('users')">查看用户</button>
-                    <button class="btn btn-sm btn-outline" onclick="go('settings')">配置默认值</button>
-                  </div>
-                </div>
-                <div class="divider"></div>
-              </div>
-
-              <div class="metrics">
-                <div class="stat-card">
-                  <div class="stat-label">用户总数</div>
-                  <div class="stat-value">1,284</div>
-                  <div class="stat-foot">近 7 天 +37</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-label">近 7 天活跃</div>
-                  <div class="stat-value">612</div>
-                  <div class="stat-foot">47.7% 的账号</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-label">实验室默认开启</div>
-                  <div class="stat-value">0 / 18</div>
-                  <div class="stat-foot">全部按代码默认关闭</div>
-                </div>
-                <div class="stat-card">
-                  <div class="stat-label">已禁用</div>
-                  <div class="stat-value">6</div>
-                  <div class="stat-foot">来自统一认证平台或本控制台</div>
-                </div>
-              </div>
-
-              <div class="grid-2">
-                <div class="form-group">
-                  <div class="form-group-card">
-                    <div class="form-group-header">
-                      <div>
-                        <div class="form-group-title">当前部署默认值</div>
-                        <div class="form-group-desc">来自真实代码默认值；保存后只影响新用户，存量用户需手动应用。</div>
-                      </div>
-                      <div class="form-group-extra">
-                        <button class="btn btn-sm btn-text" onclick="go('settings')">去配置</button>
-                      </div>
-                    </div>
-                    <div class="form-group-body">
-                      <div class="summary-list">
-                        <div class="summary-row"><span>默认对话模型</span><strong>deepseek / deepseek-v4-flash（DeepSeek V4 Flash）</strong></div>
-                        <div class="summary-row"><span>默认启用的 Provider</span><strong>DeepSeek、OpenAI、Anthropic、Google</strong></div>
-                        <div class="summary-row"><span>Flash / 验收模型</span><strong>openai/gpt-5.6-luna · zhipu/glm-5.3-flash</strong></div>
-                        <div class="summary-row"><span>记忆</span><strong>开启 · 强度中</strong></div>
-                        <div class="summary-row"><span>允许用户修改模型配置</span><strong>是（可改为禁止）</strong></div>
-                        <div class="summary-row"><span>可下发设置项</span><strong id="deployableSummary">按真实设置矩阵统计</strong></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <div class="form-group-card">
-                    <div class="form-group-header">
-                      <div>
-                        <div class="form-group-title">最近管理动作</div>
-                        <div class="form-group-desc">P2 接入完整审计表。</div>
-                      </div>
-                    </div>
-                    <div class="form-group-body">
-                      <div class="activity">
-                        <div class="activity-item">
-                          <span class="activity-dot"></span>
-                          <div><p>张伟 将「自进化」设为新用户默认关闭</p><time>今天 09:42</time></div>
-                        </div>
-                        <div class="activity-item">
-                          <span class="activity-dot" style="background: var(--lobe-color-warning)"></span>
-                          <div><p>张伟 禁止 李娜 修改 AI 服务商配置</p><time>今天 09:18</time></div>
-                        </div>
-                        <div class="activity-item">
-                          <span class="activity-dot" style="background: var(--lobe-color-success)"></span>
-                          <div><p>张伟 将主模型默认值设为 deepseek/deepseek-v4-flash</p><time>昨天 17:26</time></div>
-                        </div>
-                        <div class="activity-item">
-                          <span class="activity-dot" style="background: var(--lobe-color-text-quaternary)"></span>
-                          <div><p>张伟 禁用用户 王强（A100877）</p><time>昨天 14:03</time></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <!-- ============================== 用户 ============================== -->
-            <section class="page" id="page-users">
-              <div class="setting-header">
-                <div class="setting-header-main">
-                  <div class="setting-header-text">
-                    <h1 class="setting-title">用户</h1>
-                    <p class="setting-desc">查看所有 SSO 用户及其生效配置，按人调整策略。</p>
-                  </div>
-                  <div class="setting-header-actions">
-                    <button class="btn btn-sm btn-text" onclick="toast('导出功能在 P2 提供')">导出</button>
+                    <span class="tag">Better Auth admin()</span>
                   </div>
                 </div>
                 <div class="divider"></div>
@@ -2360,13 +2554,12 @@
                           <circle cx="11" cy="11" r="7" />
                           <path d="m20 20-3.5-3.5" />
                         </svg>
-                        <input id="userSearch" placeholder="搜索工号、姓名或邮箱" oninput="renderUsers()" />
+                        <input id="userSearch" placeholder="搜索工号、姓名或邮箱" oninput="setUserQuery(this.value)" />
                       </label>
                       <div class="filters">
-                        <button class="chip active" data-filter="all" onclick="setFilter('all', this)">全部</button>
-                        <button class="chip" data-filter="admin" onclick="setFilter('admin', this)">管理员</button>
-                        <button class="chip" data-filter="banned" onclick="setFilter('banned', this)">已禁用</button>
-                        <button class="chip" data-filter="custom" onclick="setFilter('custom', this)">已自定义</button>
+                        <button class="chip active" data-filter="all" onclick="setUserFilter('all', this)">全部</button>
+                        <button class="chip" data-filter="admin" onclick="setUserFilter('admin', this)">管理员</button>
+                        <button class="chip" data-filter="banned" onclick="setUserFilter('banned', this)">已禁用</button>
                       </div>
                     </div>
                     <div class="table-wrap">
@@ -2375,10 +2568,9 @@
                           <tr>
                             <th>用户</th>
                             <th>工号</th>
+                            <th>角色</th>
                             <th>状态</th>
-                            <th>实验室</th>
-                            <th>默认模型</th>
-                            <th>模型权限</th>
+                            <th>分配到的设备</th>
                             <th>最后活跃</th>
                           </tr>
                         </thead>
@@ -2386,47 +2578,28 @@
                       </table>
                     </div>
                     <div class="table-foot">
-                      <span>第 1 / 161 页</span>
                       <span>按工号排序</span>
+                      <span id="userFoot">第 1 / 1 页</span>
                     </div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <!-- ========================== 用户设置模板 ========================== -->
-            <section class="page" id="page-settings">
+            <!-- =============================== AI 服务 =============================== -->
+            <section class="page" id="page-ai">
               <div class="setting-header">
                 <div class="setting-header-main">
                   <div class="setting-header-text">
-                    <h1 class="setting-title" id="settingsTitle">外观</h1>
-                    <p class="setting-desc" id="settingsIntro"></p>
-                    <div class="summary-chips" id="settingsSummary"></div>
-                    <p class="setting-note" id="settingsFootNote">模板只影响新用户；存量用户需手动应用。</p>
-                  </div>
-                  <div class="setting-header-actions" id="settingsActions">
-                    <button class="btn btn-sm btn-text" id="resetDefaultsBtn" onclick="toast('已恢复为代码默认值')">恢复代码默认</button>
-                    <button class="btn btn-sm btn-text" onclick="toast('已还原未保存的修改')">还原</button>
-                    <button class="btn btn-sm btn-outline" onclick="toast('已保存用户设置模板，未应用到存量用户')">保存模板</button>
-                    <button class="btn btn-sm btn-primary" onclick="openApply()">保存并应用…</button>
-                  </div>
-                </div>
-                <div class="divider"></div>
-              </div>
-
-              <div class="form" id="settingsBody"></div>
-            </section>
-
-            <!-- ============================== 审计 ============================== -->
-            <section class="page" id="page-audit">
-              <div class="setting-header">
-                <div class="setting-header-main">
-                  <div class="setting-header-text">
-                    <h1 class="setting-title">审计日志</h1>
-                    <p class="setting-desc">管理员操作的完整记录。</p>
+                    <h1 class="setting-title">AI 服务</h1>
+                    <p class="setting-desc">
+                      服务商、默认模型与服务模型由管理员统一配置；用户端只读，且看不到这两个设置页。
+                    </p>
+                    <p class="setting-note" id="aiFootNote"></p>
                   </div>
                   <div class="setting-header-actions">
-                    <span class="tag">P2</span>
+                    <button class="btn btn-sm btn-text" onclick="resetAi()">还原</button>
+                    <button class="btn btn-sm btn-primary" onclick="openAiModal()">保存并同步</button>
                   </div>
                 </div>
                 <div class="divider"></div>
@@ -2436,18 +2609,198 @@
                 <div class="form-group-card">
                   <div class="form-group-header">
                     <div>
-                      <div class="form-group-title">记录范围</div>
-                      <div class="form-group-desc">记录管理员对默认值、用户策略与账号状态的操作。</div>
+                      <div class="form-group-title">菜单可见性</div>
+                      <div class="form-group-desc">
+                        隐藏只是体验；服务端同时拒绝非管理员对托管字段的写入。
+                      </div>
                     </div>
                   </div>
                   <div class="form-group-body">
-                    <ul class="note-list" style="margin-top: 0">
-                      <li>操作者：发起操作的管理员（含 SSO 工号与会话来源）</li>
-                      <li>动作：保存模板、应用到存量用户、修改用户策略、禁用/启用账号</li>
-                      <li>目标用户：受影响账号；模板级操作记录影响人数</li>
-                      <li>设置路径：写入的字段路径与变更前后的值</li>
-                      <li>时间与来源 IP</li>
-                    </ul>
+                    <div class="setting-row">
+                      <div>
+                        <span class="setting-row-title">非管理员隐藏「AI 服务商」</span>
+                        <span class="setting-row-desc">用户端不再出现该菜单，直达路由重定向到个人设置首页</span>
+                      </div>
+                      <label class="switch" style="justify-self: end">
+                        <input id="menuHideProvider" type="checkbox" checked onchange="setMenu('hideProvider', this.checked)" />
+                        <span></span>
+                      </label>
+                    </div>
+                    <div class="setting-row">
+                      <div>
+                        <span class="setting-row-title">非管理员隐藏「服务模型」</span>
+                        <span class="setting-row-desc">服务模型由管理员统一定义，用户不再选择槽位</span>
+                      </div>
+                      <label class="switch" style="justify-self: end">
+                        <input id="menuHideServiceModel" type="checkbox" checked onchange="setMenu('hideServiceModel', this.checked)" />
+                        <span></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-group-card">
+                  <div class="form-group-header">
+                    <div>
+                      <div class="form-group-title">服务商</div>
+                      <div class="form-group-desc">
+                        停用的服务商不会出现在用户的会话模型选择器里；每个服务商至少要保留一个模型。
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group-body">
+                    <div class="provider-grid" id="providerGrid"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid-2">
+                <div class="form-group">
+                  <div class="form-group-card">
+                    <div class="form-group-header">
+                      <div>
+                        <div class="form-group-title">默认模型</div>
+                        <div class="form-group-desc">新会话与所有存量用户统一使用，保存后立即生效。</div>
+                      </div>
+                    </div>
+                    <div class="form-group-body">
+                      <div class="inline-selects">
+                        <select class="control" id="defaultProvider" onchange="setDefaultProvider(this.value)"></select>
+                        <select class="control" id="defaultModel" onchange="setDefaultModel(this.value)"></select>
+                      </div>
+                      <p class="tiny muted" style="margin-top: 10px">
+                        写入用户的 <span class="mono">default_agent.config</span> 与
+                        <span class="mono">language_model</span>，用户不可改。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <div class="form-group-card">
+                    <div class="form-group-header">
+                      <div>
+                        <div class="form-group-title">服务模型</div>
+                        <div class="form-group-desc">四个槽位，写入 <span class="mono">system_agent</span>。</div>
+                      </div>
+                    </div>
+                    <div class="form-group-body">
+                      <div id="slotRows"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- ================================ 设备 ================================ -->
+            <section class="page" id="page-devices">
+              <div class="setting-header">
+                <div class="setting-header-main">
+                  <div class="setting-header-text">
+                    <h1 class="setting-title">设备</h1>
+                    <p class="setting-desc">
+                      机器由管理员注册进池，再决定它给全员还是指定人使用；用户不能自己接管别人注册的机器。
+                    </p>
+                  </div>
+                  <div class="setting-header-actions">
+                    <button class="btn btn-sm btn-text" id="emptyToggleBtn" onclick="toggleDeviceEmpty()">预览空态</button>
+                    <button class="btn btn-sm btn-outline" onclick="openCliModal()">注册设备…</button>
+                  </div>
+                </div>
+                <div class="divider"></div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-group-card">
+                  <div class="form-group-header">
+                    <div>
+                      <div class="form-group-title">设备池</div>
+                      <div class="form-group-desc" id="deviceCount">共 3 台设备</div>
+                    </div>
+                    <div class="form-group-extra">
+                      <span class="tag">lh device pool</span>
+                    </div>
+                  </div>
+                  <div class="form-group-body">
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>设备</th>
+                            <th>主机</th>
+                            <th>平台</th>
+                            <th>在线</th>
+                            <th>授权范围</th>
+                            <th>最近活跃</th>
+                          </tr>
+                        </thead>
+                        <tbody id="deviceRows"></tbody>
+                      </table>
+                    </div>
+                    <p class="tiny muted" style="margin-top: 12px">
+                      池设备的 <span class="mono">userId</span> 是注册它的管理员，用户侧通过授权表可见；撤销后下一次刷新即消失，
+                      运行中的任务不强制中断。workspace 会话不出现池设备（保持 fail closed）。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- =============================== 审计日志 =============================== -->
+            <section class="page" id="page-audit">
+              <div class="setting-header">
+                <div class="setting-header-main">
+                  <div class="setting-header-text">
+                    <h1 class="setting-title">审计日志</h1>
+                    <p class="setting-desc">每次管理写操作落一条，含操作前后值；操作失败不记录。</p>
+                  </div>
+                  <div class="setting-header-actions">
+                    <span class="tag" id="auditCount">共 8 条</span>
+                  </div>
+                </div>
+                <div class="divider"></div>
+              </div>
+
+              <div class="form-group">
+                <div class="form-group-card">
+                  <div class="form-group-header">
+                    <div>
+                      <div class="form-group-title">管理动作</div>
+                      <div class="form-group-desc">点任意一行展开前后值；Key、token 之类的敏感值不落库。</div>
+                    </div>
+                  </div>
+                  <div class="form-group-body">
+                    <div class="toolbar">
+                      <label class="search">
+                        <svg class="icon-sm" viewBox="0 0 24 24">
+                          <circle cx="11" cy="11" r="7" />
+                          <path d="m20 20-3.5-3.5" />
+                        </svg>
+                        <input id="auditSearch" placeholder="搜索操作者、目标或动作" oninput="setAuditQuery(this.value)" />
+                      </label>
+                      <div class="filters">
+                        <button class="chip active" data-filter="all" onclick="setAuditFilter('all', this)">全部</button>
+                        <button class="chip" data-filter="account" onclick="setAuditFilter('account', this)">账号</button>
+                        <button class="chip" data-filter="config" onclick="setAuditFilter('config', this)">配置</button>
+                        <button class="chip" data-filter="device" onclick="setAuditFilter('device', this)">设备</button>
+                      </div>
+                    </div>
+                    <div class="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>时间</th>
+                            <th>操作者</th>
+                            <th>动作</th>
+                            <th>目标</th>
+                            <th>来源 IP</th>
+                          </tr>
+                        </thead>
+                        <tbody id="auditRows"></tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2458,126 +2811,126 @@
     </div>
 
     <!-- ============================== 用户抽屉 ============================== -->
-    <div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
-    <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-backdrop" id="userBackdrop" onclick="closeUserDrawer()"></div>
+    <aside class="drawer" id="userDrawer" aria-hidden="true">
       <div class="drawer-head">
         <div style="display: flex; gap: 12px; min-width: 0">
-          <span class="avatar avatar-40" id="drawerAvatar"></span>
+          <span class="avatar avatar-40" id="userAvatar"></span>
           <div style="min-width: 0">
-            <h2 class="drawer-title" id="drawerName">张伟</h2>
-            <p class="drawer-sub" id="drawerSub">A100231 · a100231@tellhow.com</p>
+            <h2 class="drawer-title" id="userName">张伟</h2>
+            <p class="drawer-sub" id="userSub">A000001 · a000001@tellhow.com</p>
           </div>
         </div>
-        <button class="icon-btn" onclick="closeDrawer()" aria-label="关闭">
+        <button class="icon-btn" onclick="closeUserDrawer()" aria-label="关闭">
           <svg class="icon-sm" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-tab="profile" onclick="setTab('profile', this)">概览</button>
-        <button class="tab" data-tab="settings" onclick="setTab('settings', this)">用户设置</button>
-        <button class="tab" data-tab="policy" onclick="setTab('policy', this)">权限</button>
-        <button class="tab" data-tab="actions" onclick="setTab('actions', this)">操作</button>
+        <button class="tab active" onclick="setTab('u-profile', this)">概览</button>
+        <button class="tab" onclick="setTab('u-access', this)">设备授权</button>
+        <button class="tab" onclick="setTab('u-actions', this)">操作</button>
       </div>
 
       <div class="drawer-body">
-        <div class="tab-panel active" id="tab-profile">
-          <div class="info-grid">
-            <div class="info-item"><span>用户 ID</span><strong class="mono">user_3f9a2c71</strong></div>
-            <div class="info-item"><span>来源</span><strong>统一认证平台 SSO</strong></div>
-            <div class="info-item"><span>角色</span><strong id="infoRole">成员</strong></div>
-            <div class="info-item"><span>状态</span><strong id="infoStatus">正常</strong></div>
-            <div class="info-item"><span>创建时间</span><strong>2026-03-18 10:22</strong></div>
-            <div class="info-item"><span>最后活跃</span><strong id="infoActive">今天 09:12</strong></div>
-          </div>
+        <div class="tab-panel active" id="u-profile">
+          <div class="info-grid" id="userInfo"></div>
           <div class="policy-box">
-            <h4>生效配置摘要</h4>
-            <p id="infoSummary">实验室开启 0 项；默认模型 DeepSeek V4 Flash；允许修改模型配置。</p>
+            <h4>生效配置</h4>
+            <p>模型与服务模型由管理员统一托管；用户的实验室开关与个人偏好不受影响。</p>
           </div>
         </div>
 
-        <div class="tab-panel" id="tab-settings">
-          <div class="drawer-toolbar">
-            <span class="tiny muted">设置页</span>
-            <select class="control" id="drawerPageSelect" onchange="setDrawerPage(this.value)"></select>
-            <span class="tiny muted" style="margin-left: auto">当前值 / 模板默认</span>
-          </div>
-          <div id="drawerSettingsBody"></div>
+        <div class="tab-panel" id="u-access">
+          <div id="userAccess"></div>
+          <p class="tiny muted" style="margin-top: 12px">
+            授权在「设备」页按设备分配；这里只读。撤销授权不影响正在运行的任务。
+          </p>
         </div>
 
-        <div class="tab-panel" id="tab-policy">
-          <div class="policy-box">
-            <h4>模型与 Provider 配置</h4>
-            <p>关闭后，该用户不能修改 Provider、API Key 与默认模型；服务端写入同样被拒绝。</p>
-            <div class="radio-row">
-              <label><input type="radio" name="modelPolicy" value="inherit" checked /> 继承模板（允许）</label>
-              <label><input type="radio" name="modelPolicy" value="allow" /> 允许</label>
-              <label><input type="radio" name="modelPolicy" value="deny" /> 禁止</label>
-            </div>
-          </div>
-          <div class="policy-box">
-            <h4>实验室开关</h4>
-            <p>控制该用户能否修改实验室开关；单个开关可在「用户设置 → 实验室」里锁定。</p>
-            <div class="radio-row">
-              <label><input type="radio" name="labPolicy" value="inherit" checked /> 继承模板（允许）</label>
-              <label><input type="radio" name="labPolicy" value="allow" /> 允许</label>
-              <label><input type="radio" name="labPolicy" value="deny" /> 禁止</label>
-            </div>
-          </div>
-          <div class="policy-box">
-            <h4>其他设置</h4>
-            <p>服务模型、记忆、工具渠道、外观等按行控制；数据/资源类页面不提供默认值。</p>
-            <div class="radio-row">
-              <label><input type="checkbox" checked /> 允许修改服务模型</label>
-              <label><input type="checkbox" checked /> 允许修改记忆设置</label>
-              <label><input type="checkbox" checked /> 允许调整搜索/抓取渠道顺序</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="tab-panel" id="tab-actions">
-          <div class="drawer-actions">
-            <button class="btn btn-sm btn-primary" onclick="toast('已保存该用户的策略')">保存策略</button>
-            <button class="btn btn-sm btn-outline" onclick="toast('已按「仅补齐未设置项」应用模板')">应用模板</button>
-            <button class="btn btn-sm btn-text" onclick="toast('已将该用户恢复为模板默认')">恢复默认</button>
-            <button class="btn btn-sm btn-text" onclick="toast('已发送重置密码邮件（若启用）')">发送重置密码</button>
-            <button class="btn btn-sm btn-text" onclick="toast('已设为管理员')">设为管理员</button>
-            <button class="btn btn-sm btn-danger" onclick="toast('已禁用该用户，现有会话将被吊销')">禁用用户</button>
-          </div>
+        <div class="tab-panel" id="u-actions">
+          <div class="drawer-actions" id="userActions"></div>
           <p class="tiny muted" style="margin-top: 16px">
-            账号类操作复用 Better Auth admin 插件；设置模板与策略走 Fork 自有 RPC。
+            账号类操作复用 Better Auth admin 插件，每次成功操作落一条审计。
           </p>
         </div>
       </div>
     </aside>
 
-    <!-- ============================== 应用弹窗 ============================== -->
-    <div class="modal-backdrop" id="applyModal">
+    <!-- ============================== 设备分配抽屉 ============================== -->
+    <div class="drawer-backdrop" id="deviceBackdrop" onclick="closeDeviceDrawer()"></div>
+    <aside class="drawer" id="deviceDrawer" aria-hidden="true">
+      <div class="drawer-head">
+        <div style="min-width: 0">
+          <h2 class="drawer-title" id="deviceName">A100 训练机</h2>
+          <p class="drawer-sub" id="deviceSub">gpu-node-01 · linux/amd64 · 在线</p>
+        </div>
+        <button class="icon-btn" onclick="closeDeviceDrawer()" aria-label="关闭">
+          <svg class="icon-sm" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+      <div class="drawer-body" id="deviceDrawerBody"></div>
+    </aside>
+
+    <!-- ============================== AI 保存确认 ============================== -->
+    <div class="modal-backdrop" id="aiModal">
       <div class="modal">
         <div class="modal-head">
-          <h3>应用用户设置模板到存量用户</h3>
-          <p>只下发「可下发」字段；设备本地、用户私有与数据类字段自动跳过。</p>
+          <h3>保存并同步到存量用户</h3>
+          <p>三个托管字段会立即覆盖 1,284 位用户；用户无法单独修改。</p>
         </div>
         <div class="modal-body">
-          <label class="option selected" id="optUnset" onclick="selectApplyMode('unset')">
-            <input type="radio" name="applyMode" checked />
-            <div>
-              <strong>仅补齐未设置项（推荐）</strong>
-              <span>用户已自定义的字段保持不变；只写入用户从未设置过的字段。</span>
-            </div>
-          </label>
-          <label class="option" id="optForce" onclick="selectApplyMode('force')">
-            <input type="radio" name="applyMode" />
-            <div>
-              <strong>强制覆盖</strong>
-              <span>用模板值覆盖所有选中用户的对应字段；锁定项始终覆盖。</span>
-            </div>
-          </label>
-          <div class="apply-summary" id="applySummary"></div>
+          <div class="apply-summary" id="aiDiff"></div>
+          <ul class="note-list" style="margin-top: 12px">
+            <li>保存后新会话立即使用新配置；已开始的会话不中断。</li>
+            <li>新增用户登录时由 <span class="mono">initUser</span> 物化同一份配置。</li>
+            <li>菜单可见性变更随下次配置下发生效（缓存 5 秒）。</li>
+          </ul>
         </div>
         <div class="modal-foot">
-          <button class="btn btn-sm btn-text" onclick="closeApply()">取消</button>
-          <button class="btn btn-sm btn-primary" onclick="confirmApply()">确认应用</button>
+          <button class="btn btn-sm btn-text" onclick="closeAiModal()">取消</button>
+          <button class="btn btn-sm btn-primary" onclick="confirmAi()">确认保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== 注册设备命令 ============================== -->
+    <div class="modal-backdrop" id="cliModal">
+      <div class="modal">
+        <div class="modal-head">
+          <h3>把当前机器注册进设备池</h3>
+          <p>在要共享的机器上执行；需要管理员账号登录的 CLI。</p>
+        </div>
+        <div class="modal-body">
+          <div class="stack-8">
+            <div>
+              <div class="tiny muted">1 · 注册（设备归当前管理员所有，pool = admin）</div>
+              <div class="cmd">
+                <code>lh device pool register --name "A100 训练机"</code>
+                <button class="btn btn-sm btn-text" onclick="copyCmd(this, 'lh device pool register --name &quot;A100 训练机&quot;')">复制</button>
+              </div>
+            </div>
+            <div>
+              <div class="tiny muted">2 · 分配给全员</div>
+              <div class="cmd">
+                <code>lh device pool grant A100 --all</code>
+                <button class="btn btn-sm btn-text" onclick="copyCmd(this, 'lh device pool grant A100 --all')">复制</button>
+              </div>
+            </div>
+            <div>
+              <div class="tiny muted">3 · 或只分配给指定人（工号 / 邮箱）</div>
+              <div class="cmd">
+                <code>lh device pool grant A100 --user A100877</code>
+                <button class="btn btn-sm btn-text" onclick="copyCmd(this, 'lh device pool grant A100 --user A100877')">复制</button>
+              </div>
+            </div>
+          </div>
+          <p class="tiny muted" style="margin-top: 12px">
+            注册成功后刷新本页即可看到设备；也可以在设备页的分配抽屉里改授权范围。非管理员执行上述命令返回 FORBIDDEN。
+          </p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-sm btn-primary" onclick="closeCliModal()">知道了</button>
         </div>
       </div>
     </div>
@@ -2585,495 +2938,13 @@
     <div id="toast"></div>
     <script>
       /* ------------------------------------------------------------------
-       * 真实设置项与默认值（来自本仓库代码）
-       * - general / preference / languageModel / systemAgent / memory / tool
-       * - 默认值来源：packages/const/src/settings、packages/config/src/index.ts、
-       *   packages/business/config/src/llm.ts、packages/business/const/src/llm.ts
+       * 管理员控制台原型（第二版）
+       * 设计依据：ADMIN_CONSOLE_DESIGN.md
+       *   - 用户管理 / 审计日志   → Better Auth admin() + admin_console_audit_logs
+       *   - AI 服务               → admin_console_settings.ai + user_settings 三列
+       *   - 设备池                → devices.pool='admin' + admin_console_device_grants
+       * 纯静态：数据是 mock，交互只用于说明产品行为。
        * ------------------------------------------------------------------ */
-
-      const CAP = {
-        server: { label: '可下发', cls: 'cap-server' },
-        device: { label: '设备本地', cls: 'cap-device' },
-        private: { label: '用户私有', cls: 'cap-private' },
-        data: { label: '用户数据', cls: 'cap-data' },
-        serverOnly: { label: '服务端配置', cls: 'cap-serveronly' },
-        readonly: { label: '只读', cls: 'cap-readonly' },
-      };
-
-      const S = (label, path, value, desc, extra = {}) => ({
-        label, path, value, desc, type: 'switch', capability: 'server', editable: true, lock: false, ...extra,
-      });
-      const Q = (label, path, value, options, desc, extra = {}) => ({
-        label, path, value, options, desc, type: 'select', capability: 'server', editable: true, lock: false, ...extra,
-      });
-      const T = (label, path, value, desc, extra = {}) => ({
-        label, path, value, desc, type: 'text', capability: 'server', editable: true, lock: false, ...extra,
-      });
-      const N = (label, path, value, desc, extra = {}) => ({
-        label, path, value, desc, type: 'number', capability: 'server', editable: true, lock: false, ...extra,
-      });
-      const MODEL = (label, path, value, options, desc, extra = {}) => ({
-        label, path, value, options, desc, type: 'model', capability: 'server', editable: true, lock: false, ...extra,
-      });
-      const RAW = (label, path, value, desc, extra = {}) => ({
-        label, path, value, desc, type: 'none', capability: 'server', editable: true, lock: false, ...extra,
-      });
-
-      const OPT = {
-        animation: [['agile', '灵动'], ['elegant', '优雅'], ['disabled', '关闭']],
-        density: [['loose', '宽松'], ['compact', '紧凑']],
-        contextMenu: [['default', '开启'], ['disabled', '关闭']],
-        language: [['auto', '跟随系统'], ['zh-CN', '简体中文'], ['en-US', 'English']],
-        theme: [['system', '跟随系统'], ['light', '浅色'], ['dark', '深色']],
-        transition: [['fadeIn', '淡入'], ['smooth', '平滑'], ['none', '关闭']],
-        primary: [['', '默认（跟随主题）'], ['blue', '蓝色'], ['geekblue', '极客蓝'], ['purple', '紫色'], ['green', '绿色'], ['red', '红色'], ['orange', '橙色'], ['gold', '金色']],
-        neutral: [['', '默认（跟随主题）'], ['slate', '石板灰'], ['mauve', '淡紫'], ['olive', '橄榄'], ['sage', '鼠尾草'], ['sand', '沙色']],
-        responseLang: [['', '跟随系统'], ['zh-CN', '简体中文'], ['en-US', 'English']],
-        highlighter: [['lobe-theme', 'Lobe Theme'], ['github', 'GitHub'], ['one-dark', 'One Dark']],
-        mermaid: [['lobe-theme', 'Lobe Theme'], ['default', 'Default'], ['dark', 'Dark']],
-        topicGroup: [['byTime', '按时间'], ['byProject', '按项目'], ['flat', '平铺'], ['byStatus', '按状态'], ['byAgent', '按助理'], ['byDevice', '按设备']],
-        topicSort: [['updatedAt', '按更新时间'], ['createdAt', '按创建时间']],
-        effort: [['low', '低'], ['medium', '中'], ['high', '高']],
-      };
-
-      const MODELS = {
-        main: [
-          ['deepseek / deepseek-v4-flash', 'deepseek / deepseek-v4-flash（DeepSeek V4 Flash）'],
-          ['deepseek / deepseek-v4-pro', 'deepseek / deepseek-v4-pro'],
-          ['deepseek / deepseek-flash', 'deepseek / deepseek-flash（DeepSeek V4.1 Flash）'],
-          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna'],
-        ],
-        flash: [
-          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna（默认）'],
-          ['deepseek / deepseek-v4-flash', 'deepseek / deepseek-v4-flash'],
-          ['deepseek / deepseek-flash', 'deepseek / deepseek-flash'],
-          ['google / gemini-3-flash-preview', 'google / gemini-3-flash-preview'],
-        ],
-        embedding: [
-          ['openai / text-embedding-3-small', 'openai / text-embedding-3-small（默认）'],
-          ['openai / text-embedding-3-large', 'openai / text-embedding-3-large'],
-        ],
-        verify: [
-          ['zhipu / glm-5.3-flash', 'zhipu / glm-5.3-flash（默认，支持视觉）'],
-          ['google / gemini-3.8-flash', 'google / gemini-3.8-flash（支持视觉）'],
-          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna（支持视觉）'],
-        ],
-        slot: [
-          ['tier:main', '跟随主模型'],
-          ['tier:flash', '跟随 Flash 模型'],
-          ['tier:embedding', '跟随记忆向量化模型'],
-          ['tier:verify', '跟随验收模型'],
-          ['deepseek / deepseek-v4-flash', 'deepseek / deepseek-v4-flash'],
-          ['openai / gpt-5.6-luna', 'openai / gpt-5.6-luna'],
-          ['openai / gpt-4o-mini-transcribe', 'openai / gpt-4o-mini-transcribe'],
-          ['typesafe / jev-1.14.0', 'typesafe / jev-1.14.0'],
-        ],
-      };
-
-      const PAGES = [
-        {
-          key: 'appearance', group: '账号', label: '外观', icon: '◐',
-          intro: '对应「设置 → 外观」。主题与语言是设备本地设置，无法由服务端下发；其余外观与聊天外观字段可设默认。',
-          sections: [
-            {
-              title: '主题与语言',
-              rows: [
-                Q('主题模式', 'client.nextThemes.theme', 'system', OPT.theme, '存储在本机 next-themes，不进入 user_settings。', { capability: 'device', editable: false }),
-                Q('界面语言', 'client.globalStore.language', 'auto', OPT.language, '存储在本机全局 store，不进入 user_settings。', { capability: 'device', editable: false }),
-                Q('动画模式', 'general.animationMode', 'agile', OPT.animation, '页面切换与消息出现的动效。'),
-                Q('界面密度', 'general.interfaceDensity', 'loose', OPT.density, '列表与表单的间距。'),
-                Q('右键菜单', 'general.contextMenuMode', 'disabled', OPT.contextMenu, 'Web 默认关闭；桌面端默认开启。'),
-                Q('主色', 'general.primaryColor', '', OPT.primary, '空值表示跟随主题默认。'),
-                Q('中性色', 'general.neutralColor', '', OPT.neutral, '空值表示跟随主题默认。'),
-                Q('回复语言', 'general.responseLanguage', '', OPT.responseLang, '留空时跟随系统语言。'),
-              ],
-            },
-            {
-              title: '字体',
-              rows: [
-                T('界面字体', 'preference.fontFamily', '', '系统默认字体栈；实际可用字体取决于设备。', { note: '按设备可用字体' }),
-                T('终端字体', 'preference.terminalFontFamily', '', '桌面端内置终端使用的等宽字体。', { note: '仅桌面端' }),
-                N('字号', 'general.fontSize', 14, '聊天与界面的基础字号。'),
-                S('字体抗锯齿', 'general.fontAntialiasing', true, 'macOS 灰度抗锯齿。'),
-              ],
-            },
-            {
-              title: '聊天外观',
-              rows: [
-                Q('消息过渡', 'general.transitionMode', 'fadeIn', OPT.transition, '消息流式输出时的过渡效果。'),
-                S('自动滚动', 'general.enableAutoScrollOnStreaming', true, '流式输出时自动滚动到底部。'),
-                S('流式展开工作流', 'general.expandWorkflowWhileStreaming', false, '运行中默认展开工具工作流。'),
-                S('图片读取预览', 'general.showImageReadPreview', true, '工具读取图片时单独展示图片行。'),
-                S('链接图标', 'general.enableMessageLinkIcon', true, '在消息链接前显示站点图标。'),
-                S('粘贴自动转换', 'general.enablePasteAutoConvert', true, '粘贴 Markdown 时转换为富文本。'),
-                Q('跟进行为', 'general.followUpBehavior', 'steer', [['steer', '插话'], ['queue', '排队']], '仅在「更好的编码体验」开启时生效。'),
-                Q('代码高亮主题', 'general.highlighterTheme', 'lobe-theme', OPT.highlighter, '代码块高亮主题。'),
-                Q('Mermaid 主题', 'general.mermaidTheme', 'lobe-theme', OPT.mermaid, 'Mermaid 图表的主题。'),
-              ],
-            },
-            {
-              title: '话题列表',
-              rows: [
-                S('发送快捷键', 'preference.useCmdEnterToSend', false, '开启后使用 Cmd/Ctrl + Enter 发送。'),
-                Q('话题分组', 'preference.topicGroupMode', 'byTime', OPT.topicGroup, '个人空间话题列表的默认分组。'),
-                Q('话题排序', 'preference.topicSortBy', 'updatedAt', OPT.topicSort, '话题列表的默认排序。'),
-                S('显示已完成话题', 'preference.topicIncludeCompleted', false, '默认在话题列表中包含已完成话题。'),
-                Q('项目话题分组', 'preference.projectTopicGroupMode', 'byAgent', OPT.topicGroup, '项目空间话题列表的默认分组。'),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'hotkey', group: '账号', label: '快捷键', icon: '⌨',
-          intro: '对应「设置 → 快捷键」。热键保存在 user_settings.hotkey；系统保留键位不可修改。',
-          sections: [
-            {
-              title: '常用快捷键',
-              rows: [
-                T('命令面板', 'hotkey.commandPalette', 'mod+K', 'mod 在 macOS 为 ⌘，其他平台为 Ctrl。'),
-                T('搜索', 'hotkey.search', 'mod+J', '打开全局搜索。'),
-                T('切换左侧面板', 'hotkey.toggleLeftPanel', 'mod+[', '显示/隐藏左侧面板。'),
-                T('切换右侧面板', 'hotkey.toggleRightPanel', 'mod+]', '显示/隐藏右侧面板。'),
-                T('话题内查找', 'hotkey.findInTopic', 'mod+F', '仅在聊天范围内生效。'),
-                T('重新生成', 'hotkey.regenerateMessage', 'alt+R', '重新生成最后一条回复。'),
-                T('保存话题', 'hotkey.saveTopic', 'alt+N', '将当前话题保存为文档。'),
-                T('保存文档', 'hotkey.saveDocument', 'mod+S', '仅在文档编辑范围内生效。'),
-              ],
-            },
-            {
-              title: '不可修改的键位',
-              rows: [
-                RAW('切换标签页', 'hotkey.switchTab', 'mod+1…9', '浏览器同款标签切换，系统保留。', { capability: 'readonly', editable: false }),
-                RAW('下一个标签页', 'hotkey.nextTab', 'Ctrl+Tab', '系统保留。', { capability: 'readonly', editable: false }),
-                RAW('上一个标签页', 'hotkey.prevTab', 'Ctrl+Shift+Tab', '系统保留。', { capability: 'readonly', editable: false }),
-                RAW('编辑消息', 'hotkey.editMessage', 'Alt+双击', '系统保留。', { capability: 'readonly', editable: false }),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'stats', group: '账号', label: '数据统计', icon: '▤', kind: 'note',
-          noteTitle: '用户使用数据，只读',
-          note: '对应「设置 → 数据统计」。这里展示的是用户自己的消息数、Token 用量等统计，不是可下发配置。',
-          points: ['管理员可在用户详情里查看概览，不提供默认值。', '用量与计费数据来自服务端统计，用户不可改。'],
-        },
-        {
-          key: 'provider', group: '智能体', label: 'AI 服务商', icon: '◍',
-          intro: '对应「设置 → AI 服务商」。这里能配置 Provider 默认启停、模型范围与是否允许用户修改；API Key 属于用户私有，不下发。',
-          policy: {
-            key: 'allowModelConfig',
-            label: '允许用户修改模型与 Provider 配置',
-            desc: '关闭后，用户不能新增 Provider、填写 API Key、修改默认模型；服务端 updateSettings 会拒绝 languageModel / keyVaults / defaultAgent.config.model 的写入。',
-            value: true,
-          },
-          sections: [
-            {
-              title: '内置 Provider 默认状态',
-              rows: [
-                S('DeepSeek', 'languageModel.deepseek.enabled', true, '默认启用。'),
-                S('OpenAI', 'languageModel.openai.enabled', true, '默认启用。'),
-                S('Anthropic', 'languageModel.anthropic.enabled', true, '默认启用。'),
-                S('Google', 'languageModel.google.enabled', true, '默认启用。'),
-                S('OpenCode Zen', 'languageModel.opencodezen.enabled', false, '默认关闭；预置了官方模型列表。'),
-                S('LM Studio', 'languageModel.lmstudio.enabled', false, '默认关闭；fetchOnClient = true。'),
-                S('Ollama', 'languageModel.ollama.enabled', false, '默认关闭；fetchOnClient = true。'),
-                S('Unsloth', 'languageModel.unsloth.enabled', false, '默认关闭；fetchOnClient = true。'),
-                S('其他 Provider', 'languageModel.<provider>.enabled', false, '未在默认表中列出的 Provider 默认关闭。'),
-              ],
-            },
-            {
-              title: '模型范围',
-              rows: [
-                T('可用模型范围', 'languageModel.<provider>.enabledModels', '全部内置模型', '留空表示不限制；填写后只展示白名单内的模型。'),
-                S('自动获取模型列表', 'languageModel.<provider>.autoFetchModelLists', false, '默认跟随 Provider 能力，不强制开启。'),
-                RAW('用户自定义模型卡', 'languageModel.<provider>.customModelCards', '用户私有', '用户自己添加的模型定义，管理员不可见、不下发。', { capability: 'private', editable: false }),
-                S('允许用户添加自定义 Provider', 'policy.allowCustomProvider', true, '关闭后隐藏「添加服务商」入口，并拒绝相关写入。'),
-                S('允许用户填写 API Key', 'policy.allowUserApiKey', true, '关闭后用户只能使用服务端环境变量配置的 Provider。'),
-              ],
-            },
-            {
-              title: '凭据与服务端配置',
-              rows: [
-                RAW('API Key / Base URL', 'keyVaults.<provider>', '用户私有', '加密存储在 user_settings.keyVaults；管理员不可见。', { capability: 'private', editable: false }),
-                RAW('服务端 Provider 凭据', 'OPENAI_API_KEY 等', '服务端配置', '由部署环境变量提供，用户不可见、不可改。', { capability: 'serverOnly', editable: false }),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'serviceModel', group: '智能体', label: '服务模型', icon: '✦',
-          intro: '对应「设置 → 服务模型」。四个层级模型是后台任务默认值；高级任务可跟随层级，也可单独指定。',
-          policy: {
-            key: 'allowServiceModel',
-            label: '允许用户修改服务模型',
-            desc: '关闭后，用户端服务模型页面只读；服务端仍按已保存的值执行。',
-            value: true,
-          },
-          sections: [
-            {
-              title: '层级模型',
-              rows: [
-                MODEL('主模型', 'systemAgent.tiers.main', 'deepseek / deepseek-v4-flash', MODELS.main, '创作、推理等看重质量的任务。'),
-                MODEL('Flash 模型', 'systemAgent.tiers.flash', 'openai / gpt-5.6-luna', MODELS.flash, '命名、翻译、压缩、记忆等高频任务。'),
-                MODEL('记忆向量化', 'systemAgent.tiers.embedding', 'openai / text-embedding-3-small', MODELS.embedding, '将记忆转为向量；文件向量化由 DEFAULT_FILES_CONFIG 控制。'),
-                MODEL('验收模型', 'systemAgent.tiers.verify', 'zhipu / glm-5.3-flash', MODELS.verify, '任务与目标验收，必须支持视觉。'),
-              ],
-            },
-            {
-              title: '高级任务（17 项，默认跟随层级）',
-              rows: [
-                MODEL('话题命名', 'systemAgent.topic', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
-                MODEL('线程命名', 'systemAgent.thread', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
-                MODEL('话题自动摘要', 'systemAgent.topicAutoSummary', 'tier:main', MODELS.slot, '默认关闭；启用后跟随主模型。'),
-                MODEL('翻译', 'systemAgent.translation', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
-                MODEL('提示词改写', 'systemAgent.promptRewrite', 'tier:flash', MODELS.slot, '默认开启；跟随 Flash 模型。'),
-                MODEL('记忆分析', 'systemAgent.memoryAnalysisAgentConfig', 'tier:flash', MODELS.slot, '跟随 Flash 模型。'),
-                MODEL('输入建议', 'systemAgent.inputCompletion', 'tier:flash', MODELS.slot, '默认关闭；跟随 Flash 模型。'),
-                MODEL('跟进建议', 'systemAgent.followUpAction', 'tier:flash', MODELS.slot, '默认关闭；跟随 Flash 模型。'),
-                MODEL('语音转写', 'systemAgent.asr', 'openai / gpt-4o-mini-transcribe', MODELS.slot, '仅对外部 Agent 的语音消息生效。'),
-                MODEL('频道路由', 'systemAgent.channelRouting', 'typesafe / jev-1.14.0', MODELS.slot, '仅商业版频道功能使用，默认开启。'),
-                RAW('文件向量化', 'DEFAULT_FILES_CONFIG.embedding_model', '服务端环境变量', '不在用户设置中，管理员需通过环境变量修改。', { capability: 'serverOnly', editable: false }),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'skill', group: '智能体', label: '技能', icon: '◇', kind: 'note',
-          noteTitle: '用户已安装的技能与 MCP，属于用户数据',
-          note: '对应「设置 → 技能」。这里没有“默认技能”概念：技能是用户自己安装/连接的资源。',
-          points: [
-            '管理员可查看某用户已安装的技能与 MCP，但不应替用户写入。',
-            '若要限制安装来源，应放在「权限」里做策略（P2：允许/禁止自定义 MCP、市场技能）。',
-            '内置技能由部署版本决定，不是用户设置。',
-          ],
-        },
-        {
-          key: 'tools', group: '智能体', label: '工具', icon: '⌘',
-          intro: '对应「设置 → 工具」。管理员只能设默认优先级；最终可用渠道仍由服务端环境变量 SEARCH_PROVIDERS / CRAWLER_IMPLS 决定。',
-          policy: {
-            key: 'allowToolChannels',
-            label: '允许用户调整搜索 / 抓取渠道顺序',
-            desc: '关闭后，工具页面只读；服务端按环境变量默认顺序执行。',
-            value: true,
-          },
-          sections: [
-            {
-              title: '渠道优先级',
-              rows: [
-                T('搜索渠道顺序', 'tool.searchProviders', '跟随服务端默认', '留空表示使用 SEARCH_PROVIDERS 的默认顺序。'),
-                T('抓取渠道顺序', 'tool.crawlerImpls', '跟随服务端默认', '留空表示使用 CRAWLER_IMPLS 的默认顺序。'),
-              ],
-            },
-            {
-              title: '用户私有部分',
-              rows: [
-                RAW('工具人工干预白名单', 'tool.humanIntervention.allowList', '用户私有', '用户对具体工具的“总是允许”记录，管理员不下发。', { capability: 'private', editable: false }),
-                RAW('已卸载的内置工具', 'tool.uninstalledBuiltinTools', '用户数据', '用户在个人空间隐藏的内置工具。', { capability: 'data', editable: false }),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'memory', group: '智能体', label: '记忆设置', icon: '◎',
-          intro: '对应「设置 → 记忆设置」。',
-          policy: {
-            key: 'allowMemory',
-            label: '允许用户修改记忆设置',
-            desc: '关闭后，用户端记忆开关与强度只读。',
-            value: true,
-          },
-          sections: [
-            {
-              title: '记忆',
-              rows: [
-                S('启用记忆', 'memory.enabled', true, '默认开启。'),
-                Q('记忆强度', 'memory.effort', 'medium', OPT.effort, '默认中；强度越高，后台分析与召回越积极。'),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'labels', group: '智能体', label: '标签', icon: '⌗', kind: 'note',
-          noteTitle: '用户标签，属于用户数据',
-          note: '对应「设置 → 标签」。标签用于用户自己的助理/话题分类，没有部署默认值。',
-          points: ['管理员可在用户详情里查看标签数量，但不提供默认值。', '标签的团队共享规则属于 Workspace 权限，不在个人设置模板里。'],
-        },
-        {
-          key: 'integrations', group: '连接', label: '集成', icon: '⇄',
-          intro: '对应「设置 → 集成」。目前可下发的是 GitHub 自动化开关；仓库授权与绑定关系属于用户数据。',
-          sections: [
-            {
-              title: 'GitHub 自动化',
-              rows: [
-                S('合并 PR 自动验收', 'preference.integration.github.acceptOnMerge', true, '合并关联 PR 时接受验收。'),
-                S('私有仓库评论', 'preference.integration.github.commentOnPrivateRepositories', true, '在私有仓库 PR 上回写验收与对话链接。'),
-                S('公开仓库评论', 'preference.integration.github.commentOnPublicRepositories', false, '公开仓库默认不写内部链接。'),
-                S('CI 失败唤醒', 'preference.integration.github.wakeOnCiFailure', true, '检查失败时唤醒发起 PR 的 Agent。'),
-                S('评审反馈唤醒', 'preference.integration.github.wakeOnReview', true, '收到变更请求/评论时唤醒 Agent。'),
-              ],
-            },
-            {
-              title: '绑定关系',
-              rows: [
-                RAW('GitHub 账号绑定', 'integration_accounts', '用户数据', 'OAuth 绑定关系，管理员不可见、不下发。', { capability: 'data', editable: false }),
-                RAW('仓库授权', 'integration_repositories', '用户数据', '用户选择的仓库范围。', { capability: 'data', editable: false }),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'connector', group: '连接', label: '连接器', icon: '⚯', kind: 'note',
-          noteTitle: '连接器绑定属于用户数据',
-          note: '对应「设置 → 连接器」。连接器是用户自己连接的 MCP / 外部服务，不应由管理员写入绑定。',
-          points: ['管理员可控制允许的连接器目录与安装权限（P2）。', '已连接列表、凭据与使用量属于用户私有数据。'],
-        },
-        {
-          key: 'devices', group: '运行资源', label: '设备', icon: '▣', kind: 'note',
-          noteTitle: '设备是用户资源',
-          note: '对应「设置 → 设备」。设备注册、在线状态与工作目录属于用户自己的运行资源。',
-          points: ['不提供默认值。', '若要限制“允许添加设备”，应作为权限策略（P2），不是设置默认值。'],
-        },
-        {
-          key: 'subscriptionAccounts', group: '运行资源', label: '订阅账号', icon: '◫', kind: 'note',
-          noteTitle: '编码代理订阅账号属于用户资源',
-          note: '对应「设置 → 订阅账号」。这些是用户设备登录的 Claude Code / Codex 等订阅容量。',
-          points: ['不提供默认值。', '管理员可查看容量与状态，但不应替用户登录订阅。'],
-        },
-        {
-          key: 'environments', group: '运行资源', label: '环境', icon: '▤', kind: 'note',
-          noteTitle: '环境定义属于用户资源',
-          note: '对应「设置 → 环境」。环境是运行 Agent 的容器/沙盒定义。',
-          points: ['不提供默认值。', '若要统一环境模板，应作为独立的“环境模板”功能，而不是用户设置默认值。'],
-        },
-        {
-          key: 'creds', group: '运行资源', label: '凭证管理', icon: '⚿', kind: 'note',
-          noteTitle: '凭证由用户私有',
-          note: '对应「设置 → 凭证管理」。Agent 运行时读取的密钥属于用户私有数据。',
-          points: ['管理员不可见、不可下发。', '部署级密钥应放在服务端环境变量，而不是这个页面。'],
-        },
-        {
-          key: 'storage', group: '系统与开发者', label: '存储', icon: '▥', kind: 'note',
-          noteTitle: '存储由服务端配置',
-          note: '对应「设置 → 存储」。S3、向量库等由部署环境变量配置；个人页只有用量与账户删除。',
-          points: ['不提供用户默认值。', '管理员应通过服务端配置修改，而不是用户设置模板。'],
-        },
-        {
-          key: 'trash', group: '系统与开发者', label: '回收站', icon: '⌫', kind: 'note',
-          noteTitle: '回收站是用户数据',
-          note: '对应「设置 → 回收站」。',
-          points: ['不提供默认值。', '管理员可在用户详情里查看删除量，但不应替用户恢复/清空。'],
-        },
-        {
-          key: 'advanced', group: '系统与开发者', label: '高级', icon: '⚒',
-          intro: '对应「设置 → 高级」。开发者模式与网关模式可下发；诊断、远程调试、更新通道是设备本地。',
-          sections: [
-            {
-              title: '工具与诊断',
-              rows: [
-                S('开发者模式', 'general.isDevMode', false, '显示开发调试入口。'),
-                S('网关模式', 'defaultAgent.config.chatConfig.disableGatewayMode', false, '默认启用网关模式；关闭后走直连。'),
-                RAW('诊断信息', 'client.diagnostics', '设备本地', '浏览器/设备诊断，不进入 user_settings。', { capability: 'device', editable: false }),
-                RAW('远程调试', 'client.remoteDebugging', '设备本地', '桌面端远程调试开关。', { capability: 'device', editable: false }),
-              ],
-            },
-            {
-              title: '应用更新（桌面端）',
-              rows: [
-                RAW('更新通道', 'client.updateChannel', '设备本地', 'Stable / Canary，按设备保存。', { capability: 'device', editable: false }),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'apikey', group: '系统与开发者', label: 'API Key', icon: '⚿', kind: 'note',
-          noteTitle: 'API Key 是用户私有数据',
-          note: '对应「设置 → API Key」。API Key 用于用户自己的外部调用。',
-          points: ['不提供默认值。', '若要限制创建，应作为权限策略（P2：允许/禁止创建 API Key）。'],
-        },
-        {
-          key: 'labs', group: '系统与开发者', label: '实验室', icon: '⚗',
-          intro: '对应「设置 → 实验室」。这里是真实的 18 个实验开关（来自 LAB_FEATURES），默认全部关闭。',
-          policy: {
-            key: 'allowLabs',
-            label: '允许用户修改实验室开关',
-            desc: '关闭后，用户端实验室页面全部只读；管理员锁定项始终只读。',
-            value: true,
-          },
-          sections: [
-            {
-              title: '通用实验',
-              rows: [
-                S('Agent Graph 运行时配置', 'preference.lab.enableAgentGraphConfig', false, '在助理档案的进阶设置中显示 Graph 运行时配置。', { stage: 'alpha' }),
-                S('助理身份', 'preference.lab.enableAgentIdentity', false, '为助理开通专属邮箱地址，并查看它收到的消息。', { stage: 'alpha' }),
-                S('消息文本选择操作', 'preference.lab.enableMessageTextSelectionActions', false, '在聊天消息中选中文本时显示「引用」和「复制」。', { stage: 'alpha' }),
-                S('自进化', 'preference.lab.enableSelfLearning', false, '让 Agent 在后台从对话中学习，并在每晚复盘。', { stage: 'alpha' }),
-                S('把对话保存为评测用例', 'preference.lab.enableEvalCapture', false, '在消息动作里增加评测用例捕获。', { stage: 'alpha' }),
-                S('目标', 'preference.lab.enableGoals', false, '把目标交给助手：拆解任务、跟进进度、交付结果。', { stage: 'beta' }),
-                S('远程端口链接', 'preference.lab.enableDeviceTunnel', false, '给工作设备上的端口一个可访问链接。', { stage: 'alpha' }),
-                S('更好的编码体验', 'preference.lab.enableBetterCodingExperience', false, '改进智能体与你一起写代码、运行和审查代码的体验。', { stage: 'alpha' }),
-                S('项目工作空间', 'preference.lab.enableProjects', false, '将长期目标组织到独立工作空间中。', { stage: 'alpha' }),
-                S('OAuth 应用', 'preference.lab.enableOAuthApps', false, '在个人和工作区设置中显示 OAuth 应用管理入口。', { stage: 'beta' }),
-                S('Artifact 部署', 'preference.lab.enableArtifactDeployment', false, '将 Artifact 发布为可访问的托管链接。', { stage: 'beta' }),
-                S('Codex App Server 运行时', 'preference.lab.enableCodexAppServer', false, '通过桌面端或已连接设备的 App Server 运行 Codex。', { stage: 'alpha' }),
-              ],
-            },
-            {
-              title: '仅商业版 / 工作区',
-              rows: [
-                S('报告问题', 'preference.lab.enableTopicBugReport', false, '在话题菜单中增加「报告问题」。', { stage: 'alpha', availability: '仅商业版' }),
-                S('页面实时协作', 'preference.lab.enablePageCollab', false, '在工作区页面中与成员实时共同编辑。', { stage: 'alpha', availability: '仅商业版 · 工作区' }),
-              ],
-            },
-            {
-              title: '桌面端',
-              rows: [
-                S('标签页分栏', 'preference.lab.enableDesktopSplitView', false, '在桌面端并排显示两个标签页。', { stage: 'alpha', availability: '仅桌面端' }),
-                S('iMessage 渠道', 'preference.lab.enableImessage', false, '通过 BlueBubbles 桥接器将代理连接到 iMessage。', { stage: 'alpha', availability: '仅桌面端' }),
-                S('Claude Code SDK 运行时', 'preference.lab.enableClaudeCodeSdk', false, '通过 Claude Agent SDK 运行 Claude Code 会话。', { stage: 'alpha', availability: '仅桌面端' }),
-                S('本地 Agent 会话导入', 'preference.lab.enableHeteroSessionImport', false, '扫描本地 Claude Code / Codex CLI 会话并导入为话题。', { stage: 'beta', availability: '仅桌面端' }),
-              ],
-            },
-          ],
-        },
-        {
-          key: 'about', group: '系统与开发者', label: '关于', icon: 'ⓘ', kind: 'note',
-          noteTitle: '只读信息',
-          note: '对应「设置 → 关于」。版本、更新日志、许可信息，不提供默认值。',
-          points: ['管理员无需配置。'],
-        },
-      ];
-
-      const USERS = [
-        { id: 'u1', name: '张伟', username: 'A100231', email: 'a100231@tellhow.com', role: 'admin', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '管理员', active: '今天 09:12', custom: true, overrides: { 'client.nextThemes.theme': 'dark', 'general.interfaceDensity': 'compact' }, locked: [] },
-        { id: 'u2', name: '李娜', username: 'A100455', email: 'a100455@tellhow.com', role: 'member', status: 'active', labs: 2, model: 'DeepSeek V4 Flash', policy: '禁止改模型', active: '今天 08:47', custom: true, overrides: { 'preference.lab.enableSelfLearning': true, 'preference.lab.enableProjects': true, 'general.fontSize': 16 }, locked: ['languageModel.deepseek.enabled'] },
-        { id: 'u3', name: '王强', username: 'A100877', email: 'a100877@tellhow.com', role: 'member', status: 'banned', labs: 0, model: '—', policy: '继承模板', active: '昨天 14:03', custom: false, overrides: {}, locked: [] },
-        { id: 'u4', name: '陈静', username: 'A101002', email: 'a101002@tellhow.com', role: 'member', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '继承模板', active: '今天 09:05', custom: false, overrides: {}, locked: [] },
-        { id: 'u5', name: '刘洋', username: 'A101188', email: 'a101188@tellhow.com', role: 'member', status: 'active', labs: 4, model: 'OpenAI GPT-5.6 Luna', policy: '允许改模型', active: '昨天 18:21', custom: true, overrides: { 'preference.lab.enableBetterCodingExperience': true, 'preference.lab.enableGoals': true, 'preference.lab.enableOAuthApps': true, 'preference.lab.enableProjects': true, 'systemAgent.tiers.main': 'openai / gpt-5.6-luna' }, locked: [] },
-        { id: 'u6', name: '赵敏', username: 'A101230', email: 'a101230@tellhow.com', role: 'member', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '继承模板', active: '昨天 16:40', custom: false, overrides: {}, locked: [] },
-        { id: 'u7', name: '孙磊', username: 'A101377', email: 'a101377@tellhow.com', role: 'member', status: 'active', labs: 1, model: 'Claude Sonnet 4.6', policy: '继承模板', active: '2026-11-17', custom: true, overrides: { 'preference.lab.enableAgentGraphConfig': true, 'general.interfaceDensity': 'compact' }, locked: [] },
-        { id: 'u8', name: '周婷', username: 'A101409', email: 'a101409@tellhow.com', role: 'member', status: 'active', labs: 0, model: 'DeepSeek V4 Flash', policy: '继承模板', active: '2026-11-17', custom: false, overrides: {}, locked: [] },
-      ];
-
-      const titles = {
-        overview: ['总览', '部署用户、默认配置与权限策略的集中管理入口。'],
-        users: ['用户', '查看所有 SSO 用户及其生效配置，按人调整策略。'],
-        settings: ['用户设置模板', '按真实设置页配置新用户默认值，并决定哪些字段允许用户修改。'],
-        audit: ['审计日志', '管理员操作的完整记录。'],
-      };
-
-      /* ------------------------------------------------------------------
-       * 原型交互逻辑（仅用于静态原型；真实实现见 ADMIN_CONSOLE_DESIGN.md）
-       * ------------------------------------------------------------------ */
-
-      let currentSettingsPage = 'appearance';
-      let currentDrawerPage = 'appearance';
-      let currentUser = null;
-      let activeFilter = 'all';
-      let applyMode = 'unset';
-      let toastTimer = 0;
-
-      const AFFECTED_USERS = 1284;
-      const COMPLETE_USERS = 88;
 
       const $ = (id) => document.getElementById(id);
 
@@ -3084,10 +2955,23 @@
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;');
 
-      const pageByKey = (key) => PAGES.find((page) => page.key === key);
+      const PREVIEW_USER = 'lina';
+      const AFFECTED_USERS = 1284;
+
+      const state = {
+        page: 'users',
+        view: 'admin',
+        userFilter: 'all',
+        userQuery: '',
+        auditFilter: 'all',
+        auditQuery: '',
+        deviceEmpty: false,
+        currentUser: null,
+        currentDevice: null,
+        openAudit: null,
+      };
 
       /* -------------------------------------------------- 头像（UserAvatar 像素回退） */
-      // @lobehub/ui 的 pixel 回退头像：5×5 网格、固定色板（charcoal / violet / cream / yellow / orange），名字作种子
       const AVATAR_PALETTE = ['#383838', '#7858f9', '#f8f7bf', '#ffdd1f', '#f88c13'];
 
       function pixelAvatar(name) {
@@ -3121,14 +3005,6 @@
         return `<svg viewBox="0 0 5 5" shape-rendering="crispEdges" aria-hidden="true"><rect width="5" height="5" fill="${background}"/>${cells.join('')}</svg>`;
       }
 
-      function renderAvatarSlots() {
-        document.querySelectorAll('[data-avatar]').forEach((element) => {
-          element.innerHTML = pixelAvatar(element.dataset.avatar);
-        });
-      }
-
-      const rowAt = (pi, si, ri) => PAGES[pi].sections[si].rows[ri];
-
       /* ------------------------------------------------------------ 主题 */
 
       function renderThemeIcon() {
@@ -3140,7 +3016,8 @@
 
       function toggleTheme() {
         const root = document.documentElement;
-        root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        root.dataset.theme = root.dataset.theme === 'dark' ? 'dark' : 'light';
+        root.dataset.theme = root.dataset.theme === 'dark' && root.dataset.theme !== 'dark' ? 'dark' : root.dataset.theme;
         renderThemeIcon();
       }
 
@@ -3157,6 +3034,7 @@
 
       function filterNav(value) {
         const keyword = (value || '').trim().toLowerCase();
+        const blocked = (item) => state.view === 'user' && item.dataset.adminOnly === 'true';
 
         document.querySelectorAll('#navScroll .nav-section').forEach((section) => {
           let visible = 0;
@@ -3164,8 +3042,8 @@
           section.querySelectorAll('.nav-item').forEach((item) => {
             const text = `${item.dataset.label || ''} ${item.textContent}`.toLowerCase();
             const hit = !keyword || text.includes(keyword);
-            item.hidden = !hit;
-            if (hit) visible += 1;
+            item.hidden = !hit || blocked(item);
+            if (!item.hidden) visible += 1;
           });
 
           section.hidden = visible === 0;
@@ -3173,337 +3051,400 @@
         });
       }
 
-      function go(page, key) {
-        if (page !== 'settings' && !titles[page]) return;
-        if (page === 'settings' && key) currentSettingsPage = key;
+      const PAGES = {
+        users: ['用户管理', '账号、角色与状态；账号能力复用 Better Auth admin()。'],
+        ai: ['AI 服务', '服务商、默认模型与服务模型由管理员统一配置。'],
+        devices: ['设备', '管理员注册机器进池，再分配给全员或指定人。'],
+        audit: ['审计日志', '每次管理写操作落一条，含前后值。'],
+      };
+
+      function go(page) {
+        if (!PAGES[page]) return;
+        if (state.view === 'user' && page === 'ai') page = 'users';
+
+        state.page = page;
 
         document.querySelectorAll('.page').forEach((section) => {
           section.classList.toggle('active', section.id === `page-${page}`);
         });
 
         document.querySelectorAll('#navScroll .nav-item').forEach((item) => {
-          const target = item.dataset.page;
-          const active =
-            target === page || (page === 'settings' && target === `settings:${currentSettingsPage}`);
-          item.classList.toggle('active', active);
+          item.classList.toggle('active', item.dataset.page === page);
+          if (item.dataset.adminOnly === 'true') item.hidden = state.view === 'user';
         });
 
-        const inSettings = page === 'settings';
-
-        $('pageCrumb').textContent = '管理员控制台';
-        $('pageCrumbSep').hidden = !inSettings;
-        $('pageCrumbExtra').hidden = !inSettings;
-
-        if (inSettings) {
-          const current = pageByKey(currentSettingsPage) || PAGES[0];
-          $('pageTitle').textContent = current.label;
-          renderSettingsPage();
-        } else {
-          $('pageTitle').textContent = titles[page][0];
-        }
-
+        $('pageTitle').textContent = PAGES[page][0];
         $('scroll').scrollTop = 0;
       }
 
-      /* -------------------------------------------------------- 设置导航 */
+      function setView(isUser) {
+        state.view = isUser ? 'user' : 'admin';
+        $('viewBadge').textContent = isUser ? '普通用户' : '管理员';
+        $('viewBadge').className = isUser ? 'tag' : 'tag tag-primary';
+        $('viewBanner').hidden = !isUser;
+        if (isUser && state.page === 'ai') go('users');
+        else go(state.page);
+        renderDevices();
+      }
 
-      function settingsGroups() {
-        const groups = [];
+      /* ------------------------------------------------------------ 数据 */
 
-        PAGES.forEach((page) => {
-          let group = groups.find((item) => item.name === page.group);
-          if (!group) {
-            group = { name: page.group, items: [] };
-            groups.push(group);
-          }
-          group.items.push(page);
+      const USERS = [
+        { id: 'u_zw', name: '张伟', username: 'A000001', email: 'a000001@tellhow.com', role: 'admin', status: 'active', joined: '2026-03-02 09:10', last: '今天 09:42' },
+        { id: 'u_zm', name: '赵敏', username: 'A000006', email: 'a000006@tellhow.com', role: 'admin', status: 'active', joined: '2026-03-05 14:22', last: '今天 08:55' },
+        { id: 'u_ln', name: '李娜', username: 'A100877', email: 'a100877@tellhow.com', role: 'member', status: 'active', joined: '2026-04-11 10:30', last: '今天 09:12' },
+        { id: 'u_wq', name: '王强', username: 'A100878', email: 'a100878@tellhow.com', role: 'member', status: 'banned', joined: '2026-04-18 09:05', last: '昨天 14:03' },
+        { id: 'u_cc', name: '陈晨', username: 'A100879', email: 'a100879@tellhow.com', role: 'member', status: 'active', joined: '2026-05-06 16:44', last: '昨天 18:40' },
+        { id: 'u_ly', name: '刘洋', username: 'A100880', email: 'a100880@tellhow.com', role: 'member', status: 'active', joined: '2026-06-02 11:12', last: '11-17 16:20' },
+        { id: 'u_sy', name: '孙悦', username: 'A100881', email: 'a100881@tellhow.com', role: 'member', status: 'active', joined: '2026-06-21 08:48', last: '11-16 10:05' },
+        { id: 'u_zt', name: '周涛', username: 'A100882', email: 'a100882@tellhow.com', role: 'member', status: 'active', joined: '2026-07-09 13:37', last: '11-14 09:30' },
+      ];
+
+      const DEVICES = [
+        { id: 'A100', name: 'A100 训练机', host: 'gpu-node-01', platform: 'linux/amd64', online: true, audience: 'all', users: [], last: '2 分钟前' },
+        { id: 'TESTSRV', name: '测试机 · 上海', host: 'test-sh-02', platform: 'linux/amd64', online: true, audience: 'users', users: ['lina', 'wangqiang'], last: '1 小时前' },
+        { id: 'DESIGNMINI', name: '设计部 Mac mini', host: 'design-mini', platform: 'darwin/arm64', online: false, audience: null, users: [], last: '3 天前' },
+      ];
+
+      const ACTION_META = {
+        'user.ban': { label: '禁用用户', cat: 'account', cls: 'tag tag-danger' },
+        'user.unban': { label: '启用用户', cat: 'account', cls: 'tag tag-success' },
+        'user.setRole': { label: '变更角色', cat: 'account', cls: 'tag tag-primary' },
+        'user.revokeSessions': { label: '会话失效', cat: 'account', cls: 'tag' },
+        'ai.update': { label: '更新 AI 配置', cat: 'config', cls: 'tag tag-primary' },
+        'ai.menu': { label: '菜单可见性', cat: 'config', cls: 'tag' },
+        'device.register': { label: '注册池设备', cat: 'device', cls: 'tag' },
+        'device.grant': { label: '分配设备', cat: 'device', cls: 'tag tag-success' },
+        'device.revoke': { label: '撤销授权', cat: 'device', cls: 'tag tag-warning' },
+        'device.remove': { label: '移出设备池', cat: 'device', cls: 'tag tag-danger' },
+      };
+
+      let auditSeq = 8;
+
+      const AUDIT = [
+        { id: 'a8', at: '11-19 17:26', actor: '张伟', action: 'ai.update', target: '全局 AI 配置', ip: '10.10.10.118', detail: { before: 'defaultModel = deepseek/deepseek-v4-flash', after: 'defaultModel = anthropic/claude-sonnet-5' } },
+        { id: 'a7', at: '11-19 15:02', actor: '张伟', action: 'device.grant', target: 'A100 训练机', ip: '10.10.10.118', detail: { before: 'audience = users (2 人)', after: 'audience = all' } },
+        { id: 'a6', at: '11-19 11:40', actor: '赵敏', action: 'user.setRole', target: '赵敏（A000006）', ip: '10.10.9.31', detail: { before: 'role = member', after: 'role = admin' } },
+        { id: 'a5', at: '11-18 18:12', actor: '张伟', action: 'device.revoke', target: '测试机 · 上海', ip: '10.10.10.118', detail: { before: 'granted: 李娜、王强、陈晨', after: 'granted: 李娜、王强' } },
+        { id: 'a4', at: '11-18 16:30', actor: '张伟', action: 'user.ban', target: '王强（A100878）', ip: '10.10.10.118', detail: { before: 'banned = false', after: 'banned = true · 已吊销 2 个会话' } },
+        { id: 'a3', at: '11-18 10:04', actor: '赵敏', action: 'ai.menu', target: '菜单可见性', ip: '10.10.9.31', detail: { before: 'hideServiceModel = false', after: 'hideServiceModel = true' } },
+        { id: 'a2', at: '11-17 17:48', actor: '赵敏', action: 'device.register', target: '设计部 Mac mini', ip: '10.10.9.31', detail: { before: '—', after: 'pool = admin · deviceId = DESIGNMINI' } },
+        { id: 'a1', at: '11-17 09:20', actor: '张伟', action: 'user.revokeSessions', target: '陈晨（A100879）', ip: '10.10.10.118', detail: { before: 'sessions = 3', after: 'sessions = 0' } },
+      ];
+
+      function logAudit(entry) {
+        auditSeq += 1;
+        AUDIT.unshift(Object.assign({ id: `a${auditSeq}`, at: '刚刚', actor: '张伟', ip: '10.10.10.118' }, entry));
+        if (state.page === 'audit') renderAudit();
+      }
+
+      /* ------------------------------------------------------------ AI 配置 */
+
+      const CATALOG = {
+        deepseek: { name: 'DeepSeek', vendor: 'deepseek', color: '#4d6bfe', models: ['deepseek-v4-flash', 'deepseek-v4', 'deepseek-reasoner'] },
+        openai: { name: 'OpenAI', vendor: 'openai', color: '#10a37f', models: ['gpt-5.6-luna', 'gpt-5.6', 'o4-mini'] },
+        anthropic: { name: 'Anthropic', vendor: 'anthropic', color: '#d97757', models: ['claude-sonnet-5', 'claude-opus-5'] },
+        google: { name: 'Google', vendor: 'google', color: '#4285f4', models: ['gemini-3-pro', 'gemini-3-flash'] },
+        zhipu: { name: '智谱', vendor: 'zhipu', color: '#2f6bff', models: ['glm-5.3-flash', 'glm-5.3'] },
+        ollama: { name: 'Ollama（本地）', vendor: 'ollama', color: '#8a8a8a', models: [] },
+      };
+
+      const AI_INITIAL = {
+        menu: { hideProvider: true, hideServiceModel: true },
+        providers: {
+          deepseek: { enabled: true, models: ['deepseek-v4-flash', 'deepseek-v4'] },
+          openai: { enabled: true, models: ['gpt-5.6-luna'] },
+          anthropic: { enabled: true, models: ['claude-sonnet-5'] },
+          google: { enabled: false, models: [] },
+          zhipu: { enabled: true, models: ['glm-5.3-flash'] },
+          ollama: { enabled: false, models: [] },
+        },
+        defaultModel: { provider: 'deepseek', model: 'deepseek-v4-flash' },
+        slots: {
+          main: 'deepseek/deepseek-v4-flash',
+          flash: 'openai/gpt-5.6-luna',
+          embedding: 'openai/text-embedding-3-large',
+          verify: 'zhipu/glm-5.3-flash',
+        },
+      };
+
+      const clone = (value) => JSON.parse(JSON.stringify(value));
+
+      let ai = clone(AI_INITIAL);
+      let aiSaved = clone(AI_INITIAL);
+
+      const SLOTS = [
+        ['main', '主模型', '新会话与智能体的默认对话模型'],
+        ['flash', 'Flash 模型', '快速响应与轻量任务'],
+        ['embedding', '向量模型', '知识库与语义检索'],
+        ['verify', '验收模型', '自动验收与判定'],
+      ];
+
+      const EMBEDDING_OPTIONS = [
+        'openai/text-embedding-3-large',
+        'zhipu/embedding-3',
+        'ollama/nomic-embed-text',
+      ];
+
+      const enabledProviders = () => Object.keys(CATALOG).filter((id) => ai.providers[id].enabled);
+
+      function catalogOptions() {
+        const options = [];
+        enabledProviders().forEach((id) => {
+          if (id === 'ollama') return;
+          ai.providers[id].models.forEach((model) => options.push(`${id}/${model}`));
         });
-
-        return groups;
+        return options;
       }
 
-      function renderSettingsNav() {
-        $('settingsNav').innerHTML = settingsGroups()
-          .map(
-            (group) => `
-            <div class="nav-section" data-open="true">
-              <button class="section-trigger" onclick="toggleSection(this)">
-                <span class="section-trigger-title">${esc(group.name)}</span>
-                <svg class="section-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
-              </button>
-              <div class="nav-items">
-                ${group.items
-                  .map(
-                    (page) => `
-                  <button
-                    class="nav-item"
-                    data-page="settings:${page.key}"
-                    data-label="${esc(page.label)}"
-                    onclick="go('settings', '${page.key}')"
-                  >
-                    <span class="nav-icon">${page.icon}</span>
-                    <span class="nav-title">${esc(page.label)}</span>
-                    ${page.kind === 'note' ? '<span class="tag">只读</span>' : ''}
-                  </button>`,
-                  )
-                  .join('')}
-              </div>
-            </div>`,
-          )
-          .join('');
+      function slotOptions(key) {
+        if (key === 'embedding') return EMBEDDING_OPTIONS;
+        const options = catalogOptions();
+        if (!options.includes(ai.slots[key])) options.unshift(ai.slots[key]);
+        return options;
       }
 
-      /* ------------------------------------------------------ 设置模板页 */
-
-      function capOf(row) {
-        return CAP[row.capability] || CAP.server;
-      }
-
-      function formatValue(row, value) {
-        if (row.type === 'switch') return value ? '开启' : '关闭';
-        if (row.options) {
-          const hit = row.options.find((option) => option[0] === value);
-          return hit ? hit[1] : String(value);
-        }
-        return String(value);
-      }
-
-      function templateStats() {
-        const stats = { server: 0, total: 0, locked: 0 };
-
-        PAGES.forEach((page) =>
-          (page.sections || []).forEach((section) =>
-            section.rows.forEach((row) => {
-              stats.total += 1;
-              if (row.capability === 'server' && row.editable) stats.server += 1;
-              if (row.lock) stats.locked += 1;
-            }),
-          ),
-        );
-
-        return stats;
-      }
-
-      function renderControl(pageIndex, sectionIndex, rowIndex, row) {
-        const disabled = !row.editable || row.lock;
-        const handler = `setRowValue(${pageIndex}, ${sectionIndex}, ${rowIndex}, this.value)`;
-
-        if (row.type === 'switch') {
-          return `<label class="switch">
-            <input type="checkbox" ${row.value ? 'checked' : ''} ${disabled ? 'disabled' : ''}
-              onchange="setRowValue(${pageIndex}, ${sectionIndex}, ${rowIndex}, this.checked)" />
-            <span></span>
-          </label>`;
-        }
-
-        if (row.type === 'select' || row.type === 'model') {
-          return `<select class="control" ${disabled ? 'disabled' : ''} onchange="${handler}">
-            ${row.options
+      function providerCard(id) {
+        const provider = CATALOG[id];
+        const conf = ai.providers[id];
+        const models = provider.models.length
+          ? provider.models
               .map(
-                (option) =>
-                  `<option value="${esc(option[0])}" ${option[0] === row.value ? 'selected' : ''}>${esc(option[1])}</option>`,
+                (model) =>
+                  `<button type="button" class="model-chip ${conf.models.includes(model) ? 'on' : ''}" onclick="toggleModel('${id}','${model}')">${model}</button>`,
               )
-              .join('')}
-          </select>`;
-        }
+              .join('')
+          : '<span class="tiny muted">本地部署，模型由设备提供，无需在服务端登记</span>';
 
-        if (row.type === 'text') {
-          return `<input class="control" value="${esc(row.value)}" ${disabled ? 'disabled' : ''} onchange="${handler}" />`;
-        }
+        const foot = conf.enabled
+          ? `已启用 · ${conf.models.length}/${provider.models.length} 个模型可用`
+          : '已停用 · 用户端选择器里不出现';
 
-        if (row.type === 'number') {
-          return `<input class="control" type="number" value="${esc(row.value)}" ${disabled ? 'disabled' : ''} onchange="${handler}" />`;
-        }
-
-        return `<span class="tiny muted">${esc(row.value)}</span>`;
-      }
-
-      function renderRow(pageIndex, sectionIndex, rowIndex, row) {
-        const cap = capOf(row);
-        const tags = [
-          row.stage ? `<span class="tag tag-${row.stage}">${row.stage}</span>` : '',
-          row.availability ? `<span class="tag">${esc(row.availability)}</span>` : '',
-        ].join('');
-        const desc = [row.desc, row.note ? `（${row.note}）` : ''].join('');
-
-        return `<div class="form-row">
-          <div class="form-label">
-            <div class="form-label-title">${esc(row.label)}${tags}</div>
-            <div class="form-label-desc">${esc(desc)}</div>
-            <div class="form-label-path">${esc(row.path)}</div>
+        return `<div class="provider ${conf.enabled ? '' : 'is-off'}">
+          <div class="provider-head">
+            <span class="provider-dot" style="--dot: ${provider.color}"></span>
+            <span class="provider-name"><strong>${provider.name}</strong><span class="tiny muted">${provider.vendor}</span></span>
+            <label class="switch"><input type="checkbox" ${conf.enabled ? 'checked' : ''} onchange="toggleProvider('${id}', this.checked)" /><span></span></label>
           </div>
-          <div class="form-control">${renderControl(pageIndex, sectionIndex, rowIndex, row)}</div>
-          <div class="form-meta"><span class="cap ${cap.cls}">${cap.label}</span></div>
-          <div class="form-policy">
-            ${
-              row.capability === 'server' && row.editable
-                ? `<label class="mini-check" title="锁定后用户端置灰，服务端拒绝写入">
-                    <input type="checkbox" ${row.lock ? 'checked' : ''}
-                      onchange="toggleRowLock(${pageIndex}, ${sectionIndex}, ${rowIndex}, this.checked)" /> 锁定
-                  </label>`
-                : '<span class="tiny muted">—</span>'
-            }
-          </div>
+          <div class="provider-models">${models}</div>
+          <div class="provider-foot">${foot}</div>
         </div>`;
       }
 
-      function renderPolicyGroup(page) {
-        const policy = page.policy;
-
-        return `<div class="form-group">
-          <div class="form-group-card">
-            <div class="form-group-header">
-              <div>
-                <div class="form-group-title">页面策略</div>
-                <div class="form-group-desc">作用于整页，优先于单项锁定。</div>
-              </div>
-              <div class="form-group-extra"><span class="tag tag-primary">策略</span></div>
-            </div>
-            <div class="form-group-body">
-              <div class="form-row">
-                <div class="form-label">
-                  <div class="form-label-title">${esc(policy.label)}</div>
-                  <div class="form-label-desc">${esc(policy.desc)}</div>
-                  <div class="form-label-path">policy.${esc(policy.key)}</div>
-                </div>
-                <div class="form-control">
-                  <label class="switch">
-                    <input type="checkbox" ${policy.value ? 'checked' : ''} onchange="setPolicy('${page.key}', this.checked)" />
-                    <span></span>
-                  </label>
-                </div>
-                <div class="form-meta"><span class="cap cap-server">可下发</span></div>
-                <div class="form-policy"><span class="tiny muted">页面级</span></div>
-              </div>
-            </div>
-          </div>
-        </div>`;
+      function renderAi() {
+        $('menuHideProvider').checked = ai.menu.hideProvider;
+        $('menuHideServiceModel').checked = ai.menu.hideServiceModel;
+        $('providerGrid').innerHTML = Object.keys(CATALOG).map(providerCard).join('');
+        renderDefaultModel();
+        renderSlots();
+        $('aiFootNote').textContent = `当前生效：${AFFECTED_USERS.toLocaleString('en-US')} 位用户 · 上次保存 11-19 17:26 · 张伟`;
       }
 
-      function renderNotePage(page) {
-        const points = (page.points || [])
-          .map((point) => `<li>${esc(point)}</li>`)
+      function renderDefaultModel() {
+        const providers = enabledProviders();
+        if (!providers.includes(ai.defaultModel.provider)) {
+          ai.defaultModel.provider = providers[0] || 'deepseek';
+          ai.defaultModel.model = (ai.providers[ai.defaultModel.provider].models || [])[0] || '';
+        }
+
+        const pid = ai.defaultModel.provider;
+        $('defaultProvider').innerHTML = providers
+          .map((id) => `<option value="${id}" ${id === pid ? 'selected' : ''}>${CATALOG[id].name}</option>`)
           .join('');
 
-        return `<div class="form-group">
-          <div class="form-group-card">
-            <div class="form-group-header">
-              <div>
-                <div class="form-group-title">${esc(page.noteTitle || page.label)}</div>
-                <div class="form-group-desc">${esc(page.note || '')}</div>
-              </div>
-              <div class="form-group-extra"><span class="tag">无默认值</span></div>
-            </div>
-            <div class="form-group-body">
-              <div class="alert">
-                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 16v-5M12 8h.01" /></svg>
-                <div>
-                  <div class="alert-title">这一页在用户端是可用的，但不属于「部署默认值」</div>
-                  <div class="alert-desc">${esc(page.note || '')}</div>
-                </div>
-              </div>
-              ${points ? `<ul class="note-list">${points}</ul>` : ''}
-            </div>
-          </div>
-        </div>`;
+        const models = ai.providers[pid].models;
+        $('defaultModel').innerHTML = models.length
+          ? models
+              .map(
+                (model) =>
+                  `<option value="${model}" ${model === ai.defaultModel.model ? 'selected' : ''}>${model}</option>`,
+              )
+              .join('')
+          : '<option value="">无可用模型</option>';
       }
 
-      function renderSettingsPage() {
-        const page = pageByKey(currentSettingsPage) || PAGES[0];
-        const pageIndex = PAGES.indexOf(page);
-        const note = page.kind === 'note';
+      function renderSlots() {
+        $('slotRows').innerHTML = SLOTS.map(([key, title, desc]) => {
+          const options = slotOptions(key)
+            .map(
+              (value) =>
+                `<option value="${value}" ${value === ai.slots[key] ? 'selected' : ''}>${value}</option>`,
+            )
+            .join('');
+          return `<div class="setting-row">
+            <div>
+              <span class="setting-row-title">${title}</span>
+              <span class="setting-row-desc">${desc}</span>
+            </div>
+            <select class="control" onchange="setSlot('${key}', this.value)">${options}</select>
+          </div>`;
+        }).join('');
+      }
 
-        $('settingsTitle').textContent = page.label;
-        $('settingsIntro').textContent = page.intro || page.note || '';
+      function setMenu(key, checked) {
+        ai.menu[key] = checked;
+        renderAi();
+      }
 
-        if (note) {
-          $('settingsSummary').innerHTML = '<span class="tag">只读</span><span class="tag">无默认值</span>';
-          $('settingsFootNote').textContent = '此页面不提供默认值，仅供了解该页在用户端的实际来源。';
-          $('settingsActions').hidden = true;
-          $('settingsBody').innerHTML = renderNotePage(page);
-          return;
+      function toggleProvider(id, checked) {
+        ai.providers[id].enabled = checked;
+        if (!checked) ai.providers[id].models = [];
+        else if (!ai.providers[id].models.length) ai.providers[id].models = [CATALOG[id].models[0]];
+
+        if (!checked && ai.defaultModel.provider === id) {
+          const fallback = Object.keys(CATALOG).find((key) => ai.providers[key].enabled);
+          if (fallback) {
+            ai.defaultModel.provider = fallback;
+            ai.defaultModel.model = ai.providers[fallback].models[0];
+          }
         }
 
-        const stats = { server: 0, locked: 0 };
-        (page.sections || []).forEach((section) =>
-          section.rows.forEach((row) => {
-            if (row.capability === 'server' && row.editable) stats.server += 1;
-            if (row.lock) stats.locked += 1;
-          }),
+        renderAi();
+      }
+
+      function toggleModel(id, model) {
+        const conf = ai.providers[id];
+        if (!conf.enabled) return;
+
+        if (conf.models.includes(model)) {
+          if (conf.models.length === 1) return toast('每个服务商至少要保留一个模型');
+          conf.models = conf.models.filter((item) => item !== model);
+          if (ai.defaultModel.provider === id && ai.defaultModel.model === model) {
+            ai.defaultModel.model = conf.models[0];
+          }
+        } else {
+          conf.models = [...conf.models, model];
+        }
+
+        renderAi();
+      }
+
+      function setDefaultProvider(id) {
+        ai.defaultModel.provider = id;
+        ai.defaultModel.model = ai.providers[id].models[0] || '';
+        renderDefaultModel();
+      }
+
+      function setDefaultModel(model) {
+        ai.defaultModel.model = model;
+      }
+
+      function setSlot(key, value) {
+        ai.slots[key] = value;
+      }
+
+      function resetAi() {
+        ai = clone(aiSaved);
+        renderAi();
+        toast('已还原为上次保存的配置');
+      }
+
+      function aiDiff() {
+        const lines = [];
+
+        if (ai.menu.hideProvider !== aiSaved.menu.hideProvider) {
+          lines.push(`「AI 服务商」菜单：${ai.menu.hideProvider ? '对非管理员隐藏' : '恢复可见'}`);
+        }
+        if (ai.menu.hideServiceModel !== aiSaved.menu.hideServiceModel) {
+          lines.push(`「服务模型」菜单：${ai.menu.hideServiceModel ? '对非管理员隐藏' : '恢复可见'}`);
+        }
+
+        const disabled = Object.keys(CATALOG).filter(
+          (id) => aiSaved.providers[id].enabled && !ai.providers[id].enabled,
         );
+        if (disabled.length) {
+          lines.push(`停用服务商：${disabled.map((id) => CATALOG[id].name).join('、')}`);
+        }
 
-        const chips = [
-          `<span class="tag">${(page.sections || []).length} 个分组</span>`,
-          `<span class="tag tag-primary">${stats.server} 项可下发</span>`,
-        ];
-        if (stats.locked) chips.push(`<span class="tag tag-warning">${stats.locked} 项已锁定</span>`);
+        const enabled = Object.keys(CATALOG).filter(
+          (id) => !aiSaved.providers[id].enabled && ai.providers[id].enabled,
+        );
+        if (enabled.length) {
+          lines.push(`启用服务商：${enabled.map((id) => CATALOG[id].name).join('、')}`);
+        }
 
-        $('settingsSummary').innerHTML = chips.join('');
-        $('settingsFootNote').textContent = '模板只影响新用户；存量用户需手动应用。';
-        $('settingsActions').hidden = false;
+        const removed = Object.keys(CATALOG).reduce((sum, id) => {
+          const before = aiSaved.providers[id].models.length;
+          const after = ai.providers[id].models.length;
+          return sum + (ai.providers[id].enabled ? Math.max(0, before - after) : before);
+        }, 0);
+        if (removed) lines.push(`从白名单移除 ${removed} 个模型`);
 
-        const groups = (page.sections || [])
-          .map(
-            (section, sectionIndex) => `
-            <div class="form-group">
-              <div class="form-group-card">
-                <div class="form-group-header">
-                  <div>
-                    <div class="form-group-title">${esc(section.title)}</div>
-                    <div class="form-group-desc">${section.rows.length} 项 · 可下发 ${
-                      section.rows.filter((row) => row.capability === 'server' && row.editable).length
-                    } 项</div>
-                  </div>
-                </div>
-                <div class="form-group-body">
-                  ${section.rows
-                    .map((row, rowIndex) => renderRow(pageIndex, sectionIndex, rowIndex, row))
-                    .join('')}
-                </div>
-              </div>
-            </div>`,
-          )
-          .join('');
+        const before = `${aiSaved.defaultModel.provider}/${aiSaved.defaultModel.model}`;
+        const after = `${ai.defaultModel.provider}/${ai.defaultModel.model}`;
+        if (before !== after) lines.push(`默认模型：${before} → ${after}`);
 
-        $('settingsBody').innerHTML = (page.policy ? renderPolicyGroup(page) : '') + groups;
+        const slotChanges = SLOTS.filter(([key]) => ai.slots[key] !== aiSaved.slots[key]);
+        if (slotChanges.length) {
+          lines.push(`服务模型变更 ${slotChanges.length} 个槽位：${slotChanges.map(([, title]) => title).join('、')}`);
+        }
+
+        return lines;
       }
 
-      function setRowValue(pageIndex, sectionIndex, rowIndex, value) {
-        rowAt(pageIndex, sectionIndex, rowIndex).value = value;
-        renderSettingsPage();
+      function openAiModal() {
+        const lines = aiDiff();
+        $('aiDiff').innerHTML = lines.length
+          ? `<ul style="margin: 0; padding-left: 18px">${lines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>`
+          : '<span class="muted">没有需要保存的变更。</span>';
+        $('aiModal').classList.add('show');
       }
 
-      function toggleRowLock(pageIndex, sectionIndex, rowIndex, checked) {
-        rowAt(pageIndex, sectionIndex, rowIndex).lock = checked;
-        renderSettingsPage();
-        toast(checked ? '已锁定该字段：用户端置灰，服务端拒绝写入' : '已解除锁定');
+      function closeAiModal() {
+        $('aiModal').classList.remove('show');
       }
 
-      function setPolicy(key, checked) {
-        const page = pageByKey(key);
-        if (!page || !page.policy) return;
-        page.policy.value = checked;
-        renderSettingsPage();
-        toast(checked ? '已允许用户修改该项' : '已禁止用户修改该项');
+      function confirmAi() {
+        const lines = aiDiff();
+        aiSaved = clone(ai);
+        closeAiModal();
+        if (lines.length) {
+          logAudit({
+            action: 'ai.update',
+            target: '全局 AI 配置',
+            detail: { before: lines.length ? '见上一版配置' : '—', after: lines.join('；') },
+          });
+        }
+        toast(`已保存并同步 ${AFFECTED_USERS.toLocaleString('en-US')} 位用户`);
       }
 
       /* ------------------------------------------------------------ 用户 */
 
-      function statusBadge(user) {
+      function deviceGrantedTo(username) {
+        return DEVICES.filter(
+          (device) =>
+            device.audience === 'all' ||
+            (device.audience === 'users' && device.users.includes(username.toLowerCase())),
+        );
+      }
+
+      function userRoleBadge(user) {
+        return user.role === 'admin'
+          ? '<span class="tag tag-primary">管理员</span>'
+          : '<span class="tag">成员</span>';
+      }
+
+      function userStatusBadge(user) {
         return user.status === 'banned'
           ? '<span class="tag tag-danger">已禁用</span>'
           : '<span class="tag tag-success">正常</span>';
       }
 
-      function policyBadge(user) {
-        if (user.policy === '管理员') return '<span class="tag tag-primary">管理员</span>';
-        if (user.policy === '禁止改模型') return '<span class="tag tag-danger">禁止改模型</span>';
-        if (user.policy === '允许改模型') return '<span class="tag tag-success">允许改模型</span>';
-        return '<span class="tag">继承模板</span>';
+      function setUserQuery(value) {
+        state.userQuery = value;
+        renderUsers();
+      }
+
+      function setUserFilter(name, element) {
+        state.userFilter = name;
+        document
+          .querySelectorAll('#page-users .chip')
+          .forEach((chip) => chip.classList.toggle('active', chip === element));
+        renderUsers();
       }
 
       function renderUsers() {
-        const keyword = ($('userSearch').value || '').trim().toLowerCase();
+        const keyword = state.userQuery.trim().toLowerCase();
         const rows = USERS.filter((user) => {
           const hitKeyword =
             !keyword ||
@@ -3511,23 +3452,28 @@
               field.toLowerCase().includes(keyword),
             );
           const hitFilter =
-            activeFilter === 'all' ||
-            (activeFilter === 'admin' && user.role === 'admin') ||
-            (activeFilter === 'banned' && user.status === 'banned') ||
-            (activeFilter === 'custom' && user.custom);
+            state.userFilter === 'all' ||
+            (state.userFilter === 'admin' && user.role === 'admin') ||
+            (state.userFilter === 'banned' && user.status === 'banned');
 
           return hitKeyword && hitFilter;
         });
 
         $('userCount').textContent =
-          keyword || activeFilter !== 'all'
+          keyword || state.userFilter !== 'all'
             ? `筛选出 ${rows.length} / ${USERS.length} 位用户`
             : `共 ${USERS.length} 位用户`;
+        $('userFoot').textContent = `第 1 / ${Math.max(1, Math.ceil(rows.length / 20))} 页`;
 
         $('userRows').innerHTML = rows.length
           ? rows
-              .map(
-                (user) => `<tr onclick="openDrawer('${user.id}')">
+              .map((user) => {
+                const devices = deviceGrantedTo(user.username);
+                const deviceText = devices.length
+                  ? devices.map((device) => esc(device.name)).join('、')
+                  : '—';
+
+                return `<tr onclick="openUserDrawer('${user.id}')">
                   <td>
                     <div class="user-cell">
                       <span class="avatar avatar-28">${pixelAvatar(user.name)}</span>
@@ -3538,202 +3484,464 @@
                     </div>
                   </td>
                   <td class="mono tiny">${esc(user.username)}</td>
-                  <td>${statusBadge(user)}</td>
-                  <td class="tiny muted">${user.labs ? `${user.labs} 项` : '—'}</td>
-                  <td class="tiny">${esc(user.model)}</td>
-                  <td>${policyBadge(user)}</td>
-                  <td class="tiny muted">${esc(user.active)}</td>
-                </tr>`,
+                  <td>${userRoleBadge(user)}</td>
+                  <td>${userStatusBadge(user)}</td>
+                  <td class="tiny muted">${deviceText}</td>
+                  <td class="tiny muted">${esc(user.last)}</td>
+                </tr>`;
+              })
+              .join('')
+          : '<tr><td colspan="6"><div class="tiny muted" style="padding: 16px 12px">没有匹配的用户</div></td></tr>';
+      }
+
+      function openUserDrawer(id) {
+        const user = USERS.find((item) => item.id === id);
+        if (!user) return;
+
+        state.currentUser = user;
+        $('userAvatar').innerHTML = pixelAvatar(user.name);
+        $('userName').textContent = user.name;
+        $('userSub').textContent = `${user.username} · ${user.email}`;
+
+        $('userInfo').innerHTML = [
+          ['用户 ID', user.id],
+          ['工号', user.username],
+          ['邮箱', user.email],
+          ['来源', '统一认证平台 SSO'],
+          ['角色', user.role === 'admin' ? '管理员' : '成员'],
+          ['状态', user.status === 'banned' ? '已禁用' : '正常'],
+          ['创建时间', user.joined],
+          ['最后活跃', user.last],
+        ]
+          .map(
+            ([label, value]) =>
+              `<div class="info-item"><span>${label}</span><strong>${esc(value)}</strong></div>`,
+          )
+          .join('');
+
+        const devices = deviceGrantedTo(user.username);
+        $('userAccess').innerHTML = devices.length
+          ? devices
+              .map(
+                (device) => `<div class="setting-row">
+                  <div>
+                    <span class="setting-row-title">${esc(device.name)}</span>
+                    <span class="setting-row-desc mono">${esc(device.host)} · ${esc(device.platform)}</span>
+                  </div>
+                  <span class="tag tag-alpha" style="justify-self: end">${
+                    device.audience === 'all' ? '全员可用' : '指定授权'
+                  }</span>
+                </div>`,
               )
               .join('')
-          : '<tr><td colspan="7"><div class="tiny muted" style="padding: 16px 12px">没有匹配的用户</div></td></tr>';
+          : '<div class="empty"><strong>没有分配设备</strong><span>在「设备」页按设备分配后，这里会出现。</span></div>';
+
+        $('userActions').innerHTML = `
+          <button class="btn btn-sm btn-outline" onclick="toggleUserRole()">${
+            user.role === 'admin' ? '取消管理员' : '设为管理员'
+          }</button>
+          <button class="btn btn-sm btn-text" onclick="revokeUserSessions()">会话失效</button>
+          <button class="btn btn-sm btn-text" onclick="toggleUserStatus()">${
+            user.status === 'banned' ? '启用用户' : '禁用用户'
+          }</button>
+        `;
+
+        // 打开时回到概览页
+        const drawer = $('userDrawer');
+        drawer.querySelectorAll('.tab').forEach((tab, index) => tab.classList.toggle('active', index === 0));
+        drawer
+          .querySelectorAll('.tab-panel')
+          .forEach((panel) => panel.classList.toggle('active', panel.id === 'u-profile'));
+
+        drawer.classList.add('show');
+        $('userBackdrop').classList.add('show');
       }
 
-      function setFilter(name, element) {
-        activeFilter = name;
-        document
-          .querySelectorAll('#page-users .chip')
-          .forEach((chip) => chip.classList.toggle('active', chip === element));
+      function closeUserDrawer() {
+        $('userDrawer').classList.remove('show');
+        $('userBackdrop').classList.remove('show');
+      }
+
+      function refreshUserDrawer() {
+        if (state.currentUser) openUserDrawer(state.currentUser.id);
+      }
+
+      function toggleUserRole() {
+        const user = state.currentUser;
+        if (!user) return;
+        const before = user.role;
+        user.role = before === 'admin' ? 'member' : 'admin';
+        logAudit({
+          action: 'user.setRole',
+          target: `${user.name}（${user.username}）`,
+          detail: { before: `role = ${before}`, after: `role = ${user.role}` },
+        });
         renderUsers();
+        refreshUserDrawer();
+        toast(user.role === 'admin' ? '已设为管理员' : '已取消管理员');
       }
 
-      /* ------------------------------------------------------------ 抽屉 */
+      function toggleUserStatus() {
+        const user = state.currentUser;
+        if (!user) return;
+        if (user.username === 'A000001') return toast('不能禁用当前登录的管理员');
 
-      function userValue(user, row) {
-        const has = Object.prototype.hasOwnProperty.call(user.overrides, row.path);
-        return { has, text: has ? formatValue(row, user.overrides[row.path]) : '未设置' };
+        const banning = user.status !== 'banned';
+        user.status = banning ? 'banned' : 'active';
+        logAudit({
+          action: banning ? 'user.ban' : 'user.unban',
+          target: `${user.name}（${user.username}）`,
+          detail: {
+            before: `banned = ${!banning}`,
+            after: `banned = ${banning}${banning ? ' · 会话已吊销' : ''}`,
+          },
+        });
+        renderUsers();
+        refreshUserDrawer();
+        toast(banning ? '已禁用该用户，现有会话已吊销' : '已启用该用户');
       }
 
-      function drawerRow(row) {
-        const current = userValue(currentUser, row);
-        const template = formatValue(row, row.value);
-        const lockable = row.capability === 'server' && row.editable;
-        const locked = currentUser.locked.includes(row.path);
-
-        return `<div class="user-setting-row">
-          <div class="form-label">
-            <div class="form-label-title">${esc(row.label)}</div>
-            <div class="form-label-path">${esc(row.path)}</div>
-          </div>
-          <div><span class="value-pill ${current.has ? '' : 'default'}" title="${esc(current.text)}">${esc(current.text)}</span></div>
-          <div><span class="value-pill default" title="${esc(template)}">${esc(template)}</span></div>
-          <div>
-            ${
-              lockable
-                ? `<label class="mini-check">
-                    <input type="checkbox" ${locked ? 'checked' : ''}
-                      onchange="toggleUserLock(this, '${esc(row.path)}')" /> 锁定
-                  </label>`
-                : '<span class="tiny muted">—</span>'
-            }
-          </div>
-        </div>`;
+      function revokeUserSessions() {
+        const user = state.currentUser;
+        if (!user) return;
+        logAudit({
+          action: 'user.revokeSessions',
+          target: `${user.name}（${user.username}）`,
+          detail: { before: 'sessions = 3', after: 'sessions = 0' },
+        });
+        toast('已吊销该用户的全部会话');
       }
 
-      function renderDrawerSettings() {
-        const page = pageByKey(currentDrawerPage);
-        const body = $('drawerSettingsBody');
-        if (!page) {
-          body.innerHTML = '';
-          return;
+      function setTab(panelId, element) {
+        const drawer = element.closest('.drawer');
+        drawer.querySelectorAll('.tab').forEach((tab) => tab.classList.toggle('active', tab === element));
+        drawer
+          .querySelectorAll('.tab-panel')
+          .forEach((panel) => panel.classList.toggle('active', panel.id === panelId));
+      }
+
+      /* ------------------------------------------------------------ 设备 */
+
+      function audienceBadge(device) {
+        if (device.audience === 'all') return '<span class="tag tag-success">全员</span>';
+        if (device.audience === 'users') return `<span class="tag tag-alpha">指定 ${device.users.length} 人</span>`;
+        return '<span class="tag">未分配</span>';
+      }
+
+      function deviceRows() {
+        if (!state.deviceEmpty) {
+          if (state.view === 'user') {
+            return DEVICES.filter(
+              (device) =>
+                device.audience === 'all' ||
+                (device.audience === 'users' && device.users.includes(PREVIEW_USER)),
+            );
+          }
+          return DEVICES;
         }
+        return [];
+      }
 
-        if (page.kind === 'note') {
-          body.innerHTML = `<div class="alert" style="margin-top: 8px">
-              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 16v-5M12 8h.01" /></svg>
-              <div>
-                <div class="alert-title">${esc(page.noteTitle || page.label)}</div>
-                <div class="alert-desc">${esc(page.note || '')}</div>
-              </div>
+      function toggleDeviceEmpty() {
+        state.deviceEmpty = !state.deviceEmpty;
+        $('emptyToggleBtn').textContent = state.deviceEmpty ? '返回列表' : '预览空态';
+        renderDevices();
+      }
+
+      function renderDevices() {
+        const rows = deviceRows();
+        const inUserView = state.view === 'user';
+
+        $('deviceCount').textContent = rows.length ? `共 ${rows.length} 台设备` : '设备池为空';
+
+        if (!rows.length) {
+          $('deviceRows').innerHTML = `<tr><td colspan="6">
+            <div class="empty">
+              <strong>还没有池设备</strong>
+              <span>在要共享的机器上执行 <span class="mono">lh device pool register</span>，注册后在这里分配。</span>
+              <button class="btn btn-sm btn-outline" style="margin-top: 8px" onclick="openCliModal()">查看命令</button>
             </div>
-            <ul class="note-list">${(page.points || []).map((point) => `<li>${esc(point)}</li>`).join('')}</ul>`;
+          </td></tr>`;
           return;
         }
 
-        body.innerHTML = (page.sections || [])
+        $('deviceRows').innerHTML = rows
           .map(
-            (section) => `<div class="drawer-section-title">${esc(section.title)}</div>
-              ${section.rows.map((row) => drawerRow(row)).join('')}`,
+            (device) => `<tr onclick="openDeviceDrawer('${device.id}')">
+              <td>
+                <div class="user-name">${esc(device.name)}</div>
+                <div class="user-mail mono">${esc(device.id)}</div>
+              </td>
+              <td class="mono tiny">${esc(device.host)}</td>
+              <td class="tiny muted">${esc(device.platform)}</td>
+              <td>${
+                device.online
+                  ? '<span class="tag tag-success">在线</span>'
+                  : '<span class="tag">离线</span>'
+              }</td>
+              <td>${
+                inUserView ? '<span class="tag tag-alpha">已分配给你</span>' : audienceBadge(device)
+              }</td>
+              <td class="tiny muted">${esc(device.last)}</td>
+            </tr>`,
           )
           .join('');
       }
 
-      function openDrawer(id) {
-        const user = USERS.find((item) => item.id === id);
-        if (!user) return;
+      function openDeviceDrawer(id) {
+        const device = DEVICES.find((item) => item.id === id);
+        if (!device) return;
 
-        currentUser = user;
-
-        $('drawerAvatar').innerHTML = pixelAvatar(user.name);
-        $('drawerName').textContent = user.name;
-        $('drawerSub').textContent = `${user.username} · ${user.email}`;
-        $('infoRole').textContent = user.role === 'admin' ? '管理员' : '成员';
-        $('infoStatus').textContent = user.status === 'banned' ? '已禁用' : '正常';
-        $('infoActive').textContent = user.active;
-        $('infoSummary').textContent = `实验室开启 ${user.labs} 项；默认模型 ${user.model}；${user.policy}；${
-          user.locked.length ? `锁定 ${user.locked.length} 项` : '无锁定项'
-        }。`;
-
-        const select = $('drawerPageSelect');
-        select.innerHTML = PAGES.map(
-          (page) => `<option value="${page.key}">${esc(page.label)}</option>`,
-        ).join('');
-
-        currentDrawerPage = pageByKey('serviceModel') ? 'serviceModel' : PAGES[0].key;
-        select.value = currentDrawerPage;
-
-        setTab('profile');
-        renderDrawerSettings();
-
-        $('drawer').classList.add('show');
-        $('drawer').setAttribute('aria-hidden', 'false');
-        $('drawerBackdrop').classList.add('show');
-      }
-
-      function closeDrawer() {
-        $('drawer').classList.remove('show');
-        $('drawer').setAttribute('aria-hidden', 'true');
-        $('drawerBackdrop').classList.remove('show');
-        currentUser = null;
-      }
-
-      function setTab(name) {
-        document
-          .querySelectorAll('#drawer .tab')
-          .forEach((tab) => tab.classList.toggle('active', tab.dataset.tab === name));
-        document
-          .querySelectorAll('#drawer .tab-panel')
-          .forEach((panel) => panel.classList.toggle('active', panel.id === `tab-${name}`));
-      }
-
-      function setDrawerPage(key) {
-        currentDrawerPage = key;
-        renderDrawerSettings();
-      }
-
-      function toggleUserLock(input, path) {
-        if (!currentUser) return;
-
-        if (input.checked) {
-          if (!currentUser.locked.includes(path)) currentUser.locked.push(path);
-        } else {
-          currentUser.locked = currentUser.locked.filter((item) => item !== path);
+        if (state.view === 'user') {
+          toast('普通用户只能使用设备，不能修改分配（管理员视角可用）');
+          return;
         }
 
-        currentUser.custom = true;
-        renderDrawerSettings();
-        renderUsers();
-        toast(input.checked ? '已锁定该字段：用户端置灰，服务端拒绝写入' : '已解除锁定');
+        state.currentDevice = device;
+        renderDeviceDrawer();
+
+        $('deviceDrawer').classList.add('show');
+        $('deviceBackdrop').classList.add('show');
       }
 
-      /* ------------------------------------------------------------ 弹窗 */
+      function renderDeviceDrawer() {
+        const device = state.currentDevice;
+        if (!device) return;
 
-      function applySummary() {
-        const stats = templateStats();
-        const affected = AFFECTED_USERS.toLocaleString('en-US');
-        const skipped = COMPLETE_USERS.toLocaleString('en-US');
-        const patched = (AFFECTED_USERS - COMPLETE_USERS).toLocaleString('en-US');
+        $('deviceName').textContent = device.name;
+        $('deviceSub').textContent = `${device.host} · ${device.platform} · ${
+          device.online ? '在线' : '离线'
+        }`;
 
-        return applyMode === 'unset'
-          ? `影响 <strong>${affected}</strong> 位用户：补齐 <strong>${patched}</strong> 位，跳过已设置的 <strong>${skipped}</strong> 位。<br />可下发 <strong>${stats.server}</strong> 项；设备本地 / 用户私有 / 用户数据字段不写入。`
-          : `影响 <strong>${affected}</strong> 位用户：全部覆盖可下发字段。<br />可下发 <strong>${stats.server}</strong> 项；设备本地 / 用户私有 / 用户数据字段不写入。`;
+        const selected = device.audience === 'users';
+        const checklist = selected
+          ? `<div class="checklist">${USERS.filter((user) => user.role !== 'admin')
+              .map(
+                (user) => `<label class="check-row">
+                  <input type="checkbox" ${device.users.includes(user.username.toLowerCase()) ? 'checked' : ''} onclick="toggleDeviceUser('${user.username.toLowerCase()}')" />
+                  <span>${esc(user.name)}</span>
+                  <span class="mono tiny muted">${esc(user.username)}</span>
+                  <span class="meta">${user.status === 'banned' ? '已禁用' : ''}</span>
+                </label>`,
+              )
+              .join('')}</div>`
+          : '';
+
+        $('deviceDrawerBody').innerHTML = `
+          <div class="policy-box">
+            <h4>授权范围</h4>
+            <p>没有分配时只有管理员自己可见；「指定人」只对被勾选的账号可见。</p>
+            <div class="radio-row">
+              <label><input type="radio" name="audience" ${device.audience === 'all' ? 'checked' : ''} onclick="setAudience('all')" /> 全员</label>
+              <label><input type="radio" name="audience" ${selected ? 'checked' : ''} onclick="setAudience('users')" /> 指定人</label>
+              <label><input type="radio" name="audience" ${device.audience === null ? 'checked' : ''} onclick="setAudience(null)" /> 不分配</label>
+            </div>
+            ${checklist}
+          </div>
+          <div class="policy-box">
+            <h4>设备信息</h4>
+            <div class="info-grid">
+              <div class="info-item"><span>设备 ID</span><strong class="mono">${esc(device.id)}</strong></div>
+              <div class="info-item"><span>注册管理员</span><strong>张伟</strong></div>
+              <div class="info-item"><span>工作区</span><strong>不入工作区（workspaceId = null）</strong></div>
+              <div class="info-item"><span>最近活跃</span><strong>${esc(device.last)}</strong></div>
+            </div>
+          </div>
+          <div class="drawer-actions">
+            <button class="btn btn-sm btn-primary" onclick="saveDevice()">保存分配</button>
+            <button class="btn btn-sm btn-text" onclick="closeDeviceDrawer()">取消</button>
+            <button class="btn btn-sm btn-danger" onclick="removeDevice()">移出设备池</button>
+          </div>
+          <p class="tiny muted" style="margin-top: 12px">
+            保存后执行一次审计（device.grant / device.revoke）。设备上的执行使用注册管理员的 gateway 身份，
+            不携带任何使用者的个人凭据。
+          </p>
+        `;
       }
 
-      function selectApplyMode(mode) {
-        applyMode = mode;
-        $('optUnset').classList.toggle('selected', mode === 'unset');
-        $('optForce').classList.toggle('selected', mode === 'force');
-        $('optUnset').querySelector('input').checked = mode === 'unset';
-        $('optForce').querySelector('input').checked = mode === 'force';
-        $('applySummary').innerHTML = applySummary();
+      function setAudience(mode) {
+        if (!state.currentDevice) return;
+        state.currentDevice.audience = mode;
+        if (mode !== 'users') state.currentDevice.users = [];
+        renderDeviceDrawer();
       }
 
-      function openApply() {
-        $('applyModal').classList.add('show');
-        selectApplyMode('unset');
+      function toggleDeviceUser(username) {
+        const device = state.currentDevice;
+        if (!device) return;
+
+        device.users = device.users.includes(username)
+          ? device.users.filter((item) => item !== username)
+          : [...device.users, username];
+        renderDeviceDrawer();
       }
 
-      function closeApply() {
-        $('applyModal').classList.remove('show');
-      }
+      function saveDevice() {
+        const device = state.currentDevice;
+        if (!device) return;
 
-      function confirmApply() {
-        closeApply();
+        if (device.audience === 'users' && !device.users.length) {
+          return toast('「指定人」至少选择一位用户');
+        }
+
+        logAudit({
+          action: device.audience === null ? 'device.revoke' : 'device.grant',
+          target: device.name,
+          detail: {
+            before: '见上一版授权',
+            after:
+              device.audience === 'all'
+                ? 'audience = all'
+                : device.audience === 'users'
+                  ? `audience = users (${device.users.length} 人)`
+                  : 'audience = none',
+          },
+        });
+
+        closeDeviceDrawer();
+        renderDevices();
         toast(
-          applyMode === 'unset'
-            ? '已应用模板（仅补齐未设置项）：1,284 位用户'
-            : '已应用模板（强制覆盖）：1,284 位用户',
+          device.audience === 'all'
+            ? '已分配给全员'
+            : device.audience === 'users'
+              ? `已分配给 ${device.users.length} 位用户`
+              : '已撤销授权',
         );
       }
 
+      function removeDevice() {
+        const device = state.currentDevice;
+        if (!device) return;
+
+        const index = DEVICES.findIndex((item) => item.id === device.id);
+        if (index >= 0) DEVICES.splice(index, 1);
+
+        logAudit({
+          action: 'device.remove',
+          target: device.name,
+          detail: { before: `pool = admin · deviceId = ${device.id}`, after: '已从设备池移除，授权一并删除' },
+        });
+
+        closeDeviceDrawer();
+        renderDevices();
+        toast('已移出设备池');
+      }
+
+      function closeDeviceDrawer() {
+        $('deviceDrawer').classList.remove('show');
+        $('deviceBackdrop').classList.remove('show');
+      }
+
+      function openCliModal() {
+        $('cliModal').classList.add('show');
+      }
+
+      function closeCliModal() {
+        $('cliModal').classList.remove('show');
+      }
+
+      function copyCmd(button, text) {
+        const done = () => toast('命令已复制');
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(text).then(done, done);
+          return;
+        }
+        const area = document.createElement('textarea');
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+        done();
+      }
+
+      /* ------------------------------------------------------------ 审计 */
+
+      function setAuditQuery(value) {
+        state.auditQuery = value;
+        renderAudit();
+      }
+
+      function setAuditFilter(name, element) {
+        state.auditFilter = name;
+        document
+          .querySelectorAll('#page-audit .chip')
+          .forEach((chip) => chip.classList.toggle('active', chip === element));
+        renderAudit();
+      }
+
+      function toggleAudit(id) {
+        const detail = $(`detail-${id}`);
+        const row = $(`row-${id}`);
+        if (!detail || !row) return;
+
+        if (state.openAudit && state.openAudit !== id) {
+          const openDetail = $(`detail-${state.openAudit}`);
+          const openRow = $(`row-${state.openAudit}`);
+          if (openDetail) openDetail.hidden = true;
+          if (openRow) openRow.classList.remove('open');
+        }
+
+        const next = detail.hidden;
+        detail.hidden = !next;
+        row.classList.toggle('open', next);
+        state.openAudit = next ? id : null;
+      }
+
+      function renderAudit() {
+        const keyword = state.auditQuery.trim().toLowerCase();
+        const rows = AUDIT.filter((entry) => {
+          const meta = ACTION_META[entry.action] || { label: entry.action, cat: 'other', cls: 'tag' };
+          const hitFilter = state.auditFilter === 'all' || meta.cat === state.auditFilter;
+          const hitKeyword =
+            !keyword ||
+            [entry.actor, entry.target, meta.label, entry.ip].some((field) =>
+              String(field).toLowerCase().includes(keyword),
+            );
+          return hitFilter && hitKeyword;
+        });
+
+        $('auditCount').textContent = `共 ${rows.length} 条`;
+
+        $('auditRows').innerHTML = rows.length
+          ? rows
+              .map((entry) => {
+                const meta = ACTION_META[entry.action] || {
+                  label: entry.action,
+                  cat: 'other',
+                  cls: 'tag',
+                };
+                return `<tr id="row-${entry.id}" class="audit-row" onclick="toggleAudit('${entry.id}')">
+                    <td class="mono tiny">${esc(entry.at)}</td>
+                    <td class="tiny">${esc(entry.actor)}</td>
+                    <td><span class="${meta.cls}">${esc(meta.label)}</span></td>
+                    <td class="tiny">${esc(entry.target)}</td>
+                    <td class="mono tiny muted">${esc(entry.ip)}</td>
+                  </tr>
+                  <tr class="audit-detail" id="detail-${entry.id}" hidden>
+                    <td colspan="5">
+                      <div class="stack-8">
+                        <pre>- ${esc(entry.detail.before)}
++ ${esc(entry.detail.after)}</pre>
+                        <div class="tiny muted">action: <span class="mono">${esc(entry.action)}</span> · detail 只存前后值与必要元信息，Key / token 不落库。</div>
+                      </div>
+                    </td>
+                  </tr>`;
+              })
+              .join('')
+          : '<tr><td colspan="5"><div class="tiny muted" style="padding: 16px 12px">没有匹配的记录</div></td></tr>';
+      }
+
       /* ------------------------------------------------------------ 提示 */
+
+      let toastTimer = 0;
 
       function toast(message) {
         const element = $('toast');
         element.textContent = message;
         element.classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => element.classList.remove('show'), 2200);
+        toastTimer = setTimeout(() => element.classList.remove('show'), 2400);
       }
 
       /* ------------------------------------------------------------ 初始化 */
@@ -3741,21 +3949,18 @@
       function init() {
         document.documentElement.dataset.theme = 'light';
         renderThemeIcon();
-        renderAvatarSlots();
-        renderSettingsNav();
+        renderAi();
         renderUsers();
-        renderSettingsPage();
-        go('overview');
-
-        const stats = templateStats();
-        $('deployableSummary').textContent = `可下发 ${stats.server} 项 / 共 ${stats.total} 项${
-          stats.locked ? `（${stats.locked} 项已锁定）` : ''
-        }`;
+        renderDevices();
+        renderAudit();
+        go('users');
 
         document.addEventListener('keydown', (event) => {
           if (event.key !== 'Escape') return;
-          closeDrawer();
-          closeApply();
+          closeUserDrawer();
+          closeDeviceDrawer();
+          closeAiModal();
+          closeCliModal();
         });
       }
 
