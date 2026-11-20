@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>管理员控制台 · 第二版原型（用户 / AI 服务 / 设备 / 审计）</title>
+    <title>管理员控制台 · 第五版原型（用户 / 审计 / AI 服务商 / 服务模型 / 设备）</title>
     <style>
       /* ==========================================================================
        * 管理员控制台原型 — 视觉基线对齐「设置」页真实实现
        *
-       * 取自本仓库：
+       * 外壳与表单取自本仓库：
        *   src/features/NavHeader            · 页头三槽 / 44px 高
        *   src/features/NavPanel             · 280px 侧栏 / colorBgLayout 背景
        *   src/features/Settings/Layout      · 外壳结构
@@ -17,6 +17,12 @@
        *   @lobehub/ui Form variant="filled" itemsType="group"
        *   packages/const/src/layoutTokens   · MAX_WIDTH 1024 / itemMinWidth max(34%,240px)
        *   src/styles/densityScale           · loose 密度（默认）
+       *
+       * 「AI 服务商」「服务模型」两页按原版 1:1 复刻，结构取自：
+       *   src/features/Settings/provider/            · ProviderMenu / ProviderGrid / detail
+       *   src/features/Settings/provider/features/   · ProviderConfig / ModelList
+       *   src/features/ServiceModel/ServiceModelForm · TierRow / 高级折叠 / AutoSaveHint
+       *   packages/const/src/settings/systemAgent.ts · SERVICE_MODEL_TIER_SLOTS
        * ========================================================================== */
 
       :root {
@@ -2137,52 +2143,6 @@
         text-overflow: ellipsis;
       }
 
-      .view-toggle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 10px;
-        border-radius: var(--lobe-radius);
-        background: var(--lobe-fill-quaternary);
-      }
-
-      .view-toggle-text {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        min-width: 0;
-      }
-
-      .view-toggle-text strong {
-        font-size: 12px;
-        line-height: 18px;
-        font-weight: 500;
-        color: var(--lobe-color-text);
-      }
-
-      .view-toggle-text span {
-        font-size: 11px;
-        line-height: 15px;
-        color: var(--lobe-color-text-tertiary);
-      }
-
-      .banner {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        margin-bottom: 16px;
-        padding: 10px 12px;
-        border-radius: var(--lobe-radius);
-        background: var(--lobe-color-info-bg);
-        color: var(--lobe-color-info);
-        font-size: 12px;
-        line-height: 18px;
-      }
-
-      .banner[hidden] {
-        display: none;
-      }
-
       .setting-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -2391,6 +2351,920 @@
         line-height: 17px;
         color: var(--lobe-color-text-secondary);
       }
+      /* ==========================================================================
+       * AI 服务商 —— 复刻 Settings/provider
+       *   ProviderMenu(280) + ProviderGrid(三段 / 骨架) + detail(ProviderConfig/ModelList)
+       * ========================================================================== */
+
+      .main.is-provider .scroll {
+        overflow: hidden;
+      }
+
+      /* _layout/Desktop：ProviderMenu + Container 并排 */
+      #page-provider.active {
+        display: flex;
+        flex-direction: row;
+        gap: 0;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .provider-menu {
+        flex: none;
+        width: 280px;
+        min-width: 280px;
+        display: flex;
+        flex-direction: column;
+        border-inline-end: 1px solid var(--lobe-color-border-secondary);
+        background: var(--lobe-color-bg-container);
+        overflow: hidden;
+      }
+
+      .provider-menu-head {
+        flex: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 8px;
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .provider-menu-head .search {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        background: transparent;
+      }
+
+      .provider-menu-head .search:focus-within {
+        background: var(--lobe-fill-quaternary);
+        border-color: transparent;
+      }
+
+      .provider-menu-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 4px 4px 32px;
+      }
+
+      .pv-item.is-all {
+        margin-bottom: 4px;
+      }
+
+      .pv-logo-all {
+        border: 1px solid var(--lobe-color-border-secondary);
+        color: var(--lobe-color-text-tertiary);
+        background: transparent;
+      }
+
+      .pv-section + .pv-section {
+        margin-top: 2px;
+      }
+
+      .pv-section-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+        height: 30px;
+        padding: 0 6px;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .pv-section-head:hover {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .pv-chevron {
+        width: 12px;
+        height: 12px;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: transform 0.2s ease;
+      }
+
+      .pv-section[data-open='false'] .pv-chevron {
+        transform: rotate(-90deg);
+      }
+
+      .pv-section[data-open='false'] .pv-list {
+        display: none;
+      }
+
+      .pv-section-head .tag {
+        height: 16px;
+        padding: 0 4px;
+        font-size: 10px;
+      }
+
+      .pv-section-action {
+        margin-inline-start: auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .pv-section-action:hover {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+      }
+
+      .pv-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 2px 0;
+      }
+
+      .pv-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        height: 36px;
+        padding: 0 6px;
+        border-radius: var(--lobe-radius);
+        color: var(--lobe-color-text-secondary);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .pv-item:hover {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text);
+      }
+
+      .pv-item.active {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+      }
+
+      .pv-logo {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        overflow: hidden;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+        color: #fff;
+        background: var(--pv-color, var(--lobe-color-text-tertiary));
+      }
+
+      .pv-logo-lg {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        font-size: 16px;
+      }
+
+      .pv-item-title {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      .pv-item-state {
+        flex: none;
+        width: 24px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .pv-item-state i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--lobe-color-success);
+      }
+
+      /* 搜索态整列替换（原版 SearchResult：gap 4 / paddingInline 12） */
+      .pv-search-result {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 0 8px;
+      }
+
+      .pv-search-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .pv-sort {
+        position: relative;
+        display: inline-flex;
+        margin-inline-start: auto;
+      }
+
+      .pv-sort .pv-section-action {
+        margin-inline-start: 0;
+      }
+
+      .pv-sort-menu {
+        position: absolute;
+        inset-inline-end: 0;
+        top: 22px;
+        z-index: 20;
+        display: none;
+        min-width: 168px;
+        padding: 4px;
+        border-radius: 8px;
+        background: var(--lobe-color-bg-elevated);
+        box-shadow:
+          0 0 0 1px var(--lobe-color-border-secondary),
+          0 6px 24px rgb(0 0 0 / 12%);
+      }
+
+      .pv-sort[data-open='true'] .pv-sort-menu {
+        display: block;
+      }
+
+      .pv-sort-title {
+        padding: 4px 8px;
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .pv-sort-item {
+        display: block;
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        text-align: start;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .pv-sort-item:hover {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text);
+      }
+
+      .pv-sort-item.is-active {
+        color: var(--lobe-color-text);
+        font-weight: 500;
+      }
+
+      .ml-search-meta {
+        padding: 8px 4px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .pv-menu-foot {
+        flex: none;
+        padding: 8px 12px;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* --------------------------------------------------- 内容区（ProviderGrid） */
+      .provider-content {
+        flex: 1;
+        min-width: 0;
+        overflow-y: auto;
+        background: var(--lobe-color-bg-container);
+      }
+
+      .provider-inner {
+        width: 100%;
+        max-width: 1024px;
+        margin: 0 auto;
+        padding: 24px 24px 128px;
+      }
+
+      .pv-crumb {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .pv-crumb button {
+        color: inherit;
+      }
+
+      .pv-crumb button:hover {
+        color: var(--lobe-color-text);
+      }
+
+      .pv-grid-section + .pv-grid-section {
+        margin-top: 24px;
+      }
+
+      .pv-grid-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+
+      .pv-grid-head strong {
+        font-size: 18px;
+        line-height: 26px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .pv-grid-head .pv-grid-action {
+        margin-inline-start: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 26px;
+        padding: 0 8px;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 12px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .pv-grid-head .pv-grid-action:hover {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text);
+      }
+
+      .pv-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .pv-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 14px 16px 12px;
+        border-radius: 12px;
+        background: var(--lobe-color-bg-container);
+        box-shadow:
+          inset 0 0 0 1px var(--lobe-color-border),
+          0 1px 2px -0.5px var(--lobe-color-border-secondary);
+        cursor: pointer;
+        transition: background 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      [data-theme='dark'] .pv-card {
+        box-shadow: inset 0 0 0 1px var(--lobe-color-border);
+      }
+
+      .pv-card:hover {
+        background: var(--lobe-fill-quaternary);
+        box-shadow: inset 0 0 0 1px var(--lobe-color-border);
+      }
+
+      .pv-card.is-off {
+        opacity: 0.78;
+      }
+
+      .pv-card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .pv-card-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 14px;
+        line-height: 22px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .pv-card-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 44px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .pv-card-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 10px;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* 12 张骨架（ProviderGrid loadingArr） */
+      .pv-card-skeleton {
+        height: 148px;
+        border-radius: 12px;
+        background: var(--lobe-fill-quaternary);
+      }
+
+      /* ------------------------------------------------------ 详情（ProviderConfig） */
+      .pv-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+
+      .pv-detail-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .pv-detail-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .pv-detail-title h2 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 600;
+        color: var(--lobe-color-text);
+      }
+
+      .pv-detail-sub {
+        margin: 2px 0 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .pv-config-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+        align-items: start;
+        gap: 16px;
+        padding: 14px 0;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .pv-config-row:first-child {
+        border-top: 0;
+        padding-top: 4px;
+      }
+
+      .pv-config-label strong {
+        display: block;
+        font-size: 13px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+      }
+
+      .pv-config-label span {
+        display: block;
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .pv-input {
+        width: 100%;
+        height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--lobe-color-border);
+        border-radius: var(--lobe-radius);
+        background: var(--lobe-color-bg-container);
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+        outline: 0;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .pv-input:focus {
+        border-color: var(--lobe-color-primary);
+        box-shadow: 0 0 0 2px var(--lobe-color-primary-bg);
+      }
+
+      .pv-config-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .pv-check-result {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-success);
+      }
+
+      .pv-check-result.is-error {
+        color: var(--lobe-color-error);
+      }
+
+      /* --------------------------------------------------------- ModelList */
+      .ml-tabs {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin: 0 0 4px -6px;
+        flex-wrap: wrap;
+      }
+
+      .ml-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 28px;
+        padding: 0 8px;
+        border-radius: var(--lobe-radius-sm);
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+
+      .ml-tab:hover {
+        background: var(--lobe-fill-quaternary);
+        color: var(--lobe-color-text);
+      }
+
+      .ml-tab.active {
+        background: var(--lobe-fill-tertiary);
+        color: var(--lobe-color-text);
+        font-weight: 500;
+      }
+
+      .ml-tab svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .ml-head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+        background: var(--lobe-color-bg-container);
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .ml-head strong {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        line-height: 20px;
+        font-weight: 500;
+        color: var(--lobe-color-text);
+      }
+
+      .ml-head .search {
+        width: 200px;
+      }
+
+      .ml-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+        padding: 6px 4px;
+        border-bottom: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .ml-row:hover {
+        background: var(--lobe-fill-quaternary);
+      }
+
+      .ml-row:last-child {
+        border-bottom: 0;
+      }
+
+      .ml-row-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+      }
+
+      .ml-row-tags {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: none;
+      }
+
+      .ml-row-actions {
+        display: flex;
+        align-items: center;
+        flex: none;
+        opacity: 0;
+        transition: opacity 0.15s ease;
+      }
+
+      .ml-row:hover .ml-row-actions {
+        opacity: 1;
+      }
+
+      .ml-row-actions .icon-btn {
+        width: 24px;
+        height: 24px;
+      }
+
+      .ml-more {
+        padding: 10px 4px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      /* ==========================================================================
+       * 服务模型 —— 复刻 ServiceModelForm（TierRow + 高级折叠 + AutoSaveHint）
+       * ========================================================================== */
+
+      .sm-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 24px;
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .sm-save::before {
+        content: '';
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: 0.5;
+      }
+
+      .sm-save.is-saved {
+        color: var(--lobe-color-success);
+      }
+
+      .sm-tier-desc {
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+      }
+
+      .sm-rows {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sm-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        align-items: center;
+        gap: 16px;
+        min-height: 44px;
+        padding: 6px 0;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .sm-row:first-child {
+        border-top: 0;
+      }
+
+      .sm-row-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+      }
+
+      .sm-row-desc {
+        display: block;
+        margin-top: 1px;
+        font-size: 11px;
+        line-height: 17px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .sm-row .control {
+        max-width: none;
+      }
+
+      .sm-advanced {
+        margin-top: 8px;
+        border-top: 1px solid var(--lobe-color-border-secondary);
+      }
+
+      .sm-advanced > summary {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-secondary);
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .sm-advanced > summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .sm-advanced > summary:hover {
+        color: var(--lobe-color-text);
+      }
+
+      .sm-advanced[open] > summary .pv-chevron {
+        transform: rotate(90deg);
+      }
+
+      .sm-advanced-body {
+        padding-bottom: 8px;
+      }
+
+      .sm-note {
+        margin: 0;
+        padding-bottom: 8px;
+        font-size: 11px;
+        line-height: 17px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .sm-visibility .setting-row:first-child {
+        padding-top: 4px;
+      }
+
+      @media (max-width: 1180px) {
+        .pv-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .sm-row {
+          grid-template-columns: minmax(0, 1fr) 220px;
+        }
+      }
+
+      @media (max-width: 900px) {
+        .provider-menu {
+          display: none;
+        }
+
+        .pv-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      /* ==========================================================================
+       * AI 服务商 / 服务模型 —— 布局补丁与原型控件
+       * ========================================================================== */
+
+      /* 服务商页占满滚动区：菜单 280 + 内容区独立滚动（_layout/Desktop） */
+      main.is-provider .container {
+        max-width: none;
+        height: 100%;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #page-provider.active {
+        flex: 1;
+      }
+
+      .sm-row-control {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      /* SlotRow 的 borderless Select */
+      .sm-select {
+        width: 100%;
+        height: 32px;
+        padding: 0 26px 0 8px;
+        border: 1px solid transparent;
+        border-radius: var(--lobe-radius);
+        background-color: transparent;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        background-size: 12px;
+        appearance: none;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--lobe-color-text);
+        outline: 0;
+        cursor: pointer;
+      }
+
+      .sm-select:hover {
+        background-color: var(--lobe-fill-quaternary);
+      }
+
+      .sm-select:focus-visible {
+        border-color: var(--lobe-color-primary);
+      }
+
+      .sm-select.is-muted {
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .sm-select option,
+      .sm-select optgroup {
+        color: var(--lobe-color-text);
+        background: var(--lobe-color-bg-container);
+      }
+
+      .sm-limit {
+        height: 28px;
+        font-size: 12px;
+      }
+
+      .sm-prompt {
+        height: auto;
+        min-height: 56px;
+        padding: 6px 10px;
+        font-family: inherit;
+        font-size: 12px;
+        line-height: 18px;
+        resize: vertical;
+      }
+
+      .ml-group-head {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 4px 6px;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .ml-block {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sm-row.is-off .sm-row-title {
+        color: var(--lobe-color-text-tertiary);
+      }
+
+      .sm-row .control {
+        max-width: none;
+      }
     </style>
   </head>
   <body>
@@ -2452,14 +3326,25 @@
                 </span>
                 <span class="nav-title">审计日志</span>
               </button>
-              <button class="nav-item" data-page="ai" data-label="AI 服务" data-admin-only="true" onclick="go('ai')">
+              <button class="nav-item" data-page="provider" data-label="AI 服务商" onclick="go('provider')">
                 <span class="nav-icon">
                   <svg class="icon" viewBox="0 0 24 24">
-                    <rect x="3" y="3" width="18" height="18" rx="3" />
-                    <path d="M9 9h6v6H9zM12 3v3M12 18v3M3 12h3M18 12h3" />
+                    <rect x="3" y="4" width="18" height="7" rx="2" />
+                    <rect x="3" y="14" width="18" height="7" rx="2" />
+                    <path d="M7 7.5h.01M7 17.5h.01M12 7.5h5M12 17.5h5" />
                   </svg>
                 </span>
-                <span class="nav-title">AI 服务</span>
+                <span class="nav-title">AI 服务商</span>
+              </button>
+              <button class="nav-item" data-page="service-model" data-label="服务模型" onclick="go('service-model')">
+                <span class="nav-icon">
+                  <svg class="icon" viewBox="0 0 24 24">
+                    <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+                    <circle cx="16" cy="7" r="2" />
+                    <circle cx="10" cy="17" r="2" />
+                  </svg>
+                </span>
+                <span class="nav-title">服务模型</span>
               </button>
               <button class="nav-item" data-page="devices" data-label="设备" onclick="go('devices')">
                 <span class="nav-icon">
@@ -2475,15 +3360,12 @@
         </nav>
 
         <div class="nav-footer">
-          <div class="view-toggle">
-            <label class="switch">
-              <input id="viewToggle" type="checkbox" onchange="setView(this.checked)" />
-              <span></span>
-            </label>
-            <div class="view-toggle-text">
-              <strong>普通用户视角</strong>
-              <span>预览非管理员看到的菜单</span>
-            </div>
+          <div class="nav-user" title="当前登录：管理员（控制台仅管理员可进）">
+            <span class="avatar avatar-28" id="navAvatar"></span>
+            <span class="nav-user-name">管理员</span>
+            <svg class="nav-user-chevron" viewBox="0 0 24 24">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
           </div>
         </div>
       </aside>
@@ -2503,23 +3385,13 @@
             <span class="header-title" id="pageTitle">用户管理</span>
           </div>
           <div class="header-right">
-            <span class="tag tag-primary" id="viewBadge">管理员</span>
+            <span class="tag tag-primary">管理员</span>
             <button class="icon-btn" id="themeBtn" title="切换主题" aria-label="切换主题" onclick="toggleTheme()"></button>
           </div>
         </header>
 
         <div class="scroll" id="scroll">
           <div class="container">
-            <div class="banner" id="viewBanner" hidden>
-              <svg class="icon-sm" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 8v5M12 16h.01" />
-              </svg>
-              <div>
-                <strong>普通用户视角</strong>：管理员把「AI 服务商」「服务模型」的菜单隐藏了，设备列表只显示分配给你的机器。
-                直达 URL 会被重定向，服务端写入同样返回 FORBIDDEN。
-              </div>
-            </div>
 
             <!-- ============================== 用户管理 ============================== -->
             <section class="page active" id="page-users">
@@ -2586,114 +3458,59 @@
               </div>
             </section>
 
-            <!-- =============================== AI 服务 =============================== -->
-            <section class="page" id="page-ai">
+<!-- ============================== AI 服务商 ============================== -->
+            <section class="page" id="page-provider">
+              <aside class="provider-menu">
+                <div class="provider-menu-head">
+                  <label class="search">
+                    <svg class="icon-sm" viewBox="0 0 24 24" style="flex: none">
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="m20 20-3.5-3.5" />
+                    </svg>
+                    <input
+                      id="providerSearch"
+                      type="search"
+                      placeholder="搜索服务商"
+                      autocomplete="off"
+                      oninput="setProviderSearch(this.value)"
+                    />
+                  </label>
+                  <button
+                    class="icon-btn"
+                    title="添加自定义服务商"
+                    aria-label="添加自定义服务商"
+                    onclick="toast('原型仅演示：添加自定义服务商')"
+                  >
+                    <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                  </button>
+                </div>
+                <div class="provider-menu-body" id="providerMenuBody"></div>
+                <div class="pv-menu-foot" id="providerMenuFoot"></div>
+              </aside>
+              <div class="provider-content">
+                <div class="provider-inner" id="providerPane"></div>
+              </div>
+            </section>
+
+            <!-- =============================== 服务模型 =============================== -->
+            <section class="page" id="page-service-model">
               <div class="setting-header">
                 <div class="setting-header-main">
                   <div class="setting-header-text">
-                    <h1 class="setting-title">AI 服务</h1>
-                    <p class="setting-desc">
-                      服务商、默认模型与服务模型由管理员统一配置；用户端只读，且看不到这两个设置页。
+                    <h1 class="setting-title">服务模型</h1>
+                    <p class="setting-desc">为每类任务指定模型。这里是全局默认，用户端只读，不能自行覆盖。</p>
+                    <p class="setting-note" id="smFootNote">
+                      保存后立即对全部 1,284 位用户生效；未单独指定的任务跟随所在层的主模型。
                     </p>
-                    <p class="setting-note" id="aiFootNote"></p>
                   </div>
                   <div class="setting-header-actions">
-                    <button class="btn btn-sm btn-text" onclick="resetAi()">还原</button>
-                    <button class="btn btn-sm btn-primary" onclick="openAiModal()">保存并同步</button>
+                    <button class="btn btn-sm btn-text" onclick="resetServiceModel()">还原</button>
                   </div>
                 </div>
                 <div class="divider"></div>
               </div>
-
-              <div class="form-group">
-                <div class="form-group-card">
-                  <div class="form-group-header">
-                    <div>
-                      <div class="form-group-title">菜单可见性</div>
-                      <div class="form-group-desc">
-                        隐藏只是体验；服务端同时拒绝非管理员对托管字段的写入。
-                      </div>
-                    </div>
-                  </div>
-                  <div class="form-group-body">
-                    <div class="setting-row">
-                      <div>
-                        <span class="setting-row-title">非管理员隐藏「AI 服务商」</span>
-                        <span class="setting-row-desc">用户端不再出现该菜单，直达路由重定向到个人设置首页</span>
-                      </div>
-                      <label class="switch" style="justify-self: end">
-                        <input id="menuHideProvider" type="checkbox" checked onchange="setMenu('hideProvider', this.checked)" />
-                        <span></span>
-                      </label>
-                    </div>
-                    <div class="setting-row">
-                      <div>
-                        <span class="setting-row-title">非管理员隐藏「服务模型」</span>
-                        <span class="setting-row-desc">服务模型由管理员统一定义，用户不再选择槽位</span>
-                      </div>
-                      <label class="switch" style="justify-self: end">
-                        <input id="menuHideServiceModel" type="checkbox" checked onchange="setMenu('hideServiceModel', this.checked)" />
-                        <span></span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <div class="form-group-card">
-                  <div class="form-group-header">
-                    <div>
-                      <div class="form-group-title">服务商</div>
-                      <div class="form-group-desc">
-                        停用的服务商不会出现在用户的会话模型选择器里；每个服务商至少要保留一个模型。
-                      </div>
-                    </div>
-                  </div>
-                  <div class="form-group-body">
-                    <div class="provider-grid" id="providerGrid"></div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="grid-2">
-                <div class="form-group">
-                  <div class="form-group-card">
-                    <div class="form-group-header">
-                      <div>
-                        <div class="form-group-title">默认模型</div>
-                        <div class="form-group-desc">新会话与所有存量用户统一使用，保存后立即生效。</div>
-                      </div>
-                    </div>
-                    <div class="form-group-body">
-                      <div class="inline-selects">
-                        <select class="control" id="defaultProvider" onchange="setDefaultProvider(this.value)"></select>
-                        <select class="control" id="defaultModel" onchange="setDefaultModel(this.value)"></select>
-                      </div>
-                      <p class="tiny muted" style="margin-top: 10px">
-                        写入用户的 <span class="mono">default_agent.config</span> 与
-                        <span class="mono">language_model</span>，用户不可改。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <div class="form-group-card">
-                    <div class="form-group-header">
-                      <div>
-                        <div class="form-group-title">服务模型</div>
-                        <div class="form-group-desc">四个槽位，写入 <span class="mono">system_agent</span>。</div>
-                      </div>
-                    </div>
-                    <div class="form-group-body">
-                      <div id="slotRows"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <div id="serviceModelForm"></div>
             </section>
-
             <!-- ================================ 设备 ================================ -->
             <section class="page" id="page-devices">
               <div class="setting-header">
@@ -2872,28 +3689,6 @@
       <div class="drawer-body" id="deviceDrawerBody"></div>
     </aside>
 
-    <!-- ============================== AI 保存确认 ============================== -->
-    <div class="modal-backdrop" id="aiModal">
-      <div class="modal">
-        <div class="modal-head">
-          <h3>保存并同步到存量用户</h3>
-          <p>三个托管字段会立即覆盖 1,284 位用户；用户无法单独修改。</p>
-        </div>
-        <div class="modal-body">
-          <div class="apply-summary" id="aiDiff"></div>
-          <ul class="note-list" style="margin-top: 12px">
-            <li>保存后新会话立即使用新配置；已开始的会话不中断。</li>
-            <li>新增用户登录时由 <span class="mono">initUser</span> 物化同一份配置。</li>
-            <li>菜单可见性变更随下次配置下发生效（缓存 5 秒）。</li>
-          </ul>
-        </div>
-        <div class="modal-foot">
-          <button class="btn btn-sm btn-text" onclick="closeAiModal()">取消</button>
-          <button class="btn btn-sm btn-primary" onclick="confirmAi()">确认保存</button>
-        </div>
-      </div>
-    </div>
-
     <!-- ============================== 注册设备命令 ============================== -->
     <div class="modal-backdrop" id="cliModal">
       <div class="modal">
@@ -2938,10 +3733,11 @@
     <div id="toast"></div>
     <script>
       /* ------------------------------------------------------------------
-       * 管理员控制台原型（第二版）
+       * 管理员控制台原型（第五版）
        * 设计依据：ADMIN_CONSOLE_DESIGN.md
        *   - 用户管理 / 审计日志   → Better Auth admin() + admin_console_audit_logs
-       *   - AI 服务               → admin_console_settings.ai + user_settings 三列
+       *   - AI 服务商 / 服务模型  → 1:1 复刻 Settings/provider 与 Settings/service-model；
+       *     写入目标从「个人」换成「全局策略」（全局密钥行 + 全局服务模型）
        *   - 设备池                → devices.pool='admin' + admin_console_device_grants
        * 纯静态：数据是 mock，交互只用于说明产品行为。
        * ------------------------------------------------------------------ */
@@ -2955,12 +3751,10 @@
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;');
 
-      const PREVIEW_USER = 'lina';
       const AFFECTED_USERS = 1284;
 
       const state = {
         page: 'users',
-        view: 'admin',
         userFilter: 'all',
         userQuery: '',
         auditFilter: 'all',
@@ -3016,8 +3810,7 @@
 
       function toggleTheme() {
         const root = document.documentElement;
-        root.dataset.theme = root.dataset.theme === 'dark' ? 'dark' : 'light';
-        root.dataset.theme = root.dataset.theme === 'dark' && root.dataset.theme !== 'dark' ? 'dark' : root.dataset.theme;
+        root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
         renderThemeIcon();
       }
 
@@ -3034,7 +3827,6 @@
 
       function filterNav(value) {
         const keyword = (value || '').trim().toLowerCase();
-        const blocked = (item) => state.view === 'user' && item.dataset.adminOnly === 'true';
 
         document.querySelectorAll('#navScroll .nav-section').forEach((section) => {
           let visible = 0;
@@ -3042,7 +3834,7 @@
           section.querySelectorAll('.nav-item').forEach((item) => {
             const text = `${item.dataset.label || ''} ${item.textContent}`.toLowerCase();
             const hit = !keyword || text.includes(keyword);
-            item.hidden = !hit || blocked(item);
+            item.hidden = !hit;
             if (!item.hidden) visible += 1;
           });
 
@@ -3053,14 +3845,14 @@
 
       const PAGES = {
         users: ['用户管理', '账号、角色与状态；账号能力复用 Better Auth admin()。'],
-        ai: ['AI 服务', '服务商、默认模型与服务模型由管理员统一配置。'],
+        provider: ['AI 服务商', '服务商与模型白名单由管理员统一配置；全局密钥只留在服务端。'],
+        'service-model': ['服务模型', '每类任务用哪个模型；用户端只读，不能自行覆盖。'],
         devices: ['设备', '管理员注册机器进池，再分配给全员或指定人。'],
         audit: ['审计日志', '每次管理写操作落一条，含前后值。'],
       };
 
       function go(page) {
         if (!PAGES[page]) return;
-        if (state.view === 'user' && page === 'ai') page = 'users';
 
         state.page = page;
 
@@ -3070,21 +3862,15 @@
 
         document.querySelectorAll('#navScroll .nav-item').forEach((item) => {
           item.classList.toggle('active', item.dataset.page === page);
-          if (item.dataset.adminOnly === 'true') item.hidden = state.view === 'user';
         });
+
+        document.querySelector('.main').classList.toggle('is-provider', page === 'provider');
 
         $('pageTitle').textContent = PAGES[page][0];
         $('scroll').scrollTop = 0;
-      }
 
-      function setView(isUser) {
-        state.view = isUser ? 'user' : 'admin';
-        $('viewBadge').textContent = isUser ? '普通用户' : '管理员';
-        $('viewBadge').className = isUser ? 'tag' : 'tag tag-primary';
-        $('viewBanner').hidden = !isUser;
-        if (isUser && state.page === 'ai') go('users');
-        else go(state.page);
-        renderDevices();
+        if (page === 'provider') enterProvider();
+        if (page === 'service-model') renderServiceModel();
       }
 
       /* ------------------------------------------------------------ 数据 */
@@ -3138,274 +3924,838 @@
         if (state.page === 'audit') renderAudit();
       }
 
-      /* ------------------------------------------------------------ AI 配置 */
+      /* ---------------------------------------------------------- AI 服务商 */
 
-      const CATALOG = {
-        deepseek: { name: 'DeepSeek', vendor: 'deepseek', color: '#4d6bfe', models: ['deepseek-v4-flash', 'deepseek-v4', 'deepseek-reasoner'] },
-        openai: { name: 'OpenAI', vendor: 'openai', color: '#10a37f', models: ['gpt-5.6-luna', 'gpt-5.6', 'o4-mini'] },
-        anthropic: { name: 'Anthropic', vendor: 'anthropic', color: '#d97757', models: ['claude-sonnet-5', 'claude-opus-5'] },
-        google: { name: 'Google', vendor: 'google', color: '#4285f4', models: ['gemini-3-pro', 'gemini-3-flash'] },
-        zhipu: { name: '智谱', vendor: 'zhipu', color: '#2f6bff', models: ['glm-5.3-flash', 'glm-5.3'] },
-        ollama: { name: 'Ollama（本地）', vendor: 'ollama', color: '#8a8a8a', models: [] },
+      /* 全量目录：94 个服务商 / 1847 个模型（由 packages/model-bank 生成） */
+      const PROVIDER_DATA = [{"id":"ai21","name":"Ai21Labs","desc":"AI21 Labs builds foundation models and AI systems for enterprises, accelerating generative AI in production.","models":[["jamba-mini","Jamba Mini","chat"],["jamba-large","Jamba Large","chat"]]},{"id":"ai302","name":"302.AI","desc":"302.AI is a pay-as-you-go AI platform offering a broad catalog of AI APIs and online AI apps.","models":[["deepseek-chat","deepseek-chat","chat"],["chatgpt-4o-latest","chatgpt-4o-latest","chat"],["llama3.3-70b","llama3.3-70b","chat"],["deepseek-reasoner","deepseek-reasoner","chat"],["gemini-2.0-flash","gemini-2.0-flash","chat"],["claude-3-7-sonnet-latest","claude-3-7-sonnet-latest","chat"],["grok-3-beta","grok-3-beta","chat"],["grok-3-mini-beta","grok-3-mini-beta","chat"],["gpt-4.1","gpt-4.1","chat"],["o3","o3","chat"],["o4-mini","o4-mini","chat"],["qwen3-235b-a22b","qwen3-235b-a22b","chat"],["qwen3-32b","qwen3-32b","chat"],["gemini-2.5-pro-preview-05-06","gemini-2.5-pro-preview-05-06","chat"],["llama-4-maverick","llama-4-maverick","chat"],["gemini-2.5-flash","gemini-2.5-flash","chat"],["gemini-2.5-pro","gemini-2.5-pro","chat"]]},{"id":"ai360","name":"360 AI","desc":"360 AI is a model and service platform from 360, offering NLP models like 360GPT2 Pro, 360GPT Pro, and 360GPT Turbo.…","models":[["360zhinao3-o1.5","360Zhinao3 o1.5","chat"],["360zhinao2-o1.5","360Zhinao2 o1.5","chat"],["360zhinao2-o1","360Zhinao2 o1","chat"],["360zhinao-pro-32k-thinking-vision","360Zhinao Pro 32K Thinking Vision","chat"],["360zhinao-turbo","360Zhinao Turbo","chat"],["360zhinao-turbo-qwen-plus","360Zhinao Turbo Qwen Plus","chat"],["360gpt2-o1","360GPT2 o1","chat"],["360gpt2-pro","360GPT2 Pro","chat"],["360gpt-pro","360GPT Pro","chat"],["360gpt-pro-trans","360GPT Pro Trans","chat"],["360gpt-turbo","360GPT Turbo","chat"],["deepseek-v3.2","DeepSeek V3.2","chat"],["paratera/deepseek-v3.2","DeepSeek V3.2 (Paratera)","chat"],["sophnet/deepseek-v3.2","DeepSeek V3.2 (SophNet)","chat"],["deepseek-v3.2-speciale","DeepSeek V3.2 Speciale","chat"],["360/deepseek-r1","DeepSeek R1","chat"],["volcengine/doubao-seed-2-0-lite","Doubao Seed 2.0 Lite","chat"],["volcengine/doubao-seed-2-0-mini","Doubao Seed 2.0 Mini","chat"],["volcengine/doubao-seed-2-0-pro","Doubao Seed 2.0 Pro","chat"],["volcengine/doubao-seed-2-0-code","Doubao Seed 2.0 Code","chat"]]},{"id":"aihubmix","name":"AIHubMix","desc":"AIHubMix provides access to multiple AI models through a unified API.","models":[["gpt-6-sol","GPT-6 Sol","chat"],["gpt-6-luna","GPT-6 Luna","chat"],["gpt-5.5","GPT-5.5","chat"],["gpt-5.4","GPT-5.4","chat"],["gpt-5.4-mini","GPT-5.4 mini","chat"],["gpt-5.4-nano","GPT-5.4 nano","chat"],["gpt-5.4-pro","GPT-5.4 Pro","chat"],["gpt-5.3-chat-latest","GPT-5.3 Chat","chat"],["gpt-5.2","GPT-5.2","chat"],["gpt-5.2-pro","GPT-5.2 pro","chat"],["gpt-5.2-chat-latest","GPT-5.2 Chat","chat"],["gpt-5.1","GPT-5.1","chat"],["gpt-5.1-chat-latest","GPT-5.1 Chat","chat"],["gpt-5.1-codex","GPT-5.1 Codex","chat"],["gpt-5.1-codex-mini","GPT-5.1 Codex mini","chat"],["gpt-5-pro","GPT-5 pro","chat"],["gpt-5-codex","GPT-5 Codex","chat"],["gpt-5","GPT-5","chat"],["gpt-5-mini","GPT-5 mini","chat"],["gpt-5-nano","GPT-5 nano","chat"],["gpt-5-chat-latest","GPT-5 Chat","chat"],["o4-mini","o4-mini","chat"],["o4-mini-deep-research","o4-mini Deep Research","chat"],["o3-pro","o3-pro","chat"],["o3","o3","chat"],["o3-deep-research","o3 Deep Research","chat"],["gpt-4.1","GPT-4.1","chat"],["gpt-4.1-mini","GPT-4.1 mini","chat"],["gpt-4.1-nano","GPT-4.1 nano","chat"],["chatgpt-4o-latest","ChatGPT-4o","chat"],["grok-4.7","Grok 4.7","chat"],["grok-4-20-non-reasoning","Grok 4.20 (Non-Reasoning)","chat"],["grok-4-20-reasoning","Grok 4.20","chat"],["grok-4.20-multi-agent-0309","Grok 4.20 Multi-Agent","chat"],["grok-3","Grok 3","chat"],["grok-3-mini","Grok 3 Mini","chat"],["claude-haiku-5-5","Claude Haiku 5.5","chat"],["claude-opus-5-5","Claude Opus 5.5","chat"],["claude-opus-4-7","Claude Opus 4.7","chat"],["claude-opus-4-6","Claude Opus 4.6","chat"],["claude-opus-4-5-20251101","Claude Opus 4.5","chat"],["claude-sonnet-4-6","Claude Sonnet 4.6","chat"],["claude-sonnet-4-5-20250929","Claude Sonnet 4.5","chat"],["claude-haiku-4-5-20251001","Claude Haiku 4.5","chat"],["mimo-v2.6-pro","MiMo-V2.6 Pro","chat"],["mimo-v2.6-pro-ultraspeed","MiMo-V2.6 Pro UltraSpeed","chat"],["mimo-v2.6-flash","MiMo-V2.6 Flash","chat"],["DeepSeek-V3.1-Think","DeepSeek V3.1 (Think)","chat"],["DeepSeek-R1","DeepSeek R1","chat"],["azure-DeepSeek-R1-0528","DeepSeek R1 0528 (Azure)","chat"],["DeepSeek-V3","DeepSeek V3","chat"],["DeepSeek-V3-Fast","DeepSeek V3 (Fast)","chat"],["gemini-3.1-flash-image-preview","Nano Banana 2","chat"],["gemini-3.1-pro-preview","Gemini 3.1 Pro Preview","chat"],["gemini-3.1-flash-lite-preview","Gemini 3.1 Flash-Lite Preview","chat"],["gemini-3-pro-preview","Gemini 3 Pro Preview","chat"],["gemini-3-flash-preview","Gemini 3 Flash Preview","chat"],["gemini-3-pro-image-preview","Nano Banana Pro","chat"],["gemini-2.5-pro","Gemini 2.5 Pro","chat"],["gemini-2.5-flash","Gemini 2.5 Flash","chat"],["gemini-2.5-flash-image","Nano Banana","chat"],["gemini-2.5-flash-lite","Gemini 2.5 Flash-Lite","chat"],["qwen3-235b-a22b-thinking-2507","Qwen3 235B A22B Thinking 2507","chat"],["qwen3-235b-a22b-instruct-2507","Qwen3 235B A22B Instruct 2507","chat"],["qwen3-30b-a3b-thinking-2507","Qwen3 30B A3B Thinking 2507","chat"],["qwen3-30b-a3b-instruct-2507","Qwen3 30B A3B Instruct 2507","chat"],["gemini-3.1-flash-lite-image:image","Nano Banana 2 Lite","image"],["gpt-image-2","GPT Image 2","image"]]},{"id":"akashchat","name":"AkashChat","desc":"Akash is a permissionless cloud resource marketplace with competitive pricing compared to traditional cloud providers.","models":[["DeepSeek-V3-1","DeepSeek V3.1","chat"],["gpt-oss-120b","GPT-OSS-120B","chat"],["Qwen3-235B-A22B-Instruct-2507-FP8","Qwen3 235B A22B Instruct 2507","chat"],["DeepSeek-R1-Distill-Qwen-32B","DeepSeek R1 Distill Qwen 32B","chat"],["Meta-Llama-4-Maverick-17B-128E-Instruct-FP8","Llama 4 Maverick (17Bx128E)","chat"],["Meta-Llama-3-3-70B-Instruct","Llama 3.3 70B","chat"],["Meta-Llama-3-1-8B-Instruct-FP8","Llama 3.1 8B","chat"]]},{"id":"antgroup","name":"AntGroup","desc":"Ant Ling is the core foundation model series of Ant Group’s Artificial General Intelligence (AGI) initiative, dedicated…","models":[["Ring-2.6-1T","Ring-2.6-1T","chat"],["Ling-3.0-flash","Ling-3.0-flash","chat"],["Ling-2.6-1T","Ling-2.6-1T","chat"],["Ling-2.6-flash","Ling-2.6-flash","chat"]]},{"id":"anthropic","name":"Anthropic","desc":"Anthropic builds advanced language models like Claude 3.5 Sonnet, Claude 3 Sonnet, Claude 3 Opus, and Claude 3 Haiku,…","models":[["claude-fable-5-2","Claude Fable 5.2","chat"],["claude-haiku-5-5","Claude Haiku 5.5","chat"],["claude-sonnet-5-5","Claude Sonnet 5.5","chat"],["claude-opus-5-5","Claude Opus 5.5","chat"],["claude-fable-5-1","Claude Fable 5.1","chat"],["claude-fable-5","Claude Fable 5","chat"],["claude-opus-5","Claude Opus 5","chat"],["claude-sonnet-5","Claude Sonnet 5","chat"],["claude-opus-4-8","Claude Opus 4.8","chat"],["claude-opus-4-7","Claude Opus 4.7","chat"],["claude-opus-4-6","Claude Opus 4.6","chat"],["claude-sonnet-4-6","Claude Sonnet 4.6","chat"],["claude-opus-4-5-20251101","Claude Opus 4.5","chat"],["claude-sonnet-4-5-20250929","Claude Sonnet 4.5","chat"],["claude-haiku-4-5-20251001","Claude Haiku 4.5","chat"]]},{"id":"azure","name":"Azure OpenAI","desc":"Azure offers advanced AI models, including GPT-3.5 and GPT-4 series, for diverse data types and complex tasks with a…","models":[["gpt-6.2-astra","GPT-6.2 Astra","chat"],["gpt-6.2-sol","GPT-6.2 Sol","chat"],["gpt-6-astra","GPT-6 Astra","chat"],["gpt-6-sol","GPT-6 Sol","chat"],["gpt-6-luna","GPT-6 Luna","chat"],["gpt-5.4","GPT-5.4","chat"],["gpt-5.4-pro","GPT-5.4 Pro","chat"],["gpt-5.4-mini","GPT-5.4 mini","chat"],["gpt-5.4-nano","GPT-5.4 nano","chat"],["gpt-5.2","GPT-5.2","chat"],["gpt-5.1","GPT-5.1","chat"],["gpt-5-pro","GPT-5 Pro","chat"],["gpt-5-codex","GPT-5 Codex","chat"],["gpt-5","GPT-5","chat"],["gpt-5-mini","GPT-5 Mini","chat"],["gpt-5-nano","GPT-5 Nano","chat"],["gpt-5-chat","GPT-5 Chat","chat"],["o3","o3","chat"],["o4-mini","o4-mini","chat"],["gpt-4.1","GPT-4.1","chat"],["gpt-4.1-mini","GPT-4.1 mini","chat"],["gpt-4.1-nano","GPT-4.1 nano","chat"],["o3-mini","o3-mini","chat"],["o1-mini","o1-mini","chat"],["o1","o1","chat"],["o1-preview","o1-preview","chat"],["gpt-4o","GPT-4o","chat"],["gpt-4","GPT 4 Turbo","chat"],["gpt-4o-mini","GPT 4o Mini","chat"],["gpt-image-1","GPT Image 1","image"],["dall-e-3","DALL·E 3","image"],["FLUX.1-Kontext-pro","FLUX.1 Kontext [pro]","image"],["FLUX-1.1-pro","FLUX.1.1 Pro","image"]]},{"id":"azureai","name":"Azure AI","desc":"Azure provides advanced AI models, including GPT-3.5 and GPT-4 series, for diverse data types and complex tasks with a…","models":[["DeepSeek-R1","DeepSeek R1","chat"],["DeepSeek-V3","DeepSeek V3","chat"],["o3","o3","chat"],["o4-mini","o4-mini","chat"],["gpt-4.1","GPT-4.1","chat"],["gpt-4.1-mini","GPT-4.1 mini","chat"],["gpt-4.1-nano","GPT-4.1 nano","chat"],["gpt-4.5-preview","GPT 4.5 Preview","chat"],["o3-mini","o3-mini","chat"],["o1-mini","o1-mini","chat"],["o1","o1","chat"],["gpt-4o","GPT-4o","chat"],["gpt-4o-mini","GPT 4o Mini","chat"]]},{"id":"baichuan","name":"Baichuan","desc":"Baichuan AI focuses on foundation models with strong performance on Chinese knowledge, long-context processing, and…","models":[["Baichuan-M3-Plus","Baichuan M3 Plus","chat"],["Baichuan-M3","Baichuan M3","chat"],["Baichuan-M2-Plus","Baichuan M2 Plus","chat"],["Baichuan-M2","Baichuan M2","chat"],["Baichuan4","Baichuan 4","chat"],["Baichuan4-Turbo","Baichuan 4 Turbo","chat"],["Baichuan4-Air","Baichuan 4 Air","chat"],["Baichuan3-Turbo","Baichuan 3 Turbo","chat"],["Baichuan3-Turbo-128k","Baichuan 3 Turbo 128k","chat"],["Baichuan2-Turbo","Baichuan 2 Turbo","chat"]]},{"id":"bailiancodingplan","name":"Aliyun Bailian Coding Plan","desc":"Aliyun Bailian Coding Plan is a specialized AI coding service providing access to coding-optimized models from Qwen,…","models":[]},{"id":"bedrock","name":"Bedrock","desc":"Amazon Bedrock provides enterprises with advanced language and vision models, including Anthropic Claude and Meta Llama…","models":[["global.anthropic.claude-haiku-5-5","Claude Haiku 5.5","chat"],["global.anthropic.claude-opus-5-5","Claude Opus 5.5","chat"],["global.anthropic.claude-opus-4-7","Claude Opus 4.7","chat"],["global.anthropic.claude-opus-4-6-v1","Claude Opus 4.6","chat"],["global.anthropic.claude-sonnet-4-6","Claude Sonnet 4.6","chat"],["global.anthropic.claude-opus-4-5-20251101-v1:0","Claude Opus 4.5","chat"],["global.anthropic.claude-sonnet-4-5-20250929-v1:0","Claude Sonnet 4.5","chat"],["global.anthropic.claude-haiku-4-5-20251001-v1:0","Claude Haiku 4.5","chat"],["us.anthropic.claude-3-7-sonnet-20250219-v1:0","Claude 3.7 Sonnet","chat"],["anthropic.claude-3-5-sonnet-20241022-v2:0","Claude 3.5 Sonnet","chat"],["us.anthropic.claude-3-5-sonnet-20241022-v2:0","Claude 3.5 Sonnet v2 (Inference profile)","chat"],["anthropic.claude-3-5-sonnet-20240620-v1:0","Claude 3.5 Sonnet 0620","chat"],["anthropic.claude-3-haiku-20240307-v1:0","Claude 3 Haiku","chat"],["anthropic.claude-3-sonnet-20240229-v1:0","Claude 3 Sonnet","chat"],["anthropic.claude-3-opus-20240229-v1:0","Claude 3 Opus","chat"],["anthropic.claude-v2:1","Claude 2.1","chat"],["anthropic.claude-v2","Claude 2.0","chat"],["anthropic.claude-instant-v1","Claude Instant","chat"],["meta.llama3-1-8b-instruct-v1:0","Llama 3.1 8B Instruct","chat"],["meta.llama3-1-70b-instruct-v1:0","Llama 3.1 70B Instruct","chat"],["meta.llama3-1-405b-instruct-v1:0","Llama 3.1 405B Instruct","chat"],["meta.llama3-8b-instruct-v1:0","Llama 3 8B Instruct","chat"],["meta.llama3-70b-instruct-v1:0","Llama 3 70B Instruct","chat"]]},{"id":"bfl","name":"Black Forest Labs","desc":"A leading frontier AI research lab building the visual infrastructure of tomorrow.","models":[["flux-kontext-pro","FLUX.1 Kontext [pro]","image"],["flux-kontext-max","FLUX.1 Kontext [max]","image"],["flux-pro-1.1","FLUX1.1 [pro] ","image"],["flux-pro-1.1-ultra","FLUX1.1 [pro] Ultra","image"],["flux-pro","FLUX.1 [pro]","image"],["flux-dev","FLUX.1 [dev]","image"]]},{"id":"cerebras","name":"Cerebras","desc":"Cerebras is an inference platform built on its CS-3 system, focused on ultra-low latency and high-throughput LLM…","models":[["gemma-4-31b","Gemma 4 31B","chat"],["gpt-oss-120b","GPT OSS 120B","chat"]]},{"id":"chatgpt","name":"ChatGPT","desc":"Use models included with your ChatGPT subscription through Codex, without an OpenAI Platform API key.","models":[]},{"id":"cloudflare","name":"Cloudflare Workers AI","desc":"Run serverless GPU-powered ML models across Cloudflare’s global network.","models":[["@cf/deepseek-ai/deepseek-r1-distill-qwen-32b","deepseek r1 (distill qwen 32b)","chat"],["@cf/qwen/qwq-32b","qwq 32b","chat"],["@cf/qwen/qwen2.5-coder-32b-instruct","qwen2.5 coder 32b","chat"],["@cf/meta/llama-3.3-70b-instruct-fp8-fast","llama 3.3 70b","chat"],["@cf/meta/llama-4-scout-17b-16e-instruct","llama 4 17b","chat"],["@cf/mistralai/mistral-small-3.1-24b-instruct","mistral small 3.1 24b","chat"],["@cf/meta/llama-3.1-8b-instruct-fast","llama 3.1 8b","chat"]]},{"id":"cohere","name":"Cohere","desc":"Cohere delivers cutting-edge multilingual models, advanced retrieval, and AI workspaces for modern enterprises—all in…","models":[["command-a-plus-05-2026","Command A+ 2605","chat"],["command-a-03-2025","Command A 2503","chat"],["command-r-plus-08-2024","Command R+ 2408","chat"],["command-r-08-2024","Command R 2408","chat"],["command-r7b-12-2024","Command R7B 2412","chat"],["c4ai-aya-expanse-32b","Aya Expanse 32B","chat"],["c4ai-aya-vision-32b","Aya Vision 32B","chat"]]},{"id":"cometapi","name":"CometAPI","desc":"CometAPI provides access to frontier models from OpenAI, Anthropic, Google, and more, letting users choose the best…","models":[["gpt-5-chat-latest","GPT-5-Chat-Latest","chat"],["gpt-5-mini","GPT-5 Mini","chat"],["gpt-5-nano","GPT-5 Nano","chat"],["gpt-5","GPT-5","chat"],["gpt-4.1","GPT-4.1","chat"],["gpt-4.1-mini","GPT-4.1 mini","chat"],["gpt-4.1-nano","GPT-4.1 Nano","chat"],["gpt-4o-mini","GPT-4o Mini","chat"],["chatgpt-4o-latest","ChatGPT-4o","chat"],["o4-mini-2025-04-16","o4-mini","chat"],["o3-pro-2025-06-10","o3 Pro","chat"],["o3-2025-04-16","o3","chat"],["claude-opus-4-1-20250805","Claude Opus 4.1","chat"],["claude-opus-4-1-20250805-thinking","Claude Opus 4.1 Thinking","chat"],["claude-3-7-sonnet-latest","Claude 3.7 Sonnet Latest","chat"],["claude-3-5-haiku-latest","Claude 3.5 Haiku","chat"],["gemini-2.5-pro","Gemini 2.5 Pro","chat"],["gemini-2.5-flash","Gemini 2.5 flash","chat"],["gemini-2.5-flash-lite","Gemini 2.5 Flash-Lite","chat"],["gemini-2.0-flash","Gemini 2.0 Flash","chat"],["grok-4-0709","Grok 4","chat"],["grok-3","Grok 3","chat"],["grok-3-mini","Grok 3 Mini","chat"],["deepseek-v3.1","deepseek-v3.1","chat"],["deepseek-v3","DeepSeek V3","chat"],["deepseek-r1-0528","DeepSeek R1","chat"],["deepseek-reasoner","DeepSeek Reasoner","chat"],["deepseek-chat","DeepSeek Chat","chat"]]},{"id":"comfyui","name":"ComfyUI","desc":"A powerful open-source workflow engine for image, video, and audio generation, supporting models like SD, FLUX, Qwen,…","models":[["comfyui/flux-schnell","FLUX.1 Schnell","image"],["comfyui/flux-dev","FLUX.1 Dev","image"],["comfyui/flux-krea-dev","FLUX.1 Krea-dev","image"],["comfyui/flux-kontext-dev","FLUX.1 Kontext-dev","image"],["comfyui/stable-diffusion-35","Stable Diffusion 3.5","image"],["comfyui/stable-diffusion-35-inclclip","Stable Diffusion 3.5 (Built-in Encoder)","image"],["comfyui/stable-diffusion-15","SD 1.5","image"],["comfyui/stable-diffusion-xl","SDXL Text-to-Image","image"],["comfyui/stable-diffusion-refiner","SDXL Refiner","image"],["comfyui/stable-diffusion-custom","Custom SD Text-to-Image","image"],["comfyui/stable-diffusion-custom-refiner","Custom SDXL Refiner","image"]]},{"id":"deepseek","name":"DeepSeek","desc":"DeepSeek focuses on AI research and applications. Its latest DeepSeek V4 family ships in Flash and Pro variants with a…","models":[["deepseek-flash","DeepSeek V4.1 Flash","chat"],["deepseek-v4-flash","DeepSeek V4 Flash","chat"],["deepseek-v4-pro","DeepSeek V4 Pro","chat"],["deepseek-v4-flash-vision-exp","DeepSeek V4 Flash Vision Exp","chat"]]},{"id":"doubaospeech","name":"Doubao Speech","desc":"Doubao Speech (ByteDance Volcengine) synthesizes natural Mandarin and English speech with the Seed-TTS 2.0 model and…","models":[["seed-tts-2.0","Doubao Speech 2.0","tts"]]},{"id":"elevenlabs","name":"ElevenLabs","desc":"ElevenLabs is an AI audio company whose text-to-speech models generate lifelike, expressive speech in 90+ languages,…","models":[["eleven_v4","Eleven v4","tts"],["eleven_multilingual_v2","Eleven Multilingual v2","tts"],["eleven_flash_v2_5","Eleven Flash v2.5","tts"],["eleven_v3","Eleven v3","tts"],["eleven_flash_v2","Eleven Flash v2","tts"],["eleven_turbo_v2_5","Eleven Turbo v2.5","tts"]]},{"id":"fal","name":"Fal","desc":"A generative media platform built for developers.","models":[["fal-ai/nano-banana","Nano Banana","image"],["fal-ai/bytedance/seedream/v4","Seedream 4.0","image"],["fal-ai/hunyuan-image/v3","HunyuanImage 3.0","image"],["fal-ai/flux-kontext/dev","FLUX.1 Kontext [dev]","image"],["fal-ai/flux-pro/kontext","FLUX.1 Kontext [pro]","image"],["fal-ai/flux/schnell","FLUX.1 Schnell","image"],["fal-ai/flux/krea","FLUX.1 Krea [dev]","image"],["fal-ai/imagen4/preview","Imagen 4","image"],["fal-ai/qwen-image-edit","Qwen Edit","image"],["fal-ai/qwen-image","Qwen Image","image"],["bytedance/seedance-2.5","Seedance 2.5","video"],["minimax/h3-max","H3 Max","video"],["fal-ai/minimax-music/v2.6","MiniMax Music 2.6","text2music"],["minimax/music-3","MiniMax Music 3","text2music"],["fal-ai/minimax-music","MiniMax Music 01 (Reference Audio)","text2music"],["fal-ai/ace-step-1.5","ACE-Step 1.5","text2music"]]},{"id":"fireworksai","name":"Fireworks AI","desc":"Fireworks AI provides advanced language model services with function calling and multimodal processing. Firefunction V2…","models":[["accounts/fireworks/models/llama-v3p3-70b-instruct","Llama 3.3 70B Instruct","chat"],["accounts/fireworks/models/llama-v3p2-3b-instruct","Llama 3.2 3B Instruct","chat"],["accounts/fireworks/models/llama-v3p2-11b-vision-instruct","Llama 3.2 11B Vision Instruct","chat"],["accounts/fireworks/models/llama-v3p2-90b-vision-instruct","Llama 3.2 90B Vision Instruct","chat"],["accounts/fireworks/models/llama-v3p1-8b-instruct","Llama 3.1 8B Instruct","chat"],["accounts/fireworks/models/llama-v3p1-70b-instruct","Llama 3.1 70B Instruct","chat"],["accounts/fireworks/models/llama-v3p1-405b-instruct","Llama 3.1 405B Instruct","chat"],["accounts/fireworks/models/llama-v3-8b-instruct","Llama 3 8B Instruct","chat"],["accounts/fireworks/models/llama-v3-70b-instruct","Llama 3 70B Instruct","chat"],["accounts/fireworks/models/llama-v3-8b-instruct-hf","Llama 3 8B Instruct (HF version)","chat"],["accounts/fireworks/models/mistral-small-24b-instruct-2501","Mistral Small 3 Instruct","chat"],["accounts/fireworks/models/mixtral-8x7b-instruct","Mixtral MoE 8x7B Instruct","chat"],["accounts/fireworks/models/mixtral-8x22b-instruct","Mixtral MoE 8x22B Instruct","chat"],["accounts/fireworks/models/phi-3-vision-128k-instruct","Phi 3.5 Vision Instruct","chat"],["accounts/fireworks/models/mythomax-l2-13b","MythoMax L2 13b","chat"],["accounts/fireworks/models/deepseek-v3","Deepseek V3","chat"],["accounts/fireworks/models/deepseek-r1","Deepseek R1","chat"],["accounts/fireworks/models/qwen-qwq-32b-preview","Qwen Qwq 32b Preview","chat"],["accounts/fireworks/models/qwen2p5-72b-instruct","Qwen2.5 72B Instruct","chat"],["accounts/fireworks/models/qwen2-vl-72b-instruct","Qwen2 VL 72B Instruct","chat"],["accounts/fireworks/models/qwen2p5-coder-32b-instruct","Qwen2.5-Coder-32B-Instruct","chat"],["accounts/yi-01-ai/models/yi-large","Yi-Large","chat"]]},{"id":"fishaudio","name":"Fish Audio","desc":"Fish Audio offers expressive multilingual text-to-speech (S2.1 Pro, Drama 3) with natural-language delivery directions…","models":[["s2.1-pro","Fish Audio S2.1 Pro","tts"],["drama-3","Fish Audio Drama 3","tts"],["s2-pro","Fish Audio S2 Pro","tts"],["s1","Fish Audio S1","tts"]]},{"id":"giteeai","name":"Gitee AI","desc":"Gitee AI Serverless APIs provide plug-and-play LLM inference services for developers.","models":[["DeepSeek-R1-Distill-Qwen-1.5B","DeepSeek R1 Distill Qwen 1.5B","chat"],["DeepSeek-R1-Distill-Qwen-7B","DeepSeek R1 Distill Qwen 7B","chat"],["DeepSeek-R1-Distill-Qwen-14B","DeepSeek R1 Distill Qwen 14B","chat"],["DeepSeek-R1-Distill-Qwen-32B","DeepSeek R1 Distill Qwen 32B","chat"],["QwQ-32B-Preview","QwQ 32B Preview","chat"],["Qwen2.5-72B-Instruct","Qwen2.5 72B Instruct","chat"],["Qwen2.5-32B-Instruct","Qwen2.5 32B Instruct","chat"],["Qwen2.5-14B-Instruct","Qwen2.5 14B Instruct","chat"],["Qwen2.5-7B-Instruct","Qwen2.5 7B Instruct","chat"],["Qwen2-72B-Instruct","Qwen2 72B Instruct","chat"],["Qwen2-7B-Instruct","Qwen2 7B Instruct","chat"],["Qwen2.5-Coder-32B-Instruct","Qwen2.5 Coder 32B Instruct","chat"],["Qwen2.5-Coder-14B-Instruct","Qwen2.5 Coder 14B Instruct","chat"],["Qwen2-VL-72B","Qwen2 VL 72B","chat"],["InternVL2.5-26B","InternVL2.5 26B","chat"],["InternVL2-8B","InternVL2 8B","chat"],["glm-4-9b-chat","GLM4 9B Chat","chat"],["Yi-34B-Chat","Yi 34B Chat","chat"],["code-raccoon-v1","code raccoon v1","chat"],["deepseek-coder-33B-instruct","DeepSeek Coder 33B Instruct","chat"],["codegeex4-all-9b","CodeGeeX4 All 9B","chat"],["FLUX.1-dev","FLUX.1-dev","image"],["flux-1-schnell","flux-1-schnell","image"],["FLUX.1-Kontext-dev","FLUX.1-Kontext-dev","image"],["stable-diffusion-3.5-large-turbo","stable-diffusion-3.5-large-turbo","image"],["stable-diffusion-3-medium","stable-diffusion-3-medium","image"],["stable-diffusion-xl-base-1.0","stable-diffusion-xl-base-1.0","image"],["Kolors","Kolors","image"],["HunyuanDiT-v1.2-Diffusers-Distilled","HunyuanDiT-v1.2-Diffusers-Distilled","image"],["HiDream-I1-Full","HiDream-I1-Full","image"],["HiDream-E1-Full","HiDream-E1-Full","image"],["HelloMeme","HelloMeme","image"],["OmniConsistency","OmniConsistency","image"],["InstantCharacter","InstantCharacter","image"],["DreamO","DreamO","image"],["AnimeSharp","AnimeSharp","image"]]},{"id":"github","name":"GitHub","desc":"With GitHub Models, developers can build as AI engineers using industry-leading models.","models":[["openai/o3","o3","chat"],["openai/o4-mini","o4-mini","chat"],["openai/gpt-4.1","GPT-4.1","chat"],["openai/gpt-4.1-mini","GPT-4.1 mini","chat"],["openai/gpt-4.1-nano","GPT-4.1 nano","chat"],["openai/o3-mini","o3-mini","chat"],["openai/o1-mini","o1-mini","chat"],["openai/o1","o1","chat"],["openai/o1-preview","o1-preview","chat"],["openai/gpt-4o-mini","GPT-4o mini","chat"],["openai/gpt-4o","GPT-4o","chat"],["xai/grok-3","Grok 3","chat"],["xai/grok-3-mini","Grok 3 mini","chat"],["microsoft/MAI-DS-R1","MAI DS R1","chat"],["deepseek/DeepSeek-R1","DeepSeek R1","chat"],["deepseek/DeepSeek-V3-0324","DeepSeek V3","chat"],["ai21-labs/AI21-Jamba-1.5-Mini","AI21 Jamba 1.5 Mini","chat"],["ai21-labs/AI21-Jamba-1.5-Large","AI21 Jamba 1.5 Large","chat"],["cohere/Cohere-command-r","Cohere Command R","chat"],["cohere/Cohere-command-r-plus","Cohere Command R+","chat"],["mistral-ai/Mistral-Nemo","Mistral Nemo","chat"],["mistral-ai/mistral-small-2503","Mistral Small","chat"],["mistral-ai/Mistral-Large-2411","Mistral Large","chat"],["mistral-ai/Codestral-2501","Codestral","chat"],["meta/Llama-3.2-11B-Vision-Instruct","Llama 3.2 11B Vision","chat"],["meta/Llama-3.2-90B-Vision-Instruct","Llama 3.2 90B Vision","chat"],["meta/Llama-3.3-70B-Instruct","Llama 3.3 70B Instruct","chat"],["llama-4-Scout-17B-16E-Instruct","Meta Llama 4 Scout 17B","chat"],["meta/Llama-4-Maverick-17B-128E-Instruct-FP8","Meta Llama 4 Maverick 17B","chat"],["meta/Meta-Llama-3.1-8B-Instruct","Meta Llama 3.1 8B","chat"],["meta/Meta-Llama-3.1-70B-Instruct","Meta Llama 3.1 70B","chat"],["meta/Meta-Llama-3.1-405B-Instruct","Meta Llama 3.1 405B","chat"],["meta/Meta-Llama-3-8B-Instruct","Meta Llama 3 8B","chat"],["meta/Meta-Llama-3-70B-Instruct","Meta Llama 3 70B","chat"],["microsoft/Phi-4","Phi 4","chat"],["microsoft/Phi-3.5-MoE-instruct","Phi 3.5 MoE","chat"],["microsoft/Phi-3.5-mini-instruct","Phi-3.5-mini 128K","chat"],["microsoft/Phi-3.5-vision-instruct","Phi-3.5-vision 128K","chat"],["microsoft/Phi-3-mini-4k-instruct","Phi-3-mini 4K","chat"],["microsoft/Phi-3-mini-128k-instruct","Phi-3-mini 128K","chat"],["microsoft/Phi-3-small-8k-instruct","Phi-3-small 8K","chat"],["microsoft/Phi-3-small-128k-instruct","Phi-3-small 128K","chat"],["microsoft/Phi-3-medium-4k-instruct","Phi-3-medium 4K","chat"],["microsoft/Phi-3-medium-128k-instruct","Phi-3-medium 128K","chat"]]},{"id":"githubcopilot","name":"GitHub Copilot","desc":"Access Claude, GPT, and Gemini models through your GitHub Copilot subscription.","models":[]},{"id":"glmcodingplan","name":"GLM Coding Plan","desc":"GLM Coding Plan provides access to Zhipu AI models including GLM-5 and GLM-4.7 for coding tasks via a fixed-fee…","models":[]},{"id":"google","name":"Google","desc":"暂无描述。","models":[["gemini-2.5-pro","Gemini 2.5 Pro","chat"],["gemini-2.5-flash","Gemini 2.5 Flash","chat"],["gemini-2.5-flash-image","Nano Banana","chat"],["gemini-2.5-flash-lite","Gemini 2.5 Flash-Lite","chat"],["gemini-pro-latest","Gemini Pro Latest","chat"],["gemini-flash-latest","Gemini Flash Latest","chat"],["gemini-flash-lite-latest","Gemini Flash-Lite Latest","chat"],["gemini-4-carbon","Gemini 4 Carbon","chat"],["gemini-4-neon","Gemini 4 Neon","chat"],["gemini-4-argon","Gemini 4 Argon","chat"],["gemini-3.8-flash","Gemini 3.8 Flash","chat"],["gemini-3.7-flash","Gemini 3.7 Flash","chat"],["gemini-3.6-flash","Gemini 3.6 Flash","chat"],["gemini-3.5-flash","Gemini 3.5 Flash","chat"],["gemini-3.5-flash-lite","Gemini 3.5 Flash-Lite","chat"],["gemini-nano-banana-2.1","Nano Banana 2.1","chat"],["gemini-3.1-flash-image","Nano Banana 2","chat"],["gemini-3.1-flash-image-preview","Nano Banana 2","chat"],["gemini-3.1-flash-lite-image","Nano Banana 2 Lite","chat"],["gemini-3.1-pro-preview","Gemini 3.1 Pro Preview","chat"],["gemini-3.1-flash-lite","Gemini 3.1 Flash-Lite","chat"],["gemini-3.1-flash-lite-preview","Gemini 3.1 Flash-Lite Preview","chat"],["gemini-3-flash-preview","Gemini 3 Flash Preview","chat"],["gemini-3-pro-image-preview","Nano Banana Pro","chat"],["gemma-4-26b-a4b-it","Gemma 4 26B A4B IT","chat"],["gemma-4-31b-it","Gemma 4 31B IT","chat"],["gemini-nano-banana-2.1:image","Nano Banana 2.1","image"],["gemini-3.1-flash-image:image","Nano Banana 2","image"],["gemini-3.1-flash-image-preview:image","Nano Banana 2","image"],["gemini-3.1-flash-lite-image:image","Nano Banana 2 Lite","image"],["gemini-3-pro-image-preview:image","Nano Banana Pro","image"],["gemini-2.5-flash-image:image","Nano Banana","image"],["gemini-3.8-flash-tts","Gemini 3.8 Flash TTS","tts"],["gemini-3.8-flash-lite-tts","Gemini 3.8 Flash-Lite TTS","tts"],["gemini-2.5-flash-preview-tts","Gemini 2.5 Flash Preview TTS","tts"],["gemini-2.5-pro-preview-tts","Gemini 2.5 Pro Preview TTS","tts"],["veo-3.1-generate-preview","Veo 3.1 Generate Preview","video"],["veo-3.1-fast-generate-preview","Veo 3.1 Fast Generate Preview","video"],["gemini-omni-1.1-flash","Gemini Omni 1.1 Flash","video"]]},{"id":"groq","name":"Groq","desc":"Groq’s LPU inference engine delivers standout benchmark performance with exceptional speed and efficiency, setting a…","models":[["groq/compound","Compound","chat"],["groq/compound-mini","Compound Mini","chat"],["qwen/qwen3.8-27b","Qwen3.8 27B","chat"],["qwen/qwen3.6-27b","Qwen3.6 27B","chat"],["minimaxai/minimax-m2.7","MiniMax M2.7","chat"],["openai/gpt-oss-120b","GPT OSS 120B","chat"],["openai/gpt-oss-20b","GPT OSS 20B","chat"],["meta-llama/llama-prompt-guard-2-22m","Llama Prompt Guard 2 22M","chat"],["meta-llama/llama-prompt-guard-2-86m","Llama Prompt Guard 2 86M","chat"]]},{"id":"higress","name":"Higress","desc":"Higress is a cloud-native API gateway created inside Alibaba to address Tengine reload impact on long-lived connections…","models":[["qwen-turbo","Qwen Turbo","chat"],["qwen-plus","Qwen Plus","chat"],["qwen-max","Qwen Max","chat"],["qwen-long","Qwen Long","chat"],["qwen-vl-plus-latest","Qwen VL Plus","chat"],["qwen-vl-max-latest","Qwen VL Max","chat"],["qwen-math-turbo-latest","Qwen Math Turbo","chat"],["qwen-math-plus-latest","Qwen Math Plus","chat"],["qwen-coder-turbo-latest","Qwen Coder Turbo","chat"],["qwen2.5-7b-instruct","Qwen2.5 7B","chat"],["qwen2.5-14b-instruct","Qwen2.5 14B","chat"],["qwen2.5-32b-instruct","Qwen2.5 32B","chat"],["qwen2.5-72b-instruct","Qwen2.5 72B","chat"],["qwen2.5-math-1.5b-instruct","Qwen2.5 Math 1.5B","chat"],["qwen2.5-math-7b-instruct","Qwen2.5 Math 7B","chat"],["qwen2.5-math-72b-instruct","Qwen2.5 Math 72B","chat"],["qwen2.5-coder-1.5b-instruct","Qwen2.5 Coder 1.5B","chat"],["qwen2.5-coder-7b-instruct","Qwen2.5 Coder 7B","chat"],["qwen-vl-v1","Qwen VL","chat"],["qwen-vl-chat-v1","Qwen VL Chat","chat"],["moonshot-v1-8k","Moonshot V1 8K","chat"],["moonshot-v1-32k","Moonshot V1 32K","chat"],["moonshot-v1-128k","Moonshot V1 128K","chat"],["Baichuan4","Baichuan 4","chat"],["Baichuan4-Turbo","Baichuan 4 Turbo","chat"],["Baichuan4-Air","Baichuan 4 Air","chat"],["Baichuan3-Turbo","Baichuan 3 Turbo","chat"],["Baichuan3-Turbo-128k","Baichuan 3 Turbo 128k","chat"],["Baichuan2-Turbo","Baichuan 2 Turbo","chat"],["yi-lightning","Yi Lightning","chat"],["yi-spark","Yi Spark","chat"],["yi-medium","Yi Medium","chat"],["yi-medium-200k","Yi Medium 200K","chat"],["yi-large-turbo","Yi Large Turbo","chat"],["yi-large-rag","Yi Large RAG","chat"],["yi-large-fc","Yi Large FC","chat"],["yi-large","Yi Large","chat"],["yi-vision","Yi Vision","chat"],["yi-large-preview","Yi Large Preview","chat"],["yi-lightning-lite","Yi Lightning Lite","chat"],["glm-4-flash","GLM-4-Flash","chat"],["glm-4-flashx","GLM-4-FlashX","chat"],["glm-4-long","GLM-4-Long","chat"],["glm-4-air","GLM-4-Air","chat"],["glm-4-airx","GLM-4-AirX","chat"],["glm-4-alltools","GLM-4-AllTools","chat"],["glm-4-plus","GLM-4-Plus","chat"],["glm-4-0520","GLM-4-0520","chat"],["glm-4","GLM-4","chat"],["glm-4v-plus","GLM-4V-Plus","chat"],["glm-4v","GLM-4V","chat"],["charglm-3","CharGLM-3","chat"],["emohaa","Emohaa","chat"],["360gpt2-pro","360GPT2 Pro","chat"],["360gpt-pro","360GPT Pro","chat"],["360gpt-turbo","360GPT Turbo","chat"],["360gpt-turbo-responsibility-8k","360GPT Turbo Responsibility 8K","chat"],["ERNIE-3.5-8K","ERNIE 3.5 8K","chat"],["ERNIE-3.5-8K-Preview","ERNIE 3.5 8K Preview","chat"],["ERNIE-3.5-128K","ERNIE 3.5 128K","chat"],["ERNIE-4.0-8K-Latest","ERNIE 4.0 8K","chat"],["ERNIE-4.0-8K-Preview","ERNIE 4.0 8K Preview","chat"],["ERNIE-4.0-Turbo-8K-Latest","ERNIE 4.0 Turbo 8K","chat"],["ERNIE-4.0-Turbo-8K-Preview","ERNIE 4.0 Turbo 8K Preview","chat"],["ERNIE-Lite-Pro-128K","ERNIE Lite Pro 128K","chat"],["ERNIE-Speed-Pro-128K","ERNIE Speed Pro 128K","chat"],["ERNIE-Speed-128K","ERNIE Speed 128K","chat"],["ERNIE-Character-8K","ERNIE Character 8K","chat"],["hunyuan-lite","Hunyuan Lite","chat"],["hunyuan-standard","Hunyuan Standard","chat"],["hunyuan-standard-256K","Hunyuan Standard 256K","chat"],["hunyuan-turbo","Hunyuan Turbo","chat"],["hunyuan-pro","Hunyuan Pro","chat"],["hunyuan-large","Hunyuan Large","chat"],["hunyuan-vision","Hunyuan Vision","chat"],["hunyuan-code","Hunyuan Code","chat"],["hunyuan-functioncall","Hunyuan FunctionCall","chat"],["hunyuan-role","Hunyuan Role","chat"],["step-1-flash","Step 1 Flash","chat"],["step-1-8k","Step 1 8K","chat"],["step-1-32k","Step 1 32K","chat"],["step-1-128k","Step 1 128K","chat"],["step-1-256k","Step 1 256K","chat"],["step-2-16k","Step 2 16K","chat"],["step-1v-8k","Step 1V 8K","chat"],["step-1v-32k","Step 1V 32K","chat"],["step-1.5v-mini","Step 1.5V Mini","chat"],["lite","Spark Lite","chat"],["generalv3","Spark Pro","chat"],["pro-128k","Spark Pro 128K","chat"],["generalv3.5","Spark Max","chat"],["max-32k","Spark Max 32K","chat"],["4.0Ultra","Spark 4.0 Ultra","chat"],["o1-mini","OpenAI o1-mini","chat"],["o1-preview","OpenAI o1-preview","chat"],["gpt-4o-mini","GPT-4o mini","chat"],["gpt-4o","GPT-4o","chat"],["gpt-4o-2024-08-06","GPT-4o 0806","chat"],["gpt-4o-2024-05-13","GPT-4o 0513","chat"],["chatgpt-4o-latest","ChatGPT-4o","chat"],["gpt-4-turbo","GPT-4 Turbo","chat"],["gpt-4-turbo-2024-04-09","GPT-4 Turbo Vision 0409","chat"],["gpt-4-turbo-preview","GPT-4 Turbo Preview","chat"],["gpt-4-0125-preview","GPT-4 Turbo Preview 0125","chat"],["gpt-4-1106-preview","GPT-4 Turbo Preview 1106","chat"],["gpt-4","GPT-4","chat"],["gpt-4-0613","GPT-4 0613","chat"],["gpt-4-32k","GPT-4 32K","chat"],["gpt-4-32k-0613","GPT-4 32K 0613","chat"],["gpt-3.5-turbo","GPT-3.5 Turbo","chat"],["gpt-3.5-turbo-0125","GPT-3.5 Turbo 0125","chat"],["gpt-3.5-turbo-1106","GPT-3.5 Turbo 1106","chat"],["gpt-3.5-turbo-instruct","GPT-3.5 Turbo Instruct","chat"],["gpt-35-turbo","GPT 3.5 Turbo","chat"],["gpt-35-turbo-16k","GPT 3.5 Turbo","chat"],["gpt-4-vision-preview","GPT 4 Turbo with Vision Preview","chat"],["ai21-jamba-1.5-mini","AI21 Jamba 1.5 Mini","chat"],["ai21-jamba-1.5-large","AI21 Jamba 1.5 Large","chat"],["cohere-command-r","Cohere Command R","chat"],["cohere-command-r-plus","Cohere Command R+","chat"],["mistral-nemo","Mistral Nemo","chat"],["mistral-small","Mistral Small","chat"],["mistral-large","Mistral Large","chat"],["llama-3.2-11b-vision-instruct","Llama 3.2 11B Vision","chat"],["llama-3.2-90b-vision-instruct","Llama 3.2 90B Vision","chat"],["meta-llama-3.1-8b-instruct","Meta Llama 3.1 8B","chat"],["meta-llama-3.1-70b-instruct","Meta Llama 3.1 70B","chat"],["meta-llama-3.1-405b-instruct","Meta Llama 3.1 405B","chat"],["meta-llama-3-8b-instruct","Meta Llama 3 8B","chat"],["meta-llama-3-70b-instruct","Meta Llama 3 70B","chat"],["Phi-3.5-mini-instruct","Phi-3.5-mini 128K","chat"],["Phi-3.5-vision-instrust","Phi-3.5-vision 128K","chat"],["Phi-3-mini-4k-instruct","Phi-3-mini 4K","chat"],["Phi-3-mini-128k-instruct","Phi-3-mini 128K","chat"],["Phi-3-small-8k-instruct","Phi-3-small 8K","chat"],["Phi-3-small-128k-instruct","Phi-3-small 128K","chat"],["Phi-3-medium-4k-instruct","Phi-3-medium 4K","chat"],["Phi-3-medium-128k-instruct","Phi-3-medium 128K","chat"],["llama-3.2-11b-vision-preview","Llama 3.2 11B Vision (Preview)","chat"],["llama-3.2-90b-vision-preview","Llama 3.2 90B Vision (Preview)","chat"],["llama-3.1-8b-instant","Llama 3.1 8B","chat"],["llama-3.1-70b-versatile","Llama 3.1 70B","chat"],["llama3-groq-8b-8192-tool-use-preview","Llama 3 Groq 8B Tool Use (Preview)","chat"],["llama3-groq-70b-8192-tool-use-preview","Llama 3 Groq 70B Tool Use (Preview)","chat"],["llama3-8b-8192","Meta Llama 3 8B","chat"],["llama3-70b-8192","Meta Llama 3 70B","chat"],["gemma2-9b-it","Gemma 2 9B","chat"],["gemma-7b-it","Gemma 7B","chat"],["mixtral-8x7b-32768","Mixtral 8x7B","chat"],["llava-v1.5-7b-4096-preview","LLaVA 1.5 7B","chat"],["deepseek-chat","DeepSeek V2.5","chat"],["claude-3-sonnet-20240229","Claude 3 Sonnet","chat"],["claude-3-opus-20240229","Claude 3 Opus","chat"],["claude-2.1","Claude 2.1","chat"],["claude-2.0","Claude 2.0","chat"],["gemini-1.5-flash-latest","Gemini 1.5 Flash","chat"],["gemini-1.5-flash-002","Gemini 1.5 Flash 002","chat"],["gemini-1.5-flash-001","Gemini 1.5 Flash 001","chat"],["gemini-1.5-flash-exp-0827","Gemini 1.5 Flash 0827","chat"],["gemini-1.5-flash-8b","Gemini 1.5 Flash 8B","chat"],["gemini-1.5-flash-8b-exp-0924","Gemini 1.5 Flash 8B 0924","chat"],["gemini-1.5-pro-latest","Gemini 1.5 Pro","chat"],["gemini-1.5-pro-002","Gemini 1.5 Pro 002","chat"],["gemini-1.5-pro-001","Gemini 1.5 Pro 001","chat"],["gemini-1.5-pro-exp-0827","Gemini 1.5 Pro 0827","chat"],["gemini-1.5-pro-exp-0801","Gemini 1.5 Pro 0801","chat"],["gemini-1.0-pro-latest","Gemini 1.0 Pro","chat"],["gemini-1.0-pro-001","Gemini 1.0 Pro 001 (Tuning)","chat"],["gemini-1.0-pro-002","Gemini 1.0 Pro 002 (Tuning)","chat"],["open-mistral-nemo","Mistral Nemo","chat"],["mistral-small-latest","Mistral Small","chat"],["mistral-large-latest","Mistral Large","chat"],["codestral-latest","Codestral","chat"],["pixtral-12b-2409","Pixtral 12B","chat"],["ministral-3b-latest","Ministral 3B","chat"],["ministral-8b-latest","Ministral 8B","chat"],["open-mistral-7b","Mistral 7B","chat"],["open-mixtral-8x7b","Mixtral 8x7B","chat"],["open-mixtral-8x22b","Mixtral 8x22B","chat"],["open-codestral-mamba","Codestral Mamba","chat"],["abab6.5s-chat","abab6.5s","chat"],["abab6.5g-chat","abab6.5g","chat"],["abab6.5t-chat","abab6.5t","chat"],["abab5.5-chat","abab5.5","chat"],["abab5.5s-chat","abab5.5s","chat"],["command-r","command-r","chat"],["command-r-plus","command-r-plus","chat"],["command-light","command-light","chat"],["Doubao-lite-4k","Doubao-lite-4k","chat"],["Doubao-lite-32k","Doubao-lite-32k","chat"],["Doubao-lite-128k","Doubao-lite-128k","chat"],["Doubao-pro-4k","Doubao-pro-4k","chat"],["Doubao-pro-32k","Doubao-pro-32k","chat"],["Doubao-pro-128k","Doubao-pro-128k","chat"],["Skylark2-pro-character-4k","Skylark2-pro-character-4k","chat"],["Skylark2-pro-32k","Skylark2-pro-32k","chat"],["Skylark2-pro-4k","Skylark2-pro-4k","chat"],["Skylark2-pro-turbo-8k","Skylark2-pro-turbo-8k","chat"],["Skylark2-lite-8k","Skylark2-lite-8k","chat"]]},{"id":"huggingface","name":"HuggingFace","desc":"The Hugging Face Inference API offers a fast way to explore thousands of models for many tasks, giving instant access…","models":[["mistralai/Mistral-7B-Instruct-v0.3","Mistral 7B Instruct v0.3","chat"],["google/gemma-2-2b-it","Gemma 2 2B Instruct","chat"],["Qwen/Qwen2.5-72B-Instruct","Qwen 2.5 72B Instruct","chat"],["Qwen/Qwen2.5-Coder-32B-Instruct","Qwen 2.5 Coder 32B Instruct","chat"],["Qwen/QwQ-32B-Preview","QwQ 32B Preview","chat"],["microsoft/Phi-3.5-mini-instruct","Phi 3.5 mini instruct","chat"],["NousResearch/Hermes-3-Llama-3.1-8B","Hermes 3 Llama 3.1 8B","chat"],["deepseek-ai/DeepSeek-R1-Distill-Qwen-32B","DeepSeek R1 (Distill Qwen 32B)","chat"],["deepseek-ai/DeepSeek-R1","DeepSeek R1","chat"]]},{"id":"hunyuan","name":"Hunyuan","desc":"A Tencent-developed LLM with strong Chinese writing, solid reasoning in complex contexts, and reliable task execution.","models":[["hy3","Hy3","chat"],["hy3-preview","Hy3 preview","chat"],["hunyuan-2.0-thinking-20251109","HY 2.0 Think","chat"],["hunyuan-2.0-instruct-20251111","HY 2.0 Instruct","chat"],["hunyuan-role-latest","Hunyuan-role","chat"],["glm-5.1","GLM-5.1","chat"],["glm-5-turbo","GLM-5-Turbo","chat"],["glm-5","GLM-5","chat"],["glm-5v-turbo","GLM-5V-Turbo","chat"],["kimi-k2.6","Kimi K2.6","chat"],["kimi-k2.5","Kimi K2.5","chat"],["minimax-m2.7","MiniMax-M2.7","chat"],["minimax-m2.5","MiniMax-M2.5","chat"],["deepseek-v4-flash","DeepSeek-V4-Flash","chat"],["deepseek-v4-pro","DeepSeek-V4-Pro","chat"],["deepseek-v3.2","Deepseek-v3.2","chat"],["deepseek-v3.1","Deepseek-v3.1","chat"],["deepseek-r1-0528","Deepseek-r1-0528","chat"],["deepseek-v3-0324","Deepseek-v3-0324","chat"],["youtu-vita","YT-VITA","chat"],["hy-image-v3.0","HY-Image-V3.0","image"],["hy-image-lite","HY-Image-Lite","image"],["hy-video-1.5","HY-Video-1.5","video"],["yt-video-2.0","YT-Video-2.0","video"]]},{"id":"infiniai","name":"InfiniAI","desc":"Provides app developers with high-performance, easy-to-use, secure LLM services across the full workflow from model…","models":[["deepseek-v4-flash","DeepSeek V4 Flash","chat"],["deepseek-v4-pro","DeepSeek V4 Pro","chat"],["kimi-k2.6","Kimi K2.6","chat"],["kimi-k2.5","Kimi K2.5","chat"],["mimo-v2-pro","MiMo-V2 Pro","chat"],["glm-5.1","GLM-5.1","chat"],["minimax-m2.7","MiniMax M2.7","chat"],["deepseek-v3.2","DeepSeek V3.2","chat"],["deepseek-v3.2-thinking","DeepSeek V3.2 Thinking","chat"],["glm-4.6v","GLM-4.6V","chat"],["glm-5","GLM-5","chat"],["minimax-m2.5","MiniMax M2.5","chat"],["kimi-k2-thinking","Kimi K2 Thinking","chat"],["minimax-m2.1","MiniMax M2.1","chat"],["glm-4.7","GLM-4.7","chat"],["glm-4.6","GLM-4.6","chat"],["deepseek-v3.2-exp","DeepSeek V3.2 Exp","chat"],["qwen3-vl-235b-a22b-instruct","Qwen3 VL 235B A22B Instruct","chat"],["qwen3-vl-235b-a22b-thinking","Qwen3 VL 235B A22B Thinking","chat"],["deepseek-v3.1-terminus","DeepSeek V3.1 Terminus","chat"],["qwen3-next-80b-a3b-thinking","Qwen3 Next 80B A3B Thinking","chat"],["qwen3-next-80b-a3b-instruct","Qwen3 Next 80B A3B Instruct","chat"],["deepseek-v3.1","DeepSeek V3.1","chat"],["baichuan-m2-32b","Baichuan M2 32B","chat"],["glm-4.5v","GLM-4.5V","chat"],["glm-4.5","GLM-4.5","chat"],["glm-4.5-air","GLM-4.5-Air","chat"],["qwen3-coder-480b-a35b-instruct","Qwen3 Coder 480B A35B","chat"],["qwen3-235b-a22b-instruct-2507","Qwen3 235B A22B Instruct 2507","chat"],["qwen3-8b","Qwen3 8B","chat"],["qwen3-14b","Qwen3 14B","chat"],["qwen3-32b","Qwen3 32B","chat"],["qwen3-30b-a3b","Qwen3 30B A3B","chat"],["qwen3-235b-a22b","Qwen3 235B A22B","chat"],["deepseek-v3","DeepSeek V3 0324","chat"],["deepseek-r1","DeepSeek R1","chat"],["deepseek-r1-distill-qwen-32b","DeepSeek R1 Distill Qwen 32B","chat"],["megrez-3b-instruct","Megrez 3B Instruct","chat"],["gpt-oss-120b","GPT-OSS-120B","chat"],["gpt-oss-20b","GPT-OSS-20B","chat"],["pro-deepseek-r1","DeepSeek R1 (Pro)","chat"],["pro-deepseek-v3","DeepSeek V3 (Pro)","chat"]]},{"id":"internlm","name":"InternLM","desc":"An open-source organization focused on large-model research and tooling, providing an efficient, easy-to-use platform…","models":[["intern-latest","Intern","chat"],["intern-s2-preview","Intern-S2-Preview","chat"],["intern-s1-pro","Intern-S1-Pro","chat"],["intern-s1","Intern-S1","chat"],["intern-s1-mini","Intern-S1-Mini","chat"],["internvl3.5-latest","InternVL3.5","chat"],["internvl3.5-241b-a28b","InternVL3.5-241B-A28B","chat"]]},{"id":"jina","name":"Jina AI","desc":"Founded in 2020, Jina AI is a leading search AI company. Its search stack includes vector models, rerankers, and small…","models":[["jina-deepsearch-v1","Jina DeepSearch v1","chat"]]},{"id":"kimicodingplan","name":"Kimi Code","desc":"Kimi Code from Moonshot AI provides access to Kimi models including K2.5 for coding tasks.","models":[]},{"id":"lmstudio","name":"LM Studio","desc":"LM Studio is a desktop app for developing and experimenting with LLMs on your computer.","models":[["llama3.1","Llama 3.1 8B","chat"],["qwen2.5-14b-instruct","Qwen2.5 14B","chat"]]},{"id":"lobehub","name":"lobehub","desc":"LobeHub Cloud uses official APIs to access AI models and bills usage in US dollars based on model tokens.","models":[]},{"id":"longcat","name":"LongCat","desc":"LongCat is a series of generative AI large models independently developed by Meituan. It is designed to enhance…","models":[["LongCat-2.0","LongCat-2.0","chat"]]},{"id":"magpie","name":"magpie","desc":"magpie is an LLM gateway: every model and subscription you have there is served on one endpoint.","models":[]},{"id":"meta","name":"Meta","desc":"Meta builds AI models and products that help people connect, create, and get things done, including the Llama and Muse…","models":[["muse-wonder-1.0","Muse Wonder 1.0","chat"],["muse-spark-1.3","Muse Spark 1.3","chat"]]},{"id":"minimax","name":"Minimax","desc":"Founded in 2021, MiniMax builds general-purpose AI with multimodal foundation models, including trillion-parameter MoE…","models":[["MiniMax-M3.1-Flash","MiniMax M3.1 Flash","chat"],["MiniMax-M3","MiniMax M3","chat"],["MiniMax-M2.7","MiniMax M2.7","chat"],["MiniMax-M2.7-highspeed","MiniMax M2.7 Highspeed","chat"],["MiniMax-M2.5","MiniMax M2.5","chat"],["MiniMax-M2.5-highspeed","MiniMax M2.5 highspeed","chat"],["M2-her","MiniMax M2-her","chat"],["MiniMax-M2.1","MiniMax M2.1","chat"],["MiniMax-M2.1-highspeed","MiniMax M2.1 highspeed","chat"],["MiniMax-M2","MiniMax M2","chat"],["MiniMax-M2-Stable","MiniMax M2 Stable","chat"],["MiniMax-M1","MiniMax M1","chat"],["MiniMax-Text-01","MiniMax Text 01","chat"],["image-01","Image 01","image"],["image-01-live","Image 01 Live","image"],["MiniMax-H3","MiniMax H3","video"],["MiniMax-Hailuo-2.3-Fast","MiniMax Hailuo 2.3 Fast","video"],["MiniMax-Hailuo-2.3","MiniMax Hailuo 2.3","video"],["MiniMax-Hailuo-02","MiniMax Hailuo 02","video"],["I2V-01-Director","I2V 01 Director","video"],["T2V-01-Director","T2V 01 Director","video"],["I2V-01-live","I2V 01 Live","video"],["I2V-01","I2V 01","video"],["S2V-01","S2V 01","video"],["T2V-01","T2V 01","video"],["speech-2.8-hd","Speech 2.8 HD","tts"],["speech-2.8-turbo","Speech 2.8 Turbo","tts"],["speech-2.6-hd","Speech 2.6 HD","tts"],["speech-2.6-turbo","Speech 2.6 Turbo","tts"],["speech-02-hd","Speech 02 HD","tts"],["speech-02-turbo","Speech 02 Turbo","tts"]]},{"id":"minimaxcodingplan","name":"MiniMax Token Plan","desc":"MiniMax Token Plan provides access to MiniMax models including M3.1 Flash for coding tasks via a fixed-fee subscription.","models":[]},{"id":"mistral","name":"Mistral","desc":"Mistral offers advanced general, specialized, and research models for complex reasoning, multilingual tasks, and code…","models":[["zai-glm-5-2","Z.ai GLM 5.2","chat"],["mistral-medium-3.5","Mistral Medium 3.5","chat"],["labs-devstral-small-2512","Devstral Small 2","chat"],["mistral-small-2603","Mistral Small 4","chat"],["mistral-large-2512","Mistral Large 3","chat"],["codestral-latest","Codestral 2508","chat"],["ministral-3b-latest","Ministral 3B","chat"],["ministral-8b-latest","Ministral 8B","chat"]]},{"id":"modelscope","name":"ModelScope","desc":"ModelScope is Alibaba Cloud’s model-as-a-service platform, offering a wide range of AI models and inference services.","models":[["Qwen/Qwen3-Next-80B-A3B-Thinking","Qwen3 Next 80B A3B Thinking","chat"],["Qwen/Qwen3-Next-80B-A3B-Instruct","Qwen3 Next 80B A3B Instruct","chat"],["Qwen/Qwen3-235B-A22B","Qwen3 235B A22B","chat"]]},{"id":"moonshot","name":"Moonshot","desc":"Moonshot, from Moonshot AI (Beijing Moonshot Technology), offers multiple NLP models for use cases like content…","models":[["kimi-k3.1-pro","Kimi K3.1 Pro","chat"],["kimi-k3.1-pro-highspeed","Kimi K3.1 Pro HighSpeed","chat"],["kimi-k3","Kimi K3","chat"],["kimi-k2.7-code","Kimi K2.7 Code","chat"],["kimi-k2.7-code-highspeed","Kimi K2.7 Code HighSpeed","chat"],["kimi-k2.6","Kimi K2.6","chat"]]},{"id":"nebius","name":"Nebius","desc":"Nebius provides high-performance infrastructure for global AI innovators via large-scale GPU clusters and a vertically…","models":[["openai/gpt-oss-120b","gpt-oss-120b","chat"],["google/gemma-3-27b-it","Gemma-3-27b-it","chat"],["Qwen/Qwen2.5-VL-72B-Instruct","Qwen2.5-VL-72B-Instruct","chat"]]},{"id":"newapi","name":"New API","desc":"An open-source aggregation and routing platform for multiple AI services.","models":[]},{"id":"novita","name":"Novita","desc":"Novita AI offers flexible, reliable, cost-effective APIs for LLMs and image generation. It supports models like Llama 3…","models":[["qwen/qwen3-vl-235b-a22b-instruct","Qwen3 VL 235B A22B Instruct","chat"],["qwen/qwen3-vl-235b-a22b-thinking","Qwen3 VL 235B A22B Thinking","chat"],["qwen/qwen3-next-80b-a3b-thinking","Qwen3 Next 80B A3B Thinking","chat"],["qwen/qwen3-next-80b-a3b-instruct","Qwen3 Next 80B A3B Instruct","chat"],["qwen/qwen-mt-plus","Qwen MT Plus","chat"],["moonshotai/kimi-k2-0905","Kimi K2 0905","chat"],["deepseek/deepseek-v3.2-exp","Deepseek V3.2 Exp","chat"],["deepseek/deepseek-v3.1-terminus","DeepSeek V3.1 Terminus","chat"],["deepseek/deepseek-v3.1","DeepSeek V3.1","chat"],["qwen/qwen3-coder-480b-a35b-instruct","Qwen3 Coder 480B A35B Instruct","chat"],["openai/gpt-oss-120b","OpenAI GPT OSS 120B","chat"],["openai/gpt-oss-20b","OpenAI: GPT OSS 20B","chat"],["zai-org/glm-4.5v","GLM-4.5V","chat"],["zai-org/glm-4.5","GLM-4.5","chat"],["qwen/qwen3-235b-a22b-instruct-2507","Qwen3 235B A22B Instruct 2507","chat"],["qwen/qwen3-235b-a22b-thinking-2507","Qwen3 235B A22b Thinking 2507","chat"],["baichuan/baichuan-m2-32b","BaiChuan M2 32B","chat"],["moonshotai/kimi-k2-instruct","Kimi K2 0711","chat"],["thudm/glm-4.1v-9b-thinking","GLM 4.1V 9B Thinking","chat"],["baidu/ernie-4.5-21B-a3b","ERNIE 4.5 21B A3B","chat"],["baidu/ernie-4.5-21B-a3b-thingking","ERNIE 4.5 21B A3B Thinking","chat"],["baidu/ernie-4.5-300b-a47b-paddle","ERNIE 4.5 300B A47B Paddle","chat"],["baidu/ernie-4.5-vl-28b-a3b","ERNIE 4.5 VL 28B A3B","chat"],["baidu/ernie-4.5-vl-424b-a47b","ERNIE 4.5 VL 424B A47B","chat"],["minimaxai/minimax-m1-80k","MiniMax M1 80K","chat"],["qwen/qwen3-4b-fp8","Qwen3 4B FP8","chat"],["qwen/qwen3-235b-a22b-fp8","Qwen3 235B A22B FP8","chat"],["qwen/qwen3-30b-a3b-fp8","Qwen3 30B A3B FP8","chat"],["qwen/qwen3-32b-fp8","Qwen3 32B FP8","chat"],["meta-llama/llama-3.3-70b-instruct","Llama 3.3 70B Instruct","chat"],["qwen/qwen3-8b-fp8","Qwen3 8B FP8","chat"],["meta-llama/llama-4-scout-17b-16e-instruct","Llama 4 Scout 17B Instruct","chat"],["meta-llama/llama-4-maverick-17b-128e-instruct-fp8","Llama 4 Maverick 17B Instruct","chat"],["meta-llama/llama-3.1-8b-instruct","Llama 3.1 8B Instruct","chat"],["meta-llama/llama-3-8b-instruct","Llama 3 8B Instruct","chat"],["meta-llama/llama-3-70b-instruct","Llama 3 70B Instruct","chat"],["google/gemma-3-27b-it","Gemma 3 27B","chat"],["google/gemma-3-12b-it","Gemma 3 12B","chat"],["mistralai/mistral-nemo","Mistral Nemo","chat"],["microsoft/wizardlm-2-8x22b","WizardLM-2 8x22B","chat"],["nousresearch/hermes-2-pro-llama-3-8b","Hermes 2 Pro Llama 3 8B","chat"],["gryphe/mythomax-l2-13b","MythoMax l2 13B","chat"],["deepseek/deepseek-prover-v2-671b","Deepseek Prover V2 671B","chat"],["deepseek/deepseek-v3-turbo","Deepseek V3 Turbo","chat"],["deepseek/deepseek-v3-0324","Deepseek V3 0324","chat"],["deepseek/deepseek-r1-0528","Deepseek R1 0528","chat"],["deepseek/deepseek-r1-0528-qwen3-8b","DeepSeek R1 0528 Qwen3 8B","chat"],["deepseek/deepseek-r1-turbo","Deepseek R1 Turbo","chat"],["deepseek/deepseek-r1-distill-llama-70b","Deepseek R1 Distill Llama 70B","chat"],["deepseek/deepseek-r1-distill-qwen-14b","Deepseek R1 Distill Qwen 14B","chat"],["deepseek/deepseek-r1-distill-qwen-32b","Deepseek R1 Distill Qwen 32B","chat"],["Sao10K/L3-8B-Stheno-v3.2","L3 8B Stheno v3.2","chat"],["qwen/qwen-2.5-72b-instruct","Qwen2.5 72B Instruct","chat"],["sao10k/l3-70b-euryale-v2.1","L3 70B Euryale v2.1","chat"],["sophosympatheia/midnight-rose-70b","Midnight Rose 70B","chat"],["sao10k/l3-8b-lunaris","L3 8B Lunaris","chat"],["qwen/qwen2.5-vl-72b-instruct","Qwen2.5 VL 72B Instruct","chat"],["meta-llama/llama-3.2-3b-instruct","Llama 3.2 3B Instruct","chat"],["meta-llama/llama-3.1-8b-instruct-bf16","Llama 3.1 8B Instruct BF16","chat"],["sao10k/l31-70b-euryale-v2.2","L31 70B Euryale v2.2","chat"],["qwen/qwen2.5-7b-instruct","Qwen2.5 7B Instruct","chat"]]},{"id":"nvidia","name":"Nvidia","desc":"NVIDIA NIM provides containers for self-hosted, GPU-accelerated inference microservices across cloud, data centers, RTX…","models":[["meta/llama-3.3-70b-instruct","Llama 3.3 70B Instruct","chat"],["meta/llama-3.2-11b-vision-instruct","Llama 3.2 11B Vision Instruct","chat"],["meta/llama-3.2-90b-vision-instruct","Llama 3.2 90B Vision Instruct","chat"],["meta/llama-3.1-8b-instruct","Llama 3.1 8B Instruct","chat"],["meta/llama-3.1-70b-instruct","Llama 3.1 70B Instruct","chat"],["nvidia/llama-3.1-nemotron-51b-instruct","Llama 3.1 Nemotron 51B Instruct","chat"],["nvidia/llama-3.1-nemotron-70b-instruct","Llama 3.1 Nemotron 70B Instruct","chat"]]},{"id":"ollama","name":"Ollama","desc":"Ollama offers models across code generation, math, multilingual processing, and chat, supporting both enterprise and…","models":[["deepseek-v3.1:671b","DeepSeek V3.1","chat"],["gpt-oss:20b","GPT-OSS 20B","chat"],["gpt-oss:120b","GPT-OSS 120B","chat"],["qwen3-coder:480b","Qwen3 Coder 480B","chat"],["deepseek-r1","DeepSeek R1","chat"],["deepseek-v3","DeepSeek V3 671B","chat"],["llama3.1","Llama 3.1 8B","chat"],["llama3.1:70b","Llama 3.1 70B","chat"],["llama3.1:405b","Llama 3.1 405B","chat"],["codellama","Code Llama 7B","chat"],["codellama:13b","Code Llama 13B","chat"],["codellama:34b","Code Llama 34B","chat"],["codellama:70b","Code Llama 70B","chat"],["qwq","QwQ 32B","chat"],["qwen3","Qwen3 7B","chat"],["qwen2.5:0.5b","Qwen2.5 0.5B","chat"],["qwen2.5:1.5b","Qwen2.5 1.5B","chat"],["qwen2.5","Qwen2.5 7B","chat"],["qwen2.5:72b","Qwen2.5 72B","chat"],["codeqwen","CodeQwen1.5 7B","chat"],["qwen2:0.5b","Qwen2 0.5B","chat"],["qwen2:1.5b","Qwen2 1.5B","chat"],["qwen2","Qwen2 7B","chat"],["qwen2:72b","Qwen2 72B","chat"],["gemma2:2b","Gemma 2 2B","chat"],["gemma2","Gemma 2 9B","chat"],["gemma2:27b","Gemma 2 27B","chat"],["codegemma:2b","CodeGemma 2B","chat"],["codegemma","CodeGemma 7B","chat"],["phi3","Phi-3 3.8B","chat"],["phi3:14b","Phi-3 14B","chat"],["wizardlm2","WizardLM 2 7B","chat"],["wizardlm2:8x22b","WizardLM 2 8x22B","chat"],["mathstral","MathΣtral 7B","chat"],["mistral","Mistral 7B","chat"],["mixtral","Mixtral 8x7B","chat"],["mixtral:8x22b","Mixtral 8x22B","chat"],["mistral-large","Mixtral Large 123B","chat"],["mistral-nemo","Mixtral Nemo 12B","chat"],["codestral","Codestral 22B","chat"],["aya","Aya 23 8B","chat"],["aya:35b","Aya 23 35B","chat"],["command-r","Command R 35B","chat"],["command-r-plus","Command R+ 104B","chat"],["deepseek-v2","DeepSeek V2 16B","chat"],["deepseek-v2:236b","DeepSeek V2 236B","chat"],["deepseek-coder-v2","DeepSeek Coder V2 16B","chat"],["deepseek-coder-v2:236b","DeepSeek Coder V2 236B","chat"],["llava","LLaVA 7B","chat"],["llava:13b","LLaVA 13B","chat"],["llava:34b","LLaVA 34B","chat"],["minicpm-v","MiniCPM-V 8B","chat"]]},{"id":"ollamacloud","name":"Ollama Cloud","desc":"Ollama Cloud provides managed inference with out-of-the-box access to the Ollama model library and OpenAI-compatible…","models":[["glm-5.2","GLM-5.2","chat"],["kimi-k2.7-code","Kimi K2.7 Code","chat"],["minimax-m3","MiniMax M3","chat"],["kimi-k2.6","Kimi K2.6","chat"],["glm-5.1","GLM-5.1","chat"],["gemma4:31b","Gemma 4 31B","chat"],["minimax-m2.7","MiniMax M2.7","chat"],["qwen3.5:397b","Qwen3.5 397B A17B","chat"],["gpt-oss:20b","GPT-OSS 20B","chat"],["gpt-oss:120b","GPT-OSS 120B","chat"],["mistral-large-3:675b","Mistral Large 3","chat"]]},{"id":"openai","name":"OpenAI","desc":"OpenAI is a leading AI research lab whose GPT models advanced natural language processing, delivering high performance…","models":[["gpt-6-luna:decision","GPT-6 Luna Decisions","decision"],["gpt-6.2-astra","GPT-6.2 Astra","chat"],["gpt-6.2-sol","GPT-6.2 Sol","chat"],["gpt-6.1-sol","GPT-6.1 Sol","chat"],["gpt-6.1-terra","GPT-6.1 Terra","chat"],["gpt-6-astra","GPT-6 Astra","chat"],["gpt-6-sol","GPT-6 Sol","chat"],["gpt-6-luna","GPT-6 Luna","chat"],["chat-latest","Chat Latest","chat"],["gpt-5.6-sol","GPT-5.6 Sol","chat"],["gpt-5.6-terra","GPT-5.6 Terra","chat"],["gpt-5.6-luna","GPT-5.6 Luna","chat"],["gpt-5.5","GPT-5.5","chat"],["gpt-5.5-pro","GPT-5.5 Pro","chat"],["gpt-5.4","GPT-5.4","chat"],["gpt-5.4-pro","GPT-5.4 Pro","chat"],["gpt-5.4-mini","GPT-5.4 mini","chat"],["gpt-5.4-nano","GPT-5.4 nano","chat"],["gpt-5.3-chat-latest","GPT-5.3 Chat","chat"],["gpt-5.3-codex","GPT-5.3 Codex","chat"],["gpt-5.2","GPT-5.2","chat"],["gpt-5.2-pro","GPT-5.2 pro","chat"],["gpt-5.2-chat-latest","GPT-5.2 Chat","chat"],["gpt-5.1","GPT-5.1","chat"],["gpt-5-pro","GPT-5 pro","chat"],["gpt-5","GPT-5","chat"],["gpt-5-mini","GPT-5 mini","chat"],["gpt-5-nano","GPT-5 nano","chat"],["o4-mini","o4-mini","chat"],["o3-pro","o3-pro","chat"],["o3","o3","chat"],["o3-mini","o3-mini","chat"],["o1-pro","o1-pro","chat"],["o1","o1","chat"],["gpt-4.1","GPT-4.1","chat"],["gpt-4.1-mini","GPT-4.1 mini","chat"],["gpt-4.1-nano","GPT-4.1 nano","chat"],["gpt-4o-mini","GPT-4o mini","chat"],["gpt-4o","GPT-4o","chat"],["gpt-4o-2024-11-20","GPT-4o 1120","chat"],["gpt-4o-2024-05-13","GPT-4o 0513","chat"],["gpt-audio","GPT Audio","chat"],["gpt-4-turbo","GPT-4 Turbo","chat"],["gpt-4-turbo-2024-04-09","GPT-4 Turbo Vision 0409","chat"],["gpt-4","GPT-4","chat"],["gpt-4-0613","GPT-4 0613","chat"],["gpt-3.5-turbo","GPT-3.5 Turbo","chat"],["gpt-3.5-turbo-0125","GPT-3.5 Turbo 0125","chat"],["gpt-3.5-turbo-1106","GPT-3.5 Turbo 1106","chat"],["gpt-3.5-turbo-instruct","GPT-3.5 Turbo Instruct","chat"],["text-embedding-3-large","Text Embedding 3 Large","embedding"],["text-embedding-3-small","Text Embedding 3 Small","embedding"],["tts-1","TTS-1","tts"],["tts-1-hd","TTS-1 HD","tts"],["gpt-4o-mini-tts","GPT-4o Mini TTS","tts"],["whisper-1","Whisper","asr"],["gpt-4o-transcribe","GPT-4o Transcribe","asr"],["gpt-4o-mini-transcribe","GPT-4o Mini Transcribe","asr"],["gpt-image-2.5-sunburst","GPT Image 2.5 Sunburst","image"],["gpt-image-2.5-flare","GPT Image 2.5 Flare","image"],["gpt-image-2","GPT Image 2","image"],["gpt-image-1.5","GPT Image 1.5","image"],["gpt-image-1","GPT Image 1","image"],["gpt-image-1-mini","GPT Image 1 Mini","image"],["gpt-realtime","GPT Realtime","realtime"],["gpt-4o-realtime-preview","GPT-4o Realtime 241217","realtime"],["gpt-4o-realtime-preview-2025-06-03","GPT-4o Realtime 250603","realtime"],["gpt-4o-realtime-preview-2024-10-01","GPT-4o Realtime 241001","realtime"],["gpt-4o-mini-realtime-preview","GPT-4o Mini Realtime","realtime"],["sora-2","Sora 2","video"],["sora-2-pro","Sora 2 Pro","video"]]},{"id":"opencodecodingplan","name":"OpenCode Go","desc":"OpenCode Go is a $10/month subscription providing reliable access to curated open coding models: GLM, Kimi, MiMo, Qwen,…","models":[]},{"id":"opencodezen","name":"OpenCode Zen","desc":"OpenCode Zen provides access to curated models from OpenAI, Anthropic, Moonshot, MiniMax, Zhipu, Qwen, and more via a…","models":[]},{"id":"openrouter","name":"OpenRouter","desc":"OpenRouter provides access to many frontier models from OpenAI, Anthropic, LLaMA, and more, letting users pick the best…","models":[["typesafe/jev-1.13","Jev 1.13","decision"],["openai/gpt-6-luna-decisions","GPT-6 Luna Decisions","decision"],["google/gemini-4-carbon","Gemini 4 Carbon","chat"],["google/gemini-4-neon","Gemini 4 Neon","chat"],["google/gemini-3.1-flash-image-preview","Nano Banana 2","chat"],["google/gemini-3-pro-image-preview","Nano Banana Pro","chat"],["google/gemini-2.5-flash-image","Nano Banana","chat"],["openai/gpt-6.2-astra","GPT-6.2 Astra","chat"],["openai/gpt-6.2-sol","GPT-6.2 Sol","chat"],["openrouter/auto","Auto (best for prompt)","chat"],["anthropic/claude-haiku-5.5","Claude Haiku 5.5","chat"],["anthropic/claude-opus-5.5","Claude Opus 5.5","chat"],["openai/gpt-6-sol","GPT-6 Sol","chat"],["openai/gpt-6-luna","GPT-6 Luna","chat"],["x-ai/grok-4.7","Grok 4.7","chat"],["xiaomi/mimo-v2.6-pro","MiMo-V2.6 Pro","chat"],["xiaomi/mimo-v2.6-pro-ultraspeed","MiMo-V2.6 Pro UltraSpeed","chat"],["xiaomi/mimo-v2.6-flash","MiMo-V2.6 Flash","chat"],["deepseek/deepseek-chat-v3.1","DeepSeek V3.1","chat"],["qwen/qwen3-30b-a3b","Qwen3 30B A3B","chat"],["qwen/qwen3-14b","Qwen3 14B","chat"],["qwen/qwen3-32b","Qwen3 32B","chat"],["qwen/qwen3-235b-a22b","Qwen3 235B A22B","chat"],["google/gemini-2.5-pro","Gemini 2.5 Pro","chat"],["google/gemini-2.5-pro-preview","Gemini 2.5 Pro Preview","chat"],["google/gemini-2.5-flash","Gemini 2.5 Flash","chat"],["openai/o3","o3","chat"],["openai/o4-mini-high","o4-mini (high)","chat"],["openai/o4-mini","o4-mini","chat"],["openai/gpt-4.1","GPT-4.1","chat"],["openai/gpt-4.1-mini","GPT-4.1 mini","chat"],["openai/gpt-4.1-nano","GPT-4.1 nano","chat"],["openai/o3-mini-high","o3-mini (high)","chat"],["openai/o3-mini","o3-mini","chat"],["openai/gpt-4o-mini","GPT-4o mini","chat"],["openai/gpt-4o","GPT-4o","chat"],["deepseek/deepseek-r1-0528","DeepSeek R1 0528","chat"],["deepseek/deepseek-r1","DeepSeek R1","chat"],["deepseek/deepseek-chat-v3-0324","DeepSeek V3 0324","chat"],["anthropic/claude-opus-4.5","Claude Opus 4.5","chat"],["anthropic/claude-sonnet-4.5","Claude Sonnet 4.5","chat"],["anthropic/claude-3-haiku","Claude 3 Haiku","chat"],["anthropic/claude-3.5-haiku","Claude 3.5 Haiku","chat"],["anthropic/claude-3.7-sonnet","Claude 3.7 Sonnet","chat"],["anthropic/claude-sonnet-4","Claude Sonnet 4","chat"],["anthropic/claude-opus-4","Claude Opus 4","chat"],["google/gemini-2.0-flash-001","Gemini 2.0 Flash","chat"],["meta-llama/llama-3.2-11b-vision-instruct","Llama 3.2 11B Vision","chat"],["meta-llama/llama-3.3-70b-instruct","Llama 3.3 70B Instruct","chat"],["meta-llama/llama-3.3-70b-instruct:free","Llama 3.3 70B Instruct (Free)","chat"]]},{"id":"perplexity","name":"Perplexity","desc":"Perplexity provides advanced chat models, including Llama 3.1 variants, for online and offline use and complex NLP…","models":[["sonar-deep-research","Sonar Deep Research","chat"],["sonar-reasoning-pro","Sonar Reasoning Pro","chat"],["sonar-reasoning","Sonar Reasoning","chat"],["sonar-pro","Sonar Pro","chat"],["sonar","Sonar","chat"],["r1-1776","R1 1776","chat"]]},{"id":"ppio","name":"PPIO","desc":"PPIO provides reliable, cost-effective open-model APIs, including DeepSeek, Llama, Qwen, and other leading models.","models":[["deepseek/deepseek-r1/community","DeepSeek: DeepSeek R1 (Community)","chat"],["deepseek/deepseek-v3/community","DeepSeek: DeepSeek V3 (Community)","chat"],["deepseek/deepseek-r1","DeepSeek R1","chat"],["deepseek/deepseek-v3","DeepSeek V3","chat"],["deepseek/deepseek-r1-distill-llama-70b","DeepSeek R1 Distill Llama 70B","chat"],["deepseek/deepseek-r1-distill-qwen-32b","DeepSeek: DeepSeek R1 Distill Qwen 32B","chat"],["deepseek/deepseek-r1-distill-qwen-14b","DeepSeek: DeepSeek R1 Distill Qwen 14B","chat"],["deepseek/deepseek-r1-distill-llama-8b","DeepSeek: DeepSeek R1 Distill Llama 8B","chat"],["qwen/qwen-2.5-72b-instruct","qwen/qwen-2.5-72b-instruct","chat"],["qwen/qwen-2-vl-72b-instruct","qwen/qwen-2-vl-72b-instruct","chat"],["meta-llama/llama-3.2-3b-instruct","meta-llama/llama-3.2-3b-instruct","chat"],["qwen/qwen2.5-32b-instruct","qwen/qwen2.5-32b-instruct","chat"],["baichuan/baichuan2-13b-chat","baichuan/baichuan2-13b-chat","chat"],["meta-llama/llama-3.1-70b-instruct","meta-llama/llama-3.1-70b-instruct","chat"],["meta-llama/llama-3.1-8b-instruct","meta-llama/llama-3.1-8b-instruct","chat"],["01-ai/yi-1.5-34b-chat","01-ai/yi-1.5-34b-chat","chat"],["01-ai/yi-1.5-9b-chat","01-ai/yi-1.5-9b-chat","chat"],["thudm/glm-4-9b-chat","thudm/glm-4-9b-chat","chat"],["qwen/qwen-2-7b-instruct","qwen/qwen-2-7b-instruct","chat"]]},{"id":"qiniu","name":"Qiniu","desc":"Qiniu provides reliable, cost-effective real-time and batch AI inference services that are easy to use.","models":[["deepseek-v3","DeepSeek V3","chat"],["deepseek-r1","DeepSeek R1","chat"],["minimax/minimax-m2.1","MiniMax M2.1","chat"],["minimax/minimax-m2","MiniMax M2","chat"],["deepseek/deepseek-math-v2","DeepSeek Math V2","chat"],["meituan/longcat-flash-chat","LongCat Flash Chat","chat"],["z-ai/glm-4.7","GLM-4.7","chat"],["z-ai/glm-4.6","GLM-4.6","chat"]]},{"id":"qwen","name":"Aliyun Bailian","desc":"暂无描述。","models":[["z-image-turbo","Z-Image Turbo","image"],["qwen-image-2.0-pro-2026-04-22","Qwen Image 2.0 Pro 2026-04-22","image"],["qwen-image-2.0-pro","Qwen Image 2.0 Pro","image"],["qwen-image-2.0","Qwen Image 2.0","image"],["qwen-image-edit-max","Qwen Image Edit Max","image"],["qwen-image-edit-plus","Qwen Image Edit Plus","image"],["qwen-image-edit","Qwen Image Edit","image"],["qwen-image-max","Qwen Image Max","image"],["qwen-image-plus","Qwen Image Plus","image"],["qwen-image","Qwen Image","image"],["wan2.7-image-pro","Wanxiang2.7 Image Pro","image"],["wan2.7-image","Wanxiang2.7 Image","image"],["wan2.6-image","Wanxiang2.6 Image","image"],["wan2.6-t2i","Wanxiang2.6 T2I","image"],["wan2.5-i2i-preview","Wanxiang2.5 I2I Preview","image"],["wan2.5-t2i-preview","Wanxiang2.5 T2I Preview","image"],["wan2.2-t2i-flash","Wanxiang2.2 T2I Flash","image"],["wan2.2-t2i-plus","Wanxiang2.2 T2I Plus","image"],["wanx2.1-t2i-turbo","Wanxiang2.1 T2I Turbo","image"],["wanx2.1-t2i-plus","Wanxiang2.1 T2I Plus","image"],["wanx2.0-t2i-turbo","Wanxiang2.0 T2I Turbo","image"],["wanx-v1","Wanxiang v1","image"],["kling/kling-v3-image-generation","Kling V3 Image Generation","image"],["kling/kling-v3-omni-image-generation","Kling V3 Omni Image Generation","image"],["deepseek-v4-pro-0813","DeepSeek V4 Pro 0813","chat"],["deepseek-v4-flash-0731","DeepSeek V4 Flash 0731","chat"],["qwen3.8-max-0902","Qwen3.8 Max 0902","chat"],["qwen3.8-max","Qwen3.8 Max","chat"],["kimi-k2.6","Kimi K2.6","chat"],["kimi-k2.5","Kimi K2.5","chat"],["MiniMax-M2.5","MiniMax-M2.5","chat"],["MiniMax-M2.1","MiniMax-M2.1","chat"],["qwen3-vl-plus","Qwen3 VL Plus","chat"],["qwen3-vl-flash","Qwen3 VL Flash","chat"],["deepseek-v4-flash","DeepSeek V4 Flash","chat"],["deepseek-v4-pro","DeepSeek V4 Pro","chat"],["deepseek-v3.2","DeepSeek V3.2","chat"],["deepseek-v3.2-exp","DeepSeek V3.2 Exp","chat"],["deepseek-v3.1","DeepSeek V3.1","chat"],["kimi-k2-thinking","Kimi K2 Thinking","chat"],["Moonshot-Kimi-K2-Instruct","Kimi K2 Instruct","chat"],["glm-5.2","GLM-5.2","chat"],["glm-5.1","GLM-5.1","chat"],["glm-5","GLM-5","chat"],["glm-4.7","GLM-4.7","chat"],["glm-4.6","GLM-4.6","chat"],["glm-4.5","GLM-4.5","chat"],["glm-4.5-air","GLM-4.5-Air","chat"],["qwen3-coder-next","Qwen3 Coder Next","chat"],["qwen3-coder-plus","Qwen3 Coder Plus","chat"],["qwen3-coder-flash","Qwen3 Coder Flash","chat"],["qwen3-coder-480b-a35b-instruct","Qwen3 Coder 480B A35B","chat"],["qwen3-coder-30b-a3b-instruct","Qwen3 Coder 30B A3B","chat"],["qwen3.6-27b","Qwen3.6-27B","chat"],["qwen3.6-35b-a3b","Qwen3.6-35B-A3B","chat"],["qwen3.5-397b-a17b","Qwen3.5-397B-A17B","chat"],["qwen3.5-122b-a10b","Qwen3.5-122B-A10B","chat"],["qwen3.5-27b","Qwen3.5-27B","chat"],["qwen3.5-35b-a3b","Qwen3.5-35B-A3B","chat"],["qwen3-235b-a22b-thinking-2507","Qwen3 235B A22B Thinking 2507","chat"],["qwen3-235b-a22b-instruct-2507","Qwen3 235B A22B Instruct 2507","chat"],["qwen3-30b-a3b-thinking-2507","Qwen3 30B A3B Thinking 2507","chat"],["qwen3-30b-a3b-instruct-2507","Qwen3 30B A3B Instruct 2507","chat"],["qwen3-next-80b-a3b-thinking","Qwen3 Next 80B A3B Thinking","chat"],["qwen3-next-80b-a3b-instruct","Qwen3 Next 80B A3B Instruct","chat"],["qwen3-235b-a22b","Qwen3 235B A22B","chat"],["qwen3-32b","Qwen3 32B","chat"],["qwen3-30b-a3b","Qwen3 30B A3B","chat"],["qwen3-14b","Qwen3 14B","chat"],["qwen3-8b","Qwen3 8B","chat"],["qwen3-4b","Qwen3 4B","chat"],["qwen3-1.7b","Qwen3 1.7B","chat"],["qwen3-0.6b","Qwen3 0.6B","chat"],["qwq-plus","QwQ Plus","chat"],["qwen3.8-flash","Qwen3.8 Flash","chat"],["qwen3.7-flash","Qwen3.7 Flash","chat"],["qwen3.6-flash","Qwen3.6 Flash","chat"],["qwen3.5-flash","Qwen3.5 Flash","chat"],["qwen-flash","Qwen Flash","chat"],["qwen-turbo","Qwen Turbo","chat"],["qwen3.7-plus","Qwen3.7 Plus","chat"],["qwen3.6-plus","Qwen3.6 Plus","chat"],["qwen3.5-plus-2026-04-20","Qwen3.5 Plus 2026-04-20","chat"],["qwen3.5-plus","Qwen3.5 Plus","chat"],["qwen-plus","Qwen Plus","chat"],["qwen3.7-max","Qwen3.7 Max","chat"],["qwen3.6-max-preview","Qwen3.6 Max Preview","chat"],["qwen3-max","Qwen3 Max","chat"],["qwen3-max-preview","Qwen3 Max Preview","chat"],["qwen-max","Qwen Max","chat"],["qwen-long","Qwen Long","chat"],["qwen3.5-omni-plus","Qwen3.5 Omni Plus","chat"],["qwen3.5-omni-flash","Qwen3.5 Omni Flash","chat"],["qwen3-omni-flash","Qwen3 Omni Flash","chat"],["qwen-omni-turbo","Qwen Omni Turbo","chat"],["qwen2.5-omni-7b","Qwen2.5 Omni 7B","chat"],["qwen-vl-plus","Qwen VL Plus","chat"],["qwen-vl-max","Qwen VL Max","chat"],["qwen-vl-ocr","Qwen VL OCR","chat"],["qwen3-vl-30b-a3b-thinking","Qwen3 VL 30B A3B Thinking","chat"],["qwen3-vl-30b-a3b-instruct","Qwen3 VL 30B A3B Instruct","chat"],["qwen3-vl-8b-thinking","Qwen3 VL 8B Thinking","chat"],["qwen3-vl-8b-instruct","Qwen3 VL 8B Instruct","chat"],["qwen3-vl-235b-a22b-thinking","Qwen3 VL 235B A22B Thinking","chat"],["qwen3-vl-235b-a22b-instruct","Qwen3 VL 235B A22B Instruct","chat"],["qwen3-vl-32b-thinking","Qwen3 VL 32B Thinking","chat"],["qwen3-vl-32b-instruct","Qwen3 VL 32B Instruct","chat"],["qwen-math-turbo","Qwen Math Turbo","chat"],["qwen-math-plus","Qwen Math Plus","chat"],["qwen-coder-turbo","Qwen Coder Turbo","chat"],["qwen-coder-plus","Qwen Coder Plus","chat"],["qwq-32b","QwQ 32B","chat"],["qwq-32b-preview","QwQ 32B Preview","chat"],["qvq-max","QVQ Max","chat"],["qvq-plus","QVQ Plus","chat"],["qvq-72b-preview","QVQ 72B Preview","chat"],["qwen2.5-7b-instruct","Qwen2.5 7B","chat"],["qwen2.5-14b-instruct","Qwen2.5 14B","chat"],["qwen2.5-32b-instruct","Qwen2.5 32B","chat"],["qwen2.5-72b-instruct","Qwen2.5 72B","chat"],["qwen2.5-14b-instruct-1m","Qwen2.5 14B 1M","chat"],["qwen2.5-math-7b-instruct","Qwen2.5 Math 7B","chat"],["qwen2.5-math-72b-instruct","Qwen2.5 Math 72B","chat"],["qwen2.5-coder-7b-instruct","Qwen2.5 Coder 7B","chat"],["qwen2.5-coder-14b-instruct","Qwen2.5 Coder 14B","chat"],["qwen2.5-coder-32b-instruct","Qwen2.5 Coder 32B","chat"],["qwen2.5-vl-72b-instruct","Qwen2.5 VL 72B","chat"],["qwen2.5-vl-32b-instruct","Qwen2.5 VL 32B","chat"],["qwen2.5-vl-7b-instruct","Qwen2.5 VL 7B","chat"],["deepseek-r1-0528","DeepSeek R1 0528","chat"],["deepseek-v3","DeepSeek V3","chat"],["deepseek-r1-distill-qwen-1.5b","DeepSeek R1 Distill Qwen 1.5B","chat"],["deepseek-r1-distill-qwen-7b","DeepSeek R1 Distill Qwen 7B","chat"],["deepseek-r1-distill-qwen-14b","DeepSeek R1 Distill Qwen 14B","chat"],["deepseek-r1-distill-qwen-32b","DeepSeek R1 Distill Qwen 32B","chat"],["deepseek-r1-distill-llama-8b","DeepSeek R1 Distill Llama 8B","chat"],["deepseek-r1-distill-llama-70b","DeepSeek R1 Distill Llama 70B","chat"],["happyhorse-1.0-i2v","HappyHorse-1.0-I2V","video"],["happyhorse-1.0-r2v","HappyHorse-1.0-R2V","video"],["happyhorse-1.0-t2v","HappyHorse-1.0-T2V","video"],["wan2.7-i2v-2026-04-25","Wan2.7 I2V 2026-04-25","video"],["wan2.7-i2v","Wan2.7 I2V","video"],["wan2.7-r2v","Wan2.7 R2V","video"],["wan2.7-t2v-2026-04-25","Wan2.7 T2V 2026-04-25","video"],["wan2.7-t2v","Wan2.7 T2V","video"],["wan2.6-i2v-flash","Wan2.6 I2V Flash","video"],["wan2.6-i2v","Wan2.6 I2V","video"],["wan2.6-r2v-flash","Wan2.6 R2V Flash","video"],["wan2.6-r2v","Wan2.6 R2V","video"],["wan2.6-t2v","Wan2.6 T2V","video"],["wan2.5-i2v-preview","Wan2.5 I2V Preview","video"],["wan2.5-t2v-preview","Wan2.5 T2V Preview","video"],["wan2.2-kf2v-flash","Wan2.2 KF2V Flash","video"],["wan2.2-kf2v-plus","Wan2.2 KF2V Plus","video"],["wan2.2-i2v-flash","Wan2.2 I2V Flash","video"],["wan2.2-i2v-plus","Wan2.2 I2V Plus","video"],["wan2.2-t2v-plus","Wan2.2 T2V Plus","video"],["wanx2.1-i2v-turbo","Wanxiang2.1 I2V Turbo","video"],["wanx2.1-i2v-plus","Wanxiang2.1 I2V Plus","video"],["wanx2.1-t2v-turbo","Wanxiang2.1 T2V Turbo","video"],["wanx2.1-t2v-plus","Wanxiang2.1 T2V Plus","video"],["kling/kling-v3-video-generation","Kling V3 Video Generation","video"],["kling/kling-v3-omni-video-generation","Kling V3 Omni Video Generation","video"],["vidu/viduq3-pro_text2video","Vidu Q3 Pro Text-to-Video","video"],["vidu/viduq3-turbo_text2video","Vidu Q3 Turbo Text-to-Video","video"],["vidu/viduq2_text2video","Vidu Q2 Turbo Text-to-Video","video"],["vidu/viduq3-pro_img2video","Vidu Q3 Pro Image-to-Video","video"],["vidu/viduq3-turbo_img2video","Vidu Q3 Turbo Image-to-Video","video"],["vidu/viduq2-pro_img2video","Vidu Q2 Pro Image-to-Video","video"],["vidu/viduq2-turbo_img2video","Vidu Q2 Turbo Image-to-Video","video"],["vidu/viduq3-pro_start-end2video","Vidu Q3 Pro Start-to-End Video","video"],["vidu/viduq3-turbo_start-end2video","Vidu Q3 Turbo Start-to-End Video","video"],["vidu/viduq2-pro_start-end2video","Vidu Q2 Pro Start-to-End Video","video"],["vidu/viduq2-turbo_start-end2video","Vidu Q2 Turbo Start-to-End Video","video"],["vidu/viduq2-pro_reference2video","Vidu Q2 Pro Reference-to-Video","video"],["vidu/viduq2_reference2video","Vidu Q2 Reference-to-Video","video"],["pixverse/pixverse-c1-t2v","PixVerse C1 T2V","video"],["pixverse/pixverse-v6-t2v","PixVerse V6 T2V","video"],["pixverse/pixverse-v5.6-t2v","PixVerse V5.6 T2V","video"],["pixverse/pixverse-c1-it2v","PixVerse C1 IT2V","video"],["pixverse/pixverse-v6-it2v","PixVerse V6 IT2V","video"],["pixverse/pixverse-v5.6-it2v","PixVerse V5.6 IT2V","video"],["pixverse/pixverse-c1-kf2v","PixVerse C1 KF2V","video"],["pixverse/pixverse-v6-kf2v","PixVerse V6 KF2V","video"],["pixverse/pixverse-v5.6-kf2v","PixVerse V5.6 KF2V","video"],["pixverse/pixverse-c1-r2v","PixVerse C1 R2V","video"],["pixverse/pixverse-v5.6-r2v","PixVerse V5.6 R2V","video"]]},{"id":"replicate","name":"Replicate","desc":"Replicate runs open-source image models like FLUX and Stable Diffusion via a simple cloud API.","models":[["black-forest-labs/flux-1.1-pro","FLUX 1.1 Pro","image"],["black-forest-labs/flux-schnell","FLUX Schnell","image"],["black-forest-labs/flux-dev","FLUX Dev","image"],["black-forest-labs/flux-pro","FLUX Pro","image"]]},{"id":"sambanova","name":"SambaNova","desc":"SambaNova Cloud lets developers use top open-source models with extremely fast inference.","models":[["MiniMax-M2.7","MiniMax M2.7","chat"],["DeepSeek-V3.1","DeepSeek V3.1","chat"],["Meta-Llama-3.3-70B-Instruct","Meta Llama 3.3 70B Instruct","chat"],["gpt-oss-120b","GPT OSS 120B","chat"],["MiniMax-M3","MiniMax M3","chat"],["DeepSeek-V3.2","DeepSeek V3.2","chat"],["gemma-4-31B-it","Gemma 4 31B IT","chat"]]},{"id":"search1api","name":"Search1API","desc":"Search1API provides access to DeepSeek models with optional web connectivity, including standard and fast variants…","models":[["deepseek-r1-70b-online","DeepSeek R1 70B","chat"],["deepseek-r1-online","DeepSeek R1","chat"],["deepseek-r1-70b-fast-online","DeepSeek R1 70B Fast","chat"],["deepseek-r1-fast-online","DeepSeek R1 Fast","chat"]]},{"id":"sensenova","name":"SenseNova","desc":"SenseNova delivers efficient, easy-to-use full-stack LLM services backed by SenseTime infrastructure.","models":[["sensenova-6.7-flash-lite","SenseNova 6.7 Flash Lite","chat"],["deepseek-v4-flash","DeepSeek V4 Flash","chat"],["sensenova-u1-fast","SenseNova U1 Fast","image"]]},{"id":"siliconcloud","name":"SiliconCloud","desc":"SiliconCloud is a cost-effective GenAI cloud service built on strong open-source base models.","models":[["meituan-longcat/LongCat-2.0","LongCat-2.0","chat"],["nex-agi/Nex-N2-Pro","Nex-N2-Pro","chat"],["zai-org/GLM-5.2","GLM-5.2","chat"],["moonshotai/Kimi-K2.7-Code","Kimi-K2.7-Code","chat"],["deepseek-ai/DeepSeek-V4-Pro","DeepSeek V4 Pro","chat"],["deepseek-ai/DeepSeek-V4-Flash","DeepSeek V4 Flash","chat"],["Pro/moonshotai/Kimi-K2.6","Kimi-K2.6 (Pro)","chat"],["Qwen/Qwen3.6-27B","Qwen3.6 27B","chat"],["Qwen/Qwen3.6-35B-A3B","Qwen3.6 35B A3B","chat"],["Qwen/Qwen3.5-397B-A17B","Qwen3.5 397B A17B","chat"],["Qwen/Qwen3.5-122B-A10B","Qwen3.5 122B A10B","chat"],["Qwen/Qwen3.5-35B-A3B","Qwen3.5 35B A3B","chat"],["Qwen/Qwen3.5-27B","Qwen3.5 27B","chat"],["Qwen/Qwen3.5-9B","Qwen3.5 9B","chat"],["Qwen/Qwen3.5-4B","Qwen3.5 4B","chat"],["MiniMaxAI/MiniMax-M2.5","MiniMax-M2.5","chat"],["Pro/MiniMaxAI/MiniMax-M2.5","MiniMax-M2.5 (Pro)","chat"],["Pro/zai-org/glm-5.1","GLM-5.1 (Pro)","chat"],["Pro/zai-org/GLM-5.1","GLM-5.1 (Pro)","chat"],["deepseek-ai/DeepSeek-V3.2","DeepSeek V3.2","chat"],["Pro/deepseek-ai/DeepSeek-V3.2","DeepSeek V3.2 (Pro)","chat"],["PaddlePaddle/PaddleOCR-VL-1.5","PaddleOCR-VL 1.5","chat"],["Qwen/Qwen3-VL-32B-Instruct","Qwen3 VL 32B Instruct","chat"],["Qwen/Qwen3-VL-32B-Thinking","Qwen3 VL 32B Thinking","chat"],["deepseek-ai/DeepSeek-OCR","DeepSeek OCR","chat"],["Qwen/Qwen3-Omni-30B-A3B-Instruct","Qwen3 Omni 30B A3B Instruct","chat"],["Qwen/Qwen3-Omni-30B-A3B-Thinking","Qwen3 Omni 30B A3B Thinking","chat"],["Qwen/Qwen3-Omni-30B-A3B-Captioner","Qwen3 Omni 30B A3B Captioner","chat"],["tencent/Hunyuan-MT-7B","Hunyuan MT 7B","chat"],["Qwen/Qwen3-VL-30B-A3B-Instruct","Qwen3 VL 30B A3B Instruct","chat"],["Qwen/Qwen3-VL-30B-A3B-Thinking","Qwen3 VL 30B A3B Thinking","chat"],["deepseek-ai/DeepSeek-V3.1-Terminus","DeepSeek V3.1 Terminus","chat"],["Pro/deepseek-ai/DeepSeek-V3.1-Terminus","DeepSeek V3.1 Terminus (Pro)","chat"],["Qwen/Qwen3-VL-8B-Instruct","Qwen3 VL 8B Instruct","chat"],["Qwen/Qwen3-VL-8B-Thinking","Qwen3 VL 8B Thinking","chat"],["inclusionAI/Ling-flash-2.0","Ling Flash 2.0","chat"],["inclusionAI/Ling-mini-2.0","Ling Mini 2.0","chat"],["ByteDance-Seed/Seed-OSS-36B-Instruct","Seed OSS 36B Instruct","chat"],["Qwen/Qwen3-Coder-30B-A3B-Instruct","Qwen3 Coder 30B A3B Instruct","chat"],["zai-org/GLM-4.5V","GLM-4.5V","chat"],["zai-org/GLM-4.5-Air","GLM-4.5-Air","chat"],["tencent/Hunyuan-A13B-Instruct","Hunyuan A13B Instruct","chat"],["Qwen/Qwen3-30B-A3B-Instruct-2507","Qwen3 30B A3B Instruct 2507","chat"],["Qwen/Qwen3-32B","Qwen3 32B","chat"],["Qwen/Qwen3-14B","Qwen3 14B","chat"],["Qwen/Qwen3-8B","Qwen3 8B (Free)","chat"],["THUDM/GLM-Z1-9B-0414","GLM-Z1 9B 0414 (Free)","chat"],["THUDM/GLM-4-32B-0414","GLM-4 32B 0414","chat"],["THUDM/GLM-4-9B-0414","GLM-4 9B 0414 (Free)","chat"],["deepseek-ai/DeepSeek-R1-0528-Qwen3-8B","DeepSeek R1 0528 Qwen3 8B (Free)","chat"],["deepseek-ai/DeepSeek-R1","DeepSeek R1","chat"],["deepseek-ai/DeepSeek-V3","DeepSeek V3","chat"],["Pro/deepseek-ai/DeepSeek-R1","DeepSeek R1 (Pro)","chat"],["Pro/deepseek-ai/DeepSeek-V3","DeepSeek V3 (Pro)","chat"],["Qwen/Qwen2.5-7B-Instruct","Qwen2.5 7B Instruct (Free)","chat"],["Pro/Qwen/Qwen2.5-7B-Instruct","Qwen2.5 7B Instruct (Pro)","chat"],["Qwen/Qwen2.5-14B-Instruct","Qwen2.5 14B Instruct","chat"],["Qwen/Qwen2.5-32B-Instruct","Qwen2.5 32B Instruct","chat"],["Qwen/Qwen2.5-72B-Instruct","Qwen2.5 72B Instruct","chat"],["Qwen/Qwen2.5-72B-Instruct-128K","Qwen2.5 72B Instruct 128K","chat"],["stepfun-ai/Step-3.5-Flash","Step 3.5 Flash","chat"],["Kwai-Kolors/Kolors","Kolors","image"],["Qwen/Qwen-Image","Qwen-Image","image"],["Qwen/Qwen-Image-Edit-2509","Qwen-Image-Edit (2509)","image"],["Wan-AI/Wan2.2-I2V-A14B","Wan-AI/Wan2.2-I2V-A14B","video"],["Wan-AI/Wan2.2-T2V-A14B","Wan-AI/Wan2.2-T2V-A14B","video"]]},{"id":"spark","name":"Spark","desc":"iFLYTEK Spark provides powerful multilingual AI across domains, enabling innovations in smart hardware, healthcare,…","models":[["spark-x2-flash","Spark X2 Flash","chat"],["spark-x2","Spark X2","chat"],["spark-x1.5","Spark X1.5","chat"],["lite","Spark Lite","chat"],["generalv3","Spark Pro","chat"],["pro-128k","Spark Pro 128K","chat"],["generalv3.5","Spark Max","chat"],["max-32k","Spark Max 32K","chat"],["4.0Ultra","Spark 4.0 Ultra","chat"]]},{"id":"stepfun","name":"Stepfun","desc":"Stepfun models offer leading multimodal and complex reasoning capabilities, with long-context understanding and…","models":[["step-5-preview","Step 5 Preview","chat"],["step-3.7-flash","Step 3.7 Flash","chat"],["step-3.5-flash-2603","Step 3.5 Flash 2603","chat"],["step-3.5-flash","Step 3.5 Flash","chat"],["step-3","Step 3","chat"],["step-r1-v-mini","Step R1 V Mini","chat"],["step-1-8k","Step 1 8K","chat"],["step-1-32k","Step 1 32K","chat"],["step-1-256k","Step 1 256K","chat"],["step-2-mini","Step 2 Mini","chat"],["step-2-16k","Step 2 16K","chat"],["step-2-16k-exp","Step 2 16K Exp","chat"],["step-1v-8k","Step 1V 8K","chat"],["step-1v-32k","Step 1V 32K","chat"],["step-1o-vision-32k","Step 1o Vision 32K","chat"],["step-1o-turbo-vision","Step 1o Turbo Vision","chat"],["step-image-edit-2","Step Image Edit 2","image"],["step-2x-large","Step 2X Large","image"],["step-1x-medium","Step 1X Medium","image"],["step-1x-edit","Step 1X Edit","image"]]},{"id":"straico","name":"Straico","desc":"Straico simplifies AI integration by providing a unified workspace that brings together top text, image, and audio…","models":[]},{"id":"streamlake","name":"StreamLake","desc":"StreamLake is an enterprise-level model service and AI computing cloud platform, integrating high-performance model…","models":[["KAT-Coder-Pro-V2","KAT-Coder-Pro-V2","chat"],["KAT-Coder-Pro-V1","KAT-Coder-Pro-V1","chat"],["KAT-Coder-Exp-72B-1010","KAT-Coder-Exp-72B-1010","chat"],["KAT-Coder-Air-V1","KAT-Coder-Air-V1","chat"],["GLM-5-Turbo","GLM-5-Turbo","chat"],["GLM-5","GLM-5","chat"],["MiniMax-M2.7","MiniMax M2.7","chat"],["MiniMax-M2.5","MiniMax M2.5","chat"],["Kimi-K2.5","Kimi K2.5","chat"],["Qwen3.5-Plus","Qwen3.5 Plus","chat"],["MiMo-V2-Pro","MiMo-V2 Pro","chat"],["DeepSeek-V3.2","DeepSeek V3.2","chat"],["DeepSeek-OCR","DeepSeek OCR","chat"]]},{"id":"supergrok","name":"SuperGrok","desc":"Access Grok models with your SuperGrok or X Premium subscription, no API key required.","models":[]},{"id":"taichu","name":"Taichu","desc":"A next-generation multimodal model from CASIA and the Wuhan Institute of AI, supporting multi-turn QA, writing, image…","models":[["taichu_o1","Taichu-O1","chat"],["taichu4_vl_2b_nothinking","Taichu4.0-VL-2B-NoThinking","chat"],["taichu4_vl_3b","Taichu4.0-VL-3B-Thinking","chat"],["taichu4_vl_32b_nothinking","Taichu4.0-VL-32B-NoThinking","chat"],["taichu4_vl_32b","Taichu4.0-VL-32B-Thinking","chat"],["taichu_llm_2b","Taichu-LLM-2B","chat"],["taichu_llm_14b","Taichu-LLM-14B","chat"],["taichu_llm","Taichu-LLM","chat"],["deepseek_r1","DeepSeek R1","chat"],["deepseek_r1_distill_qwen_14b","DeepSeek R1 Distill Qwen 14B","chat"],["deepseek_r1_distill_qwen_32b","DeepSeek R1 Distill Qwen 32B","chat"],["deepseek_r1_distill_llama_70b","DeepSeek R1 Distill Llama 70B","chat"],["qwq_32b","QwQ 32B","chat"]]},{"id":"tencentcloud","name":"TencentCloud","desc":"LLM Knowledge Engine Atomic Power provides end-to-end knowledge QA for enterprises and developers, with modular…","models":[["deepseek-r1","DeepSeek R1","chat"],["deepseek-v3-0324","DeepSeek V3 0324","chat"],["deepseek-v3","DeepSeek V3","chat"]]},{"id":"togetherai","name":"Together AI","desc":"Together AI delivers leading performance with innovative models, broad customization, rapid scaling, and…","models":[["meta-llama/Llama-3.3-70B-Instruct-Turbo","Llama 3.3 70B Instruct Turbo","chat"],["meta-llama/Llama-3.2-3B-Instruct-Turbo","Llama 3.2 3B Instruct Turbo","chat"],["meta-llama/Llama-Vision-Free","Llama 3.2 11B Vision Instruct Turbo (Free)","chat"],["meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo","Llama 3.2 11B Vision Instruct Turbo","chat"],["meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo","Llama 3.2 90B Vision Instruct Turbo","chat"],["meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo","Llama 3.1 8B Instruct Turbo","chat"],["meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo","Llama 3.1 70B Instruct Turbo","chat"],["meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo","Llama 3.1 405B Instruct Turbo","chat"],["nvidia/Llama-3.1-Nemotron-70B-Instruct-HF","Llama 3.1 Nemotron 70B","chat"],["meta-llama/Meta-Llama-3-8B-Instruct-Turbo","Llama 3 8B Instruct Turbo","chat"],["meta-llama/Meta-Llama-3-70B-Instruct-Turbo","Llama 3 70B Instruct Turbo","chat"],["meta-llama/Meta-Llama-3-8B-Instruct-Lite","Llama 3 8B Instruct Lite","chat"],["meta-llama/Meta-Llama-3-70B-Instruct-Lite","Llama 3 70B Instruct Lite","chat"],["meta-llama/Llama-3-8b-chat-hf","Llama 3 8B Instruct Reference","chat"],["meta-llama/Llama-3-70b-chat-hf","Llama 3 70B Instruct Reference","chat"],["meta-llama/Llama-2-13b-chat-hf","LLaMA-2 Chat (13B)","chat"],["meta-llama/Llama-2-70b-hf","LLaMA-2 (70B)","chat"],["codellama/CodeLlama-34b-Instruct-hf","CodeLlama 34B Instruct","chat"],["google/gemma-2-9b-it","Gemma 2 9B","chat"],["google/gemma-2-27b-it","Gemma 2 27B","chat"],["google/gemma-2b-it","Gemma Instruct (2B)","chat"],["mistralai/Mistral-7B-Instruct-v0.3","Mistral (7B) Instruct v0.3","chat"],["mistralai/Mistral-7B-Instruct-v0.2","Mistral (7B) Instruct v0.2","chat"],["mistralai/Mistral-7B-Instruct-v0.1","Mistral (7B) Instruct","chat"],["mistralai/Mistral-7B-v0.1","Mistral (7B)","chat"],["mistralai/Mixtral-8x7B-Instruct-v0.1","Mixtral-8x7B Instruct (46.7B)","chat"],["mistralai/Mixtral-8x7B-v0.1","Mixtral-8x7B (46.7B)","chat"],["mistralai/Mixtral-8x22B-Instruct-v0.1","Mixtral-8x22B Instruct (141B)","chat"],["microsoft/WizardLM-2-8x22B","WizardLM-2 8x22B","chat"],["deepseek-ai/DeepSeek-R1","DeepSeek-R1","chat"],["deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B","DeepSeek R1 Distill Qwen 1.5B","chat"],["deepseek-ai/DeepSeek-R1-Distill-Qwen-14B","DeepSeek R1 Distill Qwen 14B","chat"],["deepseek-ai/DeepSeek-R1-Distill-Llama-70B","DeepSeek R1 Distill Llama 70B","chat"],["deepseek-ai/DeepSeek-V3","DeepSeek-V3","chat"],["deepseek-ai/deepseek-llm-67b-chat","DeepSeek LLM Chat (67B)","chat"],["Qwen/QwQ-32B-Preview","QwQ 32B Preview","chat"],["Qwen/Qwen2.5-7B-Instruct-Turbo","Qwen 2.5 7B Instruct Turbo","chat"],["Qwen/Qwen2.5-72B-Instruct-Turbo","Qwen 2.5 72B Instruct Turbo","chat"],["Qwen/Qwen2.5-Coder-32B-Instruct","Qwen 2.5 Coder 32B Instruct","chat"],["Qwen/Qwen2-72B-Instruct","Qwen 2 Instruct (72B)","chat"],["databricks/dbrx-instruct","DBRX Instruct","chat"],["upstage/SOLAR-10.7B-Instruct-v1.0","Upstage SOLAR Instruct v1 (11B)","chat"],["NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO","Nous Hermes 2 - Mixtral 8x7B-DPO (46.7B)","chat"],["Gryphe/MythoMax-L2-13b","MythoMax-L2 (13B)","chat"],["togethercomputer/StripedHyena-Nous-7B","StripedHyena Nous (7B)","chat"]]},{"id":"fishaudio","name":"Fish Audio","desc":"暂无描述。","models":[["s2.1-pro","Fish Audio S2.1 Pro","tts"],["drama-3","Fish Audio Drama 3","tts"],["s2-pro","Fish Audio S2 Pro","tts"],["s1","Fish Audio S1","tts"]]},{"id":"typesafe","name":"TypeSafe","desc":"TypeSafe provides System One models that answer typed questions with calibrated probabilities for reliable application…","models":[["jev-1.14.0","Jev 1.14","decision"]]},{"id":"unsloth","name":"Unsloth","desc":"Unsloth is a framework for fine-tuning and running LLMs locally, exposing loaded GGUF models through an…","models":[["unsloth/Qwen3-1.7B-GGUF","Qwen3 1.7B","chat"],["unsloth/gemma-3-4b-it-GGUF","Gemma 3 4B","chat"]]},{"id":"upstage","name":"Upstage","desc":"Upstage builds AI models for business needs, including Solar LLM and Document AI, with chat APIs that support function…","models":[["solar-pro","Solar Pro","chat"],["solar-mini","Solar Mini","chat"],["solar-mini-ja","Solar Mini (Ja)","chat"]]},{"id":"v0","name":"Vercel (v0)","desc":"v0 is a pair-programming assistant that turns natural-language ideas into code and UI for your project.","models":[["v0-1.5-lg","v0-1.5-lg","chat"],["v0-1.5-md","v0-1.5-md","chat"],["v0-1.0-md","v0-1.0-md","chat"]]},{"id":"vercelaigateway","name":"Vercel AI Gateway","desc":"Vercel AI Gateway provides a unified API for 100+ models across OpenAI, Anthropic, Google, and more, with budgeting,…","models":[["google/gemini-2.5-pro","Gemini 2.5 Pro","chat"],["anthropic/claude-opus-4.1","Claude Opus 4.1","chat"],["anthropic/claude-opus-4","Claude Opus 4","chat"],["anthropic/claude-sonnet-4","Claude Sonnet 4","chat"],["openai/gpt-5","GPT-5","chat"],["openai/o3","o3","chat"],["openai/o1","o1","chat"],["anthropic/claude-3.7-sonnet","Claude 3.7 Sonnet","chat"],["anthropic/claude-3.5-sonnet","Claude 3.5 Sonnet","chat"],["anthropic/claude-3-opus","Claude 3 Opus","chat"],["openai/gpt-4o","GPT-4o","chat"],["openai/gpt-5-mini","GPT-5 mini","chat"],["openai/gpt-5-nano","GPT-5 nano","chat"],["openai/gpt-oss-120b","gpt-oss-120b","chat"],["openai/gpt-oss-20b","gpt-oss-20b","chat"],["openai/o3-mini","o3-mini","chat"],["openai/o4-mini","o4-mini","chat"],["openai/gpt-4.1","GPT-4.1","chat"],["moonshotai/kimi-k2","Kimi K2","chat"],["alibaba/qwen3-coder","Qwen3 Coder 480B A35B Instruct","chat"],["alibaba/qwen-3-235b","Qwen3 235B A22B Instruct 2507","chat"],["zai/glm-4.5","GLM-4.5","chat"],["zai/glm-4.5-air","GLM 4.5 Air","chat"],["zai/glm-4.5v","GLM 4.5V","chat"],["alibaba/qwen-3-32b","Qwen3 32B","chat"],["alibaba/qwen-3-30b","Qwen3 30B A3B","chat"],["alibaba/qwen-3-14b","Qwen3 14B","chat"],["cohere/command-a","Command A","chat"],["deepseek/deepseek-r1","DeepSeek R1 0528","chat"],["deepseek/deepseek-v3","DeepSeek V3 0324","chat"],["google/gemini-2.0-flash","Gemini 2.0 Flash","chat"],["google/gemini-2.0-flash-lite","Gemini 2.0 Flash Lite","chat"],["google/gemini-2.5-flash","Gemini 2.5 Flash","chat"],["google/gemini-2.5-flash-lite","Gemini 2.5 Flash Lite","chat"],["xai/grok-4","Grok 4","chat"],["xai/grok-3-mini-fast","Grok 3 Mini Fast Beta","chat"],["xai/grok-3-mini","Grok 3 Mini Beta","chat"],["xai/grok-3-fast","Grok 3 Fast Beta","chat"],["xai/grok-3","Grok 3 Beta","chat"],["xai/grok-2-vision","Grok 2 Vision","chat"],["xai/grok-2","Grok 2","chat"],["meta/llama-3.1-70b","Llama 3.1 70B Instruct","chat"],["meta/llama-3.1-8b","Llama 3.1 8B Instruct","chat"],["meta/llama-3.2-11b","Llama 3.2 11B Vision Instruct","chat"],["meta/llama-3.2-1b","Llama 3.2 1B Instruct","chat"],["meta/llama-3.2-3b","Llama 3.2 3B Instruct","chat"],["meta/llama-3.2-90b","Llama 3.2 90B Vision Instruct","chat"],["meta/llama-3.3-70b","Llama 3.3 70B Instruct","chat"],["meta/llama-4-maverick","Llama 4 Maverick 17B 128E Instruct","chat"],["meta/llama-4-scout","Llama 4 Scout 17B 16E Instruct","chat"],["mistral/codestral","Mistral Codestral 25.01","chat"],["mistral/devstral-small","Devstral Small","chat"],["mistral/magistral-medium","Magistral Medium 2509","chat"],["mistral/magistral-small","Magistral Small 2506","chat"],["mistral/ministral-3b","Ministral 3B","chat"],["mistral/ministral-8b","Ministral 8B","chat"],["mistral/mistral-large","Mistral Large","chat"],["mistral/mistral-small","Mistral Small","chat"],["mistral/mixtral-8x22b-instruct","Mixtral MoE 8x22B Instruct","chat"],["mistral/pixtral-12b","Pixtral 12B 2409","chat"],["mistral/pixtral-large","Pixtral Large","chat"],["inception/mercury-coder-small","Mercury Coder Small Beta","chat"],["morph/morph-v3-fast","Morph V3 Fast","chat"],["morph/morph-v3-large","Morph V3 Large","chat"],["openai/gpt-3.5-turbo","GPT-3.5 Turbo","chat"],["openai/gpt-3.5-turbo-instruct","GPT-3.5 Turbo Instruct","chat"],["openai/gpt-4-turbo","GPT-4 Turbo","chat"],["openai/gpt-4.1-mini","GPT-4.1 mini","chat"],["openai/gpt-4.1-nano","GPT-4.1 nano","chat"],["openai/gpt-4o-mini","GPT-4o mini","chat"],["perplexity/sonar","Sonar","chat"],["perplexity/sonar-pro","Sonar Pro","chat"],["perplexity/sonar-reasoning","Sonar Reasoning","chat"],["perplexity/sonar-reasoning-pro","Sonar Reasoning Pro","chat"],["vercel/v0-1.0-md","v0-1.0-md","chat"],["vercel/v0-1.5-md","v0-1.5-md","chat"],["amazon/nova-lite","Nova Lite","chat"],["amazon/nova-micro","Nova Micro","chat"],["anthropic/claude-3.5-haiku","Claude 3.5 Haiku","chat"],["anthropic/claude-3-haiku","Claude 3 Haiku","chat"],["amazon/nova-pro","Nova Pro","chat"],["amazon/titan-embed-text-v2","Titan Text Embeddings V2","embedding"],["google/gemini-embedding-001","Gemini Embedding 001","embedding"],["google/text-embedding-005","Text Embedding 005","embedding"],["google/text-multilingual-embedding-002","Text Multilingual Embedding 002","embedding"],["cohere/embed-v4.0","Embed v4.0","embedding"],["mistral/codestral-embed","Codestral Embed","embedding"],["mistral/mistral-embed","Mistral Embed","embedding"],["openai/text-embedding-3-large","text-embedding-3-large","embedding"],["openai/text-embedding-3-small","text-embedding-3-small","embedding"],["openai/text-embedding-ada-002","text-embedding-ada-002","embedding"]]},{"id":"vertexai","name":"Vertex AI","desc":"暂无描述。","models":[["gemini-4-carbon","Gemini 4 Carbon","chat"],["gemini-4-neon","Gemini 4 Neon","chat"],["gemini-3.8-flash","Gemini 3.8 Flash","chat"],["gemini-3.7-flash","Gemini 3.7 Flash","chat"],["gemini-3.6-flash","Gemini 3.6 Flash","chat"],["gemini-3.5-flash","Gemini 3.5 Flash","chat"],["gemini-3.5-flash-lite","Gemini 3.5 Flash-Lite","chat"],["gemini-3.1-flash-image-preview","Nano Banana 2","chat"],["gemini-3.1-pro-preview","Gemini 3.1 Pro Preview","chat"],["gemini-3.1-flash-lite","Gemini 3.1 Flash-Lite","chat"],["gemini-3.1-flash-lite-preview","Gemini 3.1 Flash-Lite Preview","chat"],["gemini-3-pro-preview","Gemini 3 Pro Preview","chat"],["gemini-3-flash-preview","Gemini 3 Flash Preview","chat"],["gemini-3-pro-image-preview","Nano Banana Pro","chat"],["gemini-2.5-pro","Gemini 2.5 Pro","chat"],["gemini-2.5-pro-preview-05-06","Gemini 2.5 Pro Preview 05-06","chat"],["gemini-2.5-pro-preview-03-25","Gemini 2.5 Pro Preview 03-25","chat"],["gemini-2.5-flash","Gemini 2.5 Flash","chat"],["gemini-2.5-flash-preview-04-17","Gemini 2.5 Flash Preview 04-17","chat"],["gemini-2.5-flash-image","Nano Banana","chat"],["gemini-2.5-flash-lite","Gemini 2.5 Flash-Lite","chat"],["gemini-2.5-flash-lite-preview-06-17","Gemini 2.5 Flash-Lite Preview 06-17","chat"],["gemini-2.0-flash","Gemini 2.0 Flash","chat"],["gemini-2.0-flash-lite","Gemini 2.0 Flash-Lite","chat"],["gemini-1.5-flash-002","Gemini 1.5 Flash 002","chat"],["gemini-1.5-pro-002","Gemini 1.5 Pro 002","chat"],["gemini-2.5-flash-image:image","Nano Banana","image"],["imagen-4.0-generate-001","Imagen 4","image"],["imagen-4.0-ultra-generate-001","Imagen 4 Ultra","image"],["imagen-4.0-fast-generate-001","Imagen 4 Fast","image"]]},{"id":"vllm","name":"vLLM","desc":"vLLM is a fast, easy-to-use library for LLM inference and serving.","models":[["meta-llama/Meta-Llama-3.1-70B","Llama 3.1 70B","chat"],["meta-llama/Meta-Llama-3.1-405B-Instruct","Llama 3.1 405B Instruct","chat"],["google/gemma-2-9b","Gemma 2 9B","chat"],["google/gemma-2-27b","Gemma 2 27B","chat"],["mistralai/Mistral-7B-Instruct-v0.1","Mistral 7B Instruct v0.1","chat"],["mistralai/Mixtral-8x7B-Instruct-v0.1","Mistral 8x7B Instruct v0.1","chat"],["deepseek-ai/DeepSeek-V3","DeepSeek V3","chat"],["Qwen/QwQ-32B-Preview","QwQ 32B Preview","chat"],["Qwen/Qwen2-7B-Instruct","Qwen2 7B Instruct","chat"]]},{"id":"volcengine","name":"Volcengine","desc":"ByteDance’s model service platform offers secure, feature-rich, cost-competitive model access plus end-to-end tooling…","models":[["doubao-seed-evolving","Doubao Seed Evolving","chat"],["doubao-seed-2.1-pro","Doubao Seed 2.1 Pro","chat"],["doubao-seed-2.1-turbo","Doubao Seed 2.1 Turbo","chat"],["deepseek-v4-pro-ga","DeepSeek V4 Pro 0813","chat"],["deepseek-v4-flash-ga","DeepSeek V4 Flash 0731","chat"],["glm-5-2","GLM-5.2","chat"],["deepseek-v4-pro","DeepSeek V4 Pro","chat"],["deepseek-v4-flash","DeepSeek V4 Flash","chat"],["doubao-seed-2.0-pro","Doubao Seed 2.0 Pro","chat"],["doubao-seed-2.0-lite","Doubao Seed 2.0 Lite","chat"],["doubao-seed-2.0-mini","Doubao Seed 2.0 Mini","chat"],["doubao-seed-2.0-code","Doubao Seed 2.0 Code","chat"],["doubao-seed-1.8","Doubao Seed 1.8","chat"],["doubao-seed-code","Doubao Seed Code","chat"],["glm-4-7","GLM-4.7","chat"],["deepseek-v3.2","DeepSeek V3.2","chat"],["doubao-seed-1.6-vision","Doubao Seed 1.6 Vision","chat"],["doubao-seed-1.6","Doubao Seed 1.6","chat"],["doubao-seed-1.6-flash","Doubao Seed 1.6 Flash","chat"],["doubao-1.5-pro-32k","Doubao 1.5 Pro 32k","chat"],["doubao-1.5-pro-256k","Doubao 1.5 Pro 256k","chat"],["doubao-1.5-lite-32k","Doubao 1.5 Lite 32k","chat"],["doubao-1.5-vision-pro-32k","Doubao 1.5 Vision Pro 32k","chat"],["doubao-lite-32k","Doubao Lite 32k","chat"],["doubao-pro-32k","Doubao Pro 32k","chat"],["doubao-seedream-5-0-260128","Seedream 5.0 Lite","image"],["doubao-seedream-4-5-251128","Seedream 4.5","image"],["doubao-seedream-4-0-250828","Seedream 4.0","image"],["doubao-seedance-2-0-260128","Seedance 2.0","video"],["doubao-seedance-2-0-fast-260128","Seedance 2.0 Fast","video"],["doubao-seedance-1-5-pro-251215","Seedance 1.5 Pro","video"],["doubao-seedance-1-0-pro-fast-251015","Seedance 1.0 Pro Fast","video"],["doubao-seedance-1-0-pro-250528","Seedance 1.0 Pro","video"]]},{"id":"volcenginecodingplan","name":"Volcengine Coding Plan","desc":"Volcengine Coding Plan from ByteDance provides access to multiple coding models including Doubao-Seed-Code, GLM-4.7,…","models":[]},{"id":"wenxin","name":"Wenxin","desc":"An enterprise all-in-one platform for foundation models and AI-native app development, offering end-to-end tooling for…","models":[["ernie-5.1","ERNIE 5.1","chat"],["ernie-5.0","ERNIE 5.0","chat"],["ernie-5.0-thinking-latest","ERNIE 5.0 Thinking","chat"],["ernie-5.0-thinking-preview","ERNIE 5.0 Thinking Preview","chat"],["ernie-4.5-turbo-20260402","ERNIE 4.5 Turbo 20260402","chat"],["ernie-4.5-turbo-128k","ERNIE 4.5 Turbo 128K","chat"],["ernie-4.5-turbo-32k","ERNIE 4.5 Turbo 32K","chat"],["ernie-4.5-turbo-latest","ERNIE 4.5 Turbo Latest","chat"],["ernie-char-fiction-8k","ERNIE Character Fiction 8K","chat"],["ernie-char-fiction-8k-preview","ERNIE Character Fiction 8K Preview","chat"],["ernie-novel-8k","ERNIE Novel 8K","chat"],["qianfan-8b","Qianfan 8B","chat"],["qianfan-70b","Qianfan 70B","chat"],["qianfan-agent-intent-32k","Qianfan Agent Intent 32K","chat"],["qianfan-agent-lite-8k","Qianfan Agent Lite 8K","chat"],["ernie-4.5-turbo-vl","ERNIE 4.5 Turbo VL","chat"],["ernie-4.5-turbo-vl-32k","ERNIE 4.5 Turbo VL 32K","chat"],["ernie-4.5-turbo-vl-latest","ERNIE 4.5 Turbo VL Latest","chat"],["ernie-4.5-8k-preview","ERNIE 4.5 8K Preview","chat"],["ernie-x1.1","ERNIE X1.1","chat"],["ernie-x1.1-preview","ERNIE X1.1 Preview","chat"],["qianfan-composition","Qianfan Composition","chat"],["qianfan-multipicocr","Qianfan MultiPicOCR","chat"],["qianfan-qi-vl","Qianfan QI VL","chat"],["qianfan-engcard-vl","Qianfan EngCard VL","chat"],["qianfan-singlepicocr","Qianfan SinglePicOCR","chat"],["internvl3-38b","InternVL3 38B","chat"],["internvl3-14b","InternVL3 14B","chat"],["internvl3-1b","InternVL3 1B","chat"],["internvl2.5-38b-mpo","InternVL2.5 38B MPO","chat"],["glm-4.5v","GLM-4.5V","chat"],["deepseek-vl2","DeepSeek VL2","chat"],["deepseek-vl2-small","DeepSeek VL2 Small","chat"],["deepseek-v3.2-think","DeepSeek V3.2 Think","chat"],["deepseek-r1-distill-qianfan-70b","DeepSeek R1 Distill Qianfan 70B","chat"],["deepseek-r1-distill-qianfan-8b","DeepSeek R1 Distill Qianfan 8B","chat"],["deepseek-r1-distill-qianfan-llama-70b","DeepSeek R1 Distill Qianfan Llama 70B","chat"],["deepseek-r1-distill-llama-70b","DeepSeek R1 Distill Llama 70B","chat"],["deepseek-r1-distill-qwen-7b","DeepSeek R1 Distill Qwen 7B","chat"],["deepseek-r1-distill-qwen-1.5b","DeepSeek R1 Distill Qwen 1.5B","chat"],["kimi-k2-instruct","Kimi K2 Instruct","chat"],["qwen3-30b-a3b","Qwen3 30B A3B","chat"],["musesteamer-air-image","MuseSteamer Air Image","image"],["irag-1.0","ERNIE iRAG","image"],["ernie-irag-edit","ERNIE iRAG Edit","image"],["qwen-image","Qwen Image","image"],["qwen-image-edit","Qwen Image Edit","image"],["musesteamer-2.0-turbo-i2v-audio","MuseSteamer 2.0 Turbo I2V Audio","video"],["musesteamer-2.0-turbo-i2v","MuseSteamer 2.0 Turbo I2V","video"],["musesteamer-2.0-pro-i2v","MuseSteamer 2.0 Pro I2V","video"],["musesteamer-2.0-lite-i2v","MuseSteamer 2.0 Lite I2V","video"],["musesteamer-air-i2v","MuseSteamer Air I2V","video"]]},{"id":"xai","name":"xAI","desc":"xAI builds AI to accelerate scientific discovery, with a mission to deepen humanity’s understanding of the universe.","models":[["grok-4.7","Grok 4.7","chat"],["grok-4.6","Grok 4.6","chat"],["grok-4.5","Grok 4.5","chat"],["grok-4.3","Grok 4.3","chat"],["grok-4.20-0309-non-reasoning","Grok 4.20 (Non-Reasoning)","chat"],["grok-4.20-0309-reasoning","Grok 4.20","chat"],["grok-4.20-multi-agent-0309","Grok 4.20 Multi-Agent","chat"],["grok-imagine-image-2.0","Grok Imagine Image 2.0","image"],["grok-imagine-image-quality","Grok Imagine Image Quality","image"],["grok-imagine-image","Grok Imagine Image","image"],["grok-imagine-video","Grok Imagine Video","video"]]},{"id":"xiaomimimo","name":"Xiaomi MiMo","desc":"Xiaomi MiMo provides a conversational model service with an OpenAI-compatible API. The mimo-v2-flash model supports…","models":[["mimo-v2.6-pro","MiMo-V2.6 Pro","chat"],["mimo-v2.6-pro-ultraspeed","MiMo-V2.6 Pro UltraSpeed","chat"],["mimo-v2.6-flash","MiMo-V2.6 Flash","chat"],["mimo-v2.5-pro","MiMo-V2.5 Pro","chat"],["mimo-v2.5","MiMo-V2.5","chat"]]},{"id":"xinference","name":"Xinference","desc":"Xorbits Inference (Xinference) is an open-source platform that simplifies running and integrating AI models. It lets…","models":[["deepseek-v3","DeepSeek V3","chat"],["deepseek-r1","DeepSeek R1","chat"],["deepseek-r1-distill-llama","DeepSeek R1 Distill Llama","chat"],["deepseek-r1-distill-qwen","DeepSeek R1 Distill Qwen","chat"],["qwq-32b","QwQ 32B","chat"],["qvq-72b-preview","QVQ 72B Preview","chat"],["qwen2.5-instruct","Qwen2.5 Instruct","chat"],["qwen2.5-coder-instruct","Qwen2.5 Coder Instruct","chat"],["qwen2.5-vl-instruct","Qwen2.5 VL Instruct","chat"],["mistral-nemo-instruct","Mistral Nemo Instruct","chat"],["mistral-large-instruct","Mistral Large Instruct","chat"],["llama-3.3-instruct","Llama 3.3 Instruct","chat"],["llama-3.2-vision-instruct","Llama 3.2 Vision Instruct","chat"],["llama-3.1-instruct","Llama 3.1 Instruct","chat"]]},{"id":"zenmux","name":"ZenMux","desc":"ZenMux is a unified AI aggregation platform that supports OpenAI, Anthropic, Google VertexAI, and more, with flexible…","models":[["zenmux/auto","Auto Router","chat"],["openai/gpt-5.2","GPT-5.2","chat"],["openai/gpt-5.2-pro","GPT-5.2 pro","chat"],["openai/gpt-5.2-chat","GPT-5.2 Chat","chat"],["google/gemini-3-pro-image-preview","Gemini 3 Pro Image (Nano Banana Pro)","chat"],["google/gemini-3-pro-preview","Gemini 3 Pro Preview","chat"],["openai/gpt-5.1","GPT-5.1","chat"],["openai/gpt-5.1-chat","GPT-5.1 Chat","chat"],["openai/gpt-5.1-codex","GPT-5.1-Codex","chat"],["openai/gpt-5.1-codex-mini","GPT-5.1-Codex-Mini","chat"],["x-ai/grok-4.1-fast","Grok 4.1 Fast","chat"],["x-ai/grok-4.1-fast-non-reasoning","Grok 4.1 Fast (Non-Reasoning)","chat"],["baidu/ernie-5.0-thinking-preview","ERNIE-5.0-Thinking-Preview","chat"],["volcengine/doubao-seed-code","Doubao-Seed-Code","chat"],["moonshotai/kimi-k2-thinking","Kimi K2 Thinking","chat"],["moonshotai/kimi-k2-thinking-turbo","Kimi K2 Thinking Turbo","chat"],["inclusionai/ming-flash-omini-preview","Ming-flash-omini Preview","chat"],["inclusionai/ring-1t","Ring-1T","chat"],["inclusionai/ling-1t","Ling-1T","chat"],["inclusionai/ling-flash-2.0","Ling-flash-2.0","chat"],["inclusionai/ring-flash-2.0","Ring-flash-2.0","chat"],["inclusionai/ling-mini-2.0","Ling-mini-2.0","chat"],["inclusionai/ring-mini-2.0","Ring-mini-2.0","chat"],["minimax/minimax-m2","MiniMax M2","chat"],["kuaishou/kat-coder-pro-v1","KAT-Coder-Pro-V1 (Limited-time Free)","chat"],["anthropic/claude-haiku-4.5","Claude Haiku 4.5","chat"],["deepseek/deepseek-chat","DeepSeek-V3.2-Exp (Non-thinking Mode)","chat"],["deepseek/deepseek-reasoner","DeepSeek-V3.2-Exp (Thinking Mode)","chat"],["deepseek/deepseek-r1-0528","DeepSeek R1 0528","chat"],["google/gemini-2.5-pro","Gemini 2.5 Pro","chat"],["google/gemini-2.5-flash","Gemini 2.5 Flash","chat"],["openai/gpt-5-pro","GPT-5 Pro","chat"],["openai/gpt-5","GPT-5","chat"],["openai/gpt-5-chat","GPT-5 Chat","chat"],["openai/gpt-5-mini","GPT-5 Mini","chat"],["openai/gpt-5-nano","GPT-5 Nano","chat"],["openai/gpt-5-codex","GPT-5 Codex","chat"],["openai/gpt-4.1","GPT-4.1","chat"],["openai/gpt-4.1-mini","GPT-4.1 Mini","chat"],["openai/gpt-4.1-nano","GPT-4.1 Nano","chat"],["qwen/qwen3-max-preview","Qwen3 Max Thinking Preview","chat"],["qwen/qwen3-max","Qwen3 Max","chat"],["qwen/qwen3-vl-plus","Qwen3-VL-Plus","chat"],["qwen/qwen3-coder-plus","Qwen3-Coder-Plus","chat"],["qwen/qwen3-coder","Qwen3-Coder","chat"],["qwen/qwen3-14b","Qwen3 14B","chat"],["z-ai/glm-4.6","GLM 4.6","chat"],["claude-opus-4-5-20251101","Claude Opus 4.5","chat"],["anthropic/claude-opus-4.1","Claude Opus 4.1","chat"],["anthropic/claude-opus-4","Claude Opus 4","chat"],["google/gemini-2.5-flash-image","Gemini 2.5 Flash Image (Nano Banana)","chat"],["anthropic/claude-sonnet-4.5","Claude Sonnet 4.5","chat"],["anthropic/claude-sonnet-4","Claude Sonnet 4","chat"],["openai/o4-mini","o4 Mini","chat"],["openai/gpt-4o","GPT-4o","chat"],["openai/gpt-4o-mini","GPT-4o-mini","chat"],["moonshotai/kimi-k2-0711","Kimi K2 0711","chat"],["z-ai/glm-4.5-air","GLM 4.5 Air","chat"],["anthropic/claude-3.5-haiku","Claude 3.5 Haiku","chat"],["anthropic/claude-3.5-sonnet","Claude 3.5 Sonnet","chat"],["anthropic/claude-3.7-sonnet","Claude 3.7 Sonnet","chat"],["deepseek/deepseek-chat-v3.1","DeepSeek V3.1","chat"],["google/gemini-2.0-flash","Gemini 2.0 Flash","chat"],["google/gemini-2.0-flash-lite-001","Gemini 2.0 Flash Lite","chat"],["google/gemini-2.5-flash-lite","Gemini 2.5 Flash Lite","chat"],["moonshotai/kimi-k2-0905","Kimi K2 0905","chat"],["qwen/qwen3-235b-a22b-2507","Qwen3 235B A22B Instruct 2507","chat"],["qwen/qwen3-235b-a22b-thinking-2507","Qwen3 235B A22B Thinking 2507","chat"],["z-ai/glm-4.5","GLM 4.5","chat"]]},{"id":"zeroone","name":"01.AI","desc":"01.AI drives a human-centered AI 2.0 revolution, using LLMs to create economic and social value and build new AI…","models":[["yi-lightning","Yi Lightning","chat"],["yi-vision-v2","Yi Vision V2","chat"],["yi-spark","Yi Spark","chat"],["yi-medium","Yi Medium","chat"],["yi-medium-200k","Yi Medium 200K","chat"],["yi-large-turbo","Yi Large Turbo","chat"],["yi-large-rag","Yi Large RAG","chat"],["yi-large-fc","Yi Large FC","chat"],["yi-large","Yi Large","chat"],["yi-vision","Yi Vision","chat"],["yi-large-preview","Yi Large Preview","chat"],["yi-lightning-lite","Yi Lightning Lite","chat"]]},{"id":"zhipu","name":"ZhiPu","desc":"ZhiPu AI provides an open platform for multimodal and language models across text processing, image understanding, and…","models":[["glm-5.3","GLM-5.3","chat"],["glm-5.3-flash","GLM-5.3-Flash","chat"],["glm-5.2","GLM-5.2","chat"],["glm-5.1","GLM-5.1","chat"],["glm-5v-turbo","GLM-5V-Turbo","chat"],["glm-5-turbo","GLM-5-Turbo","chat"],["glm-5","GLM-5","chat"],["glm-4.7","GLM-4.7","chat"],["glm-4.7-flash","GLM-4.7-Flash","chat"],["glm-4.7-flashx","GLM-4.7-FlashX","chat"],["glm-4.6v","GLM-4.6V","chat"],["glm-4.6v-flashx","GLM-4.6V-FlashX","chat"],["glm-4.6v-flash","GLM-4.6V-Flash","chat"],["glm-4.6","GLM-4.6","chat"],["glm-4.5v","GLM-4.5V","chat"],["glm-4.5","GLM-4.5","chat"],["glm-4.5-x","GLM-4.5-X","chat"],["glm-4.5-air","GLM-4.5-Air","chat"],["glm-4.5-airx","GLM-4.5-AirX","chat"],["glm-4.1v-thinking-flashx","GLM-4.1V-Thinking-FlashX","chat"],["glm-4.1v-thinking-flash","GLM-4.1V-Thinking-Flash","chat"],["glm-zero-preview","GLM-Zero-Preview","chat"],["glm-z1-air","GLM-Z1-Air","chat"],["glm-z1-airx","GLM-Z1-AirX","chat"],["glm-z1-flashx","GLM-Z1-FlashX","chat"],["glm-z1-flash","GLM-Z1-Flash","chat"],["glm-4-flash-250414","GLM-4-Flash-250414","chat"],["glm-4-flashx","GLM-4-FlashX-250414","chat"],["glm-4-long","GLM-4-Long","chat"],["glm-4-air-250414","GLM-4-Air-250414","chat"],["glm-4-airx","GLM-4-AirX","chat"],["glm-4-plus","GLM-4-Plus","chat"],["glm-4-0520","GLM-4-0520","chat"],["glm-4v-flash","GLM-4V-Flash","chat"],["glm-4v-plus-0111","GLM-4V-Plus-0111","chat"],["glm-4v","GLM-4V","chat"],["codegeex-4","CodeGeeX-4","chat"],["charglm-4","CharGLM-4","chat"],["emohaa","Emohaa","chat"],["glm-image","GLM-Image","image"],["cogview-4","CogView-4","image"],["cogview-3-flash","CogView-3-Flash","image"],["vidu2-reference","Vidu 2 Reference","video"],["vidu2-start-end","Vidu 2 Start End","video"],["viduq1-start-end","Vidu Q1 Start End","video"],["vidu2-image","Vidu 2 Image","video"],["viduq1-image","Vidu Q1 Image","video"],["viduq1-text","Vidu Q1 Text","video"],["cogvideox-3","CogVideoX-3","video"],["cogvideox-2","CogVideoX-2","video"],["cogvideox-flash","CogVideoX-Flash","video"]]},{"id":"custom-gw","name":"公司网关","desc":"内部 OpenAI 兼容网关：统一走内网出口，审计与限流在网关侧完成。","custom":true,"models":[["deepseek-v4-flash","DeepSeek V4 Flash","chat"],["qwen3-235b-a22b","Qwen3 235B A22B","chat"],["glm-5.3","GLM-5.3","chat"],["bge-m3","BGE-M3","embedding"]]},{"id":"custom-vllm","name":"内网 vLLM","desc":"机房 A100 上自建的 vLLM 服务，只对研发网开放。","custom":true,"models":[["qwen3-coder-30b","Qwen3 Coder 30B","chat"],["internlm3-8b","InternLM3 8B","chat"]]}];
+
+const PV_ENABLED = ["deepseek","openai","anthropic","google","zhipu","qwen","siliconcloud","moonshot","openrouter","ollama","custom-gw","custom-vllm"];
+
+/* 个别模型在管理员侧被单独关掉，用来演示模型级开关 */
+const PV_OFF_MODELS = {"openai":["tts-1","gpt-4o-transcribe"],"google":["veo-3.1-generate-preview","gemini-3.1-flash-image-preview"],"ollama":["llava"]};
+
+      const PROVIDER_BY_ID = new Map(PROVIDER_DATA.map((provider) => [provider.id, provider]));
+
+      const PV_COLORS = {
+        deepseek: '#4d6bfe',
+        openai: '#10a37f',
+        anthropic: '#d97757',
+        google: '#4285f4',
+        zhipu: '#2f6bff',
+        qwen: '#615ced',
+        siliconcloud: '#6a5cff',
+        moonshot: '#16191e',
+        openrouter: '#6467f2',
+        ollama: '#7d7d7d',
+        'custom-gw': '#0d9488',
+        'custom-vllm': '#7c3aed',
       };
 
-      const AI_INITIAL = {
-        menu: { hideProvider: true, hideServiceModel: true },
-        providers: {
-          deepseek: { enabled: true, models: ['deepseek-v4-flash', 'deepseek-v4'] },
-          openai: { enabled: true, models: ['gpt-5.6-luna'] },
-          anthropic: { enabled: true, models: ['claude-sonnet-5'] },
-          google: { enabled: false, models: [] },
-          zhipu: { enabled: true, models: ['glm-5.3-flash'] },
-          ollama: { enabled: false, models: [] },
-        },
-        defaultModel: { provider: 'deepseek', model: 'deepseek-v4-flash' },
-        slots: {
-          main: 'deepseek/deepseek-v4-flash',
-          flash: 'openai/gpt-5.6-luna',
-          embedding: 'openai/text-embedding-3-large',
-          verify: 'zhipu/glm-5.3-flash',
-        },
+      /* ModelList 的分类顺序（与原版 allTabs 一致：all 恒显，其余按 count>0 显示） */
+      const PV_TAB_ORDER = ['all', 'chat', 'image', 'video', 'embedding', 'asr', 'tts', 'text2music', 'decision'];
+      const PV_TYPE_LABEL = {
+        all: '全部',
+        asr: '语音识别',
+        chat: '对话',
+        decision: '决策',
+        embedding: '向量',
+        image: '图像',
+        realtime: '实时',
+        text2music: '音乐',
+        tts: '语音合成',
+        video: '视频',
       };
 
-      const clone = (value) => JSON.parse(JSON.stringify(value));
+      const AI = {
+        providerSearch: '',
+        modelSearch: '',
+        active: 'all',
+        tab: 'all',
+        open: { enabled: true, custom: true, disabled: true },
+        enabled: new Set(PV_ENABLED),
+        offModels: new Set(
+          Object.keys(PV_OFF_MODELS).flatMap((id) => PV_OFF_MODELS[id].map((model) => `${id}:${model}`)),
+        ),
+        /* 用户在个人「设置」里能否看到 AI 菜单：true = 隐藏 */
+        menu: { hideProvider: false, hideServiceModel: false },
+        checked: {},
+        loading: false,
+        advancedOpen: false,
+        slots: {},
+        saving: null,
+        saved: null,
+        savedAt: '',
+      };
 
-      let ai = clone(AI_INITIAL);
-      let aiSaved = clone(AI_INITIAL);
-
-      const SLOTS = [
-        ['main', '主模型', '新会话与智能体的默认对话模型'],
-        ['flash', 'Flash 模型', '快速响应与轻量任务'],
-        ['embedding', '向量模型', '知识库与语义检索'],
-        ['verify', '验收模型', '自动验收与判定'],
-      ];
-
-      const EMBEDDING_OPTIONS = [
-        'openai/text-embedding-3-large',
-        'zhipu/embedding-3',
-        'ollama/nomic-embed-text',
-      ];
-
-      const enabledProviders = () => Object.keys(CATALOG).filter((id) => ai.providers[id].enabled);
-
-      function catalogOptions() {
-        const options = [];
-        enabledProviders().forEach((id) => {
-          if (id === 'ollama') return;
-          ai.providers[id].models.forEach((model) => options.push(`${id}/${model}`));
-        });
-        return options;
+      function providerColor(id) {
+        if (PV_COLORS[id]) return PV_COLORS[id];
+        let hash = 0;
+        for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
+        return `hsl(${hash % 360} 58% 50%)`;
       }
 
-      function slotOptions(key) {
-        if (key === 'embedding') return EMBEDDING_OPTIONS;
-        const options = catalogOptions();
-        if (!options.includes(ai.slots[key])) options.unshift(ai.slots[key]);
-        return options;
+      function providerInitial(name) {
+        const text = String(name || '?').replace(/[^0-9A-Za-z\u4e00-\u9fa5]/g, '');
+        if (!text) return '?';
+        return /[\u4e00-\u9fa5]/.test(text) ? text.slice(0, 2) : text.slice(0, 2).toUpperCase();
       }
 
-      function providerCard(id) {
-        const provider = CATALOG[id];
-        const conf = ai.providers[id];
-        const models = provider.models.length
-          ? provider.models
-              .map(
-                (model) =>
-                  `<button type="button" class="model-chip ${conf.models.includes(model) ? 'on' : ''}" onclick="toggleModel('${id}','${model}')">${model}</button>`,
-              )
-              .join('')
-          : '<span class="tiny muted">本地部署，模型由设备提供，无需在服务端登记</span>';
-
-        const foot = conf.enabled
-          ? `已启用 · ${conf.models.length}/${provider.models.length} 个模型可用`
-          : '已停用 · 用户端选择器里不出现';
-
-        return `<div class="provider ${conf.enabled ? '' : 'is-off'}">
-          <div class="provider-head">
-            <span class="provider-dot" style="--dot: ${provider.color}"></span>
-            <span class="provider-name"><strong>${provider.name}</strong><span class="tiny muted">${provider.vendor}</span></span>
-            <label class="switch"><input type="checkbox" ${conf.enabled ? 'checked' : ''} onchange="toggleProvider('${id}', this.checked)" /><span></span></label>
-          </div>
-          <div class="provider-models">${models}</div>
-          <div class="provider-foot">${foot}</div>
-        </div>`;
+      function isCodingPlan(id) {
+        return String(id).endsWith('codingplan');
       }
 
-      function renderAi() {
-        $('menuHideProvider').checked = ai.menu.hideProvider;
-        $('menuHideServiceModel').checked = ai.menu.hideServiceModel;
-        $('providerGrid').innerHTML = Object.keys(CATALOG).map(providerCard).join('');
-        renderDefaultModel();
-        renderSlots();
-        $('aiFootNote').textContent = `当前生效：${AFFECTED_USERS.toLocaleString('en-US')} 位用户 · 上次保存 11-19 17:26 · 张伟`;
+      function isModelOn(providerId, modelId) {
+        return !AI.offModels.has(`${providerId}:${modelId}`);
       }
 
-      function renderDefaultModel() {
-        const providers = enabledProviders();
-        if (!providers.includes(ai.defaultModel.provider)) {
-          ai.defaultModel.provider = providers[0] || 'deepseek';
-          ai.defaultModel.model = (ai.providers[ai.defaultModel.provider].models || [])[0] || '';
+      function enabledModelCount(provider) {
+        return provider.models.filter((model) => isModelOn(provider.id, model[0])).length;
+      }
+
+      function setProviderSearch(value) {
+        AI.providerSearch = value;
+        renderProviderMenu();
+      }
+
+      function toggleProviderSection(key) {
+        AI.open[key] = !AI.open[key];
+        renderProviderMenu();
+      }
+
+      function enterProvider() {
+        renderProviderMenu();
+        renderProviderPane();
+      }
+
+      function openProvider(id) {
+        AI.active = id;
+        AI.modelSearch = '';
+        AI.tab = 'all';
+        renderProviderMenu();
+
+        const content = document.querySelector('.provider-content');
+        if (content) content.scrollTop = 0;
+
+        if (id === 'all') {
+          AI.loading = true;
+          renderProviderPane();
+          setTimeout(() => {
+            AI.loading = false;
+            renderProviderPane();
+          }, 240);
+        } else {
+          renderProviderPane();
         }
+      }
 
-        const pid = ai.defaultModel.provider;
-        $('defaultProvider').innerHTML = providers
-          .map((id) => `<option value="${id}" ${id === pid ? 'selected' : ''}>${CATALOG[id].name}</option>`)
+      function renderProviderMenu() {
+        const keyword = AI.providerSearch.trim().toLowerCase();
+        const matched = PROVIDER_DATA.filter(
+          (provider) =>
+            !keyword ||
+            provider.name.toLowerCase().includes(keyword) ||
+            provider.id.toLowerCase().includes(keyword),
+        );
+
+        const sections = [
+          ['enabled', '已启用服务商', matched.filter((provider) => AI.enabled.has(provider.id))],
+          ['custom', '未启用自定义服务商', matched.filter((provider) => provider.custom && !AI.enabled.has(provider.id))],
+          ['disabled', '未启用服务商', matched.filter((provider) => !provider.custom && !AI.enabled.has(provider.id))],
+        ].filter((entry) => entry[2].length > 0);
+
+        const body = sections
+          .map(([key, title, providers]) => {
+            const action =
+              key === 'enabled' || key === 'disabled'
+                ? `<span class="pv-section-action" role="button" title="排序"
+                     onclick="event.stopPropagation(); toast('原型仅演示：按使用频率拖动排序服务商')">
+                     <svg class="icon-sm" viewBox="0 0 24 24"><path d="m8 6 4-4 4 4M12 2v14M8 18l4 4 4-4" /></svg>
+                   </span>`
+                : '';
+
+            const items = providers
+              .map(
+                (provider) => `<button class="pv-item ${AI.active === provider.id ? 'active' : ''}"
+                   onclick="openProvider('${provider.id}')">
+                   <span class="pv-logo" style="--pv-color: ${providerColor(provider.id)}">${esc(providerInitial(provider.name))}</span>
+                   <span class="pv-item-title">${esc(provider.name)}</span>
+                   <span class="pv-item-state">${AI.enabled.has(provider.id) ? '<i></i>' : ''}</span>
+                 </button>`,
+              )
+              .join('');
+
+            return `<div class="pv-section" data-open="${AI.open[key]}">
+                <div class="pv-section-head" role="button" tabindex="0" onclick="toggleProviderSection('${key}')">
+                  <svg class="pv-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+                  <span>${title}</span>
+                  <span class="tag">${providers.length}</span>
+                  ${action}
+                </div>
+                <div class="pv-list">${items}</div>
+              </div>`;
+          })
           .join('');
 
-        const models = ai.providers[pid].models;
-        $('defaultModel').innerHTML = models.length
-          ? models
-              .map(
-                (model) =>
-                  `<option value="${model}" ${model === ai.defaultModel.model ? 'selected' : ''}>${model}</option>`,
-              )
-              .join('')
-          : '<option value="">无可用模型</option>';
+        const allRow = `<button class="pv-item is-all ${AI.active === 'all' ? 'active' : ''}"
+             onclick="openProvider('all')">
+             <span class="pv-logo pv-logo-all">
+               <svg class="icon-sm" viewBox="0 0 24 24"><path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3Z" /><path d="M4 10h16" /></svg>
+             </span>
+             <span class="pv-item-title">全部</span>
+           </button>`;
+
+        $('providerMenuBody').innerHTML = allRow + (body || '<div class="empty">没有匹配的服务商</div>');
+        $('providerMenuFoot').textContent = `共 ${PROVIDER_DATA.length} 个服务商 · ${AI.enabled.size} 个已启用`;
       }
 
-      function renderSlots() {
-        $('slotRows').innerHTML = SLOTS.map(([key, title, desc]) => {
-          const options = slotOptions(key)
-            .map(
-              (value) =>
-                `<option value="${value}" ${value === ai.slots[key] ? 'selected' : ''}>${value}</option>`,
-            )
-            .join('');
-          return `<div class="setting-row">
-            <div>
-              <span class="setting-row-title">${title}</span>
-              <span class="setting-row-desc">${desc}</span>
-            </div>
-            <select class="control" onchange="setSlot('${key}', this.value)">${options}</select>
-          </div>`;
-        }).join('');
+      function renderProviderPane() {
+        if (AI.active === 'all') {
+          $('providerPane').innerHTML = renderProviderGrid();
+          return;
+        }
+        $('providerPane').innerHTML = renderProviderDetail();
       }
 
-      function setMenu(key, checked) {
-        ai.menu[key] = checked;
-        renderAi();
+      function providerCard(provider) {
+        const on = AI.enabled.has(provider.id);
+        const codingPlan = isCodingPlan(provider.id);
+        return `<div class="pv-card ${on ? '' : 'is-off'}" role="button" tabindex="0"
+             onclick="openProvider('${provider.id}')">
+             <div class="pv-card-head">
+               <span class="pv-logo" style="--pv-color: ${providerColor(provider.id)}">${esc(providerInitial(provider.name))}</span>
+               <span class="pv-card-name">${esc(provider.name)}</span>
+               ${codingPlan ? '<span class="tag" style="color: var(--lobe-color-primary)">Coding Plan</span>' : ''}
+               ${provider.custom ? '<span class="tag">自定义</span>' : ''}
+             </div>
+             <div class="pv-card-desc">${esc(provider.desc)}</div>
+             <div class="pv-card-foot">
+               <span>${on ? `已启用 ${enabledModelCount(provider)} 个模型` : `${provider.models.length} 个模型`}</span>
+               <label class="switch" onclick="event.stopPropagation()">
+                 <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleProvider('${provider.id}', this.checked)" />
+                 <span></span>
+               </label>
+             </div>
+           </div>`;
       }
 
-      function toggleProvider(id, checked) {
-        ai.providers[id].enabled = checked;
-        if (!checked) ai.providers[id].models = [];
-        else if (!ai.providers[id].models.length) ai.providers[id].models = [CATALOG[id].models[0]];
-
-        if (!checked && ai.defaultModel.provider === id) {
-          const fallback = Object.keys(CATALOG).find((key) => ai.providers[key].enabled);
-          if (fallback) {
-            ai.defaultModel.provider = fallback;
-            ai.defaultModel.model = ai.providers[fallback].models[0];
-          }
+      function renderProviderGrid() {
+        if (AI.loading) {
+          const skeletons = Array.from({ length: 12 }, () => '<div class="pv-card-skeleton"></div>').join('');
+          return `<section class="pv-grid-section"><div class="pv-grid">${skeletons}</div></section>`;
         }
 
-        renderAi();
+        const groups = [
+          [
+            '已启用服务商',
+            PROVIDER_DATA.filter((provider) => AI.enabled.has(provider.id)),
+            '<button class="pv-grid-action" onclick="toast(\'原型仅演示：按使用频率排序\')">↕ 排序</button>',
+          ],
+          [
+            '未启用自定义服务商',
+            PROVIDER_DATA.filter((provider) => provider.custom && !AI.enabled.has(provider.id)),
+            '',
+          ],
+          [
+            '未启用服务商',
+            PROVIDER_DATA.filter((provider) => !provider.custom && !AI.enabled.has(provider.id)),
+            '<button class="pv-grid-action" onclick="toast(\'原型仅演示：按使用频率排序\')">↕ 排序</button>',
+          ],
+        ].filter((entry) => entry[1].length > 0);
+
+        return groups
+          .map(
+            ([title, providers, action]) => `<section class="pv-grid-section">
+                <div class="pv-grid-head">
+                  <strong>${title}</strong>
+                  <span class="tag">${providers.length}</span>
+                  ${action}
+                </div>
+                <div class="pv-grid">${providers.map((provider) => providerCard(provider)).join('')}</div>
+              </section>`,
+          )
+          .join('');
       }
 
-      function toggleModel(id, model) {
-        const conf = ai.providers[id];
-        if (!conf.enabled) return;
+      function modelRow(provider, model) {
+        const [id, name, type] = model;
+        const on = isModelOn(provider.id, id);
+        return `<div class="ml-row">
+             <span class="ml-row-name" title="${esc(id)}">${esc(name || id)}</span>
+             <span class="ml-row-tags">
+               <span class="tag">${esc(PV_TYPE_LABEL[type] || type)}</span>
+             </span>
+             <span class="ml-row-actions">
+               <button class="icon-btn" title="编辑模型" onclick="toast('原型仅演示：编辑模型信息')">
+                 <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+               </button>
+               <button class="icon-btn" title="删除模型" onclick="toast('原型仅演示：删除自定义模型')">
+                 <svg class="icon-sm" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+               </button>
+             </span>
+             <label class="switch">
+               <input type="checkbox" ${on ? 'checked' : ''} data-pid="${esc(provider.id)}" data-mid="${esc(id)}"
+                 onchange="toggleModel(this)" />
+               <span></span>
+             </label>
+           </div>`;
+      }
 
-        if (conf.models.includes(model)) {
-          if (conf.models.length === 1) return toast('每个服务商至少要保留一个模型');
-          conf.models = conf.models.filter((item) => item !== model);
-          if (ai.defaultModel.provider === id && ai.defaultModel.model === model) {
-            ai.defaultModel.model = conf.models[0];
+      function modelGroup(title, rows, provider) {
+        return `<div class="ml-group-head"><span>${title}</span><span class="tag">${rows.length}</span></div>
+             ${rows.map((model) => modelRow(provider, model)).join('')}`;
+      }
+
+      function renderModelList(provider) {
+        const counts = {};
+        provider.models.forEach((model) => {
+          counts[model[2]] = (counts[model[2]] || 0) + 1;
+        });
+
+        const tabs = PV_TAB_ORDER.filter((key) => key === 'all' || counts[key] > 0)
+          .map((key) => {
+            const count = key === 'all' ? provider.models.length : counts[key];
+            return `<button class="ml-tab ${AI.tab === key ? 'active' : ''}" onclick="setModelTab('${key}')">
+                ${esc(PV_TYPE_LABEL[key])}${count > 0 ? ` (${count})` : ''}
+              </button>`;
+          })
+          .join('');
+
+        const keyword = AI.modelSearch.trim().toLowerCase();
+        const visible = provider.models.filter((model) => {
+          if (AI.tab !== 'all' && model[2] !== AI.tab) return false;
+          if (!keyword) return true;
+          return model[0].toLowerCase().includes(keyword) || String(model[1] || '').toLowerCase().includes(keyword);
+        });
+
+        const onRows = visible.filter((model) => isModelOn(provider.id, model[0]));
+        const offRows = visible.filter((model) => !isModelOn(provider.id, model[0]));
+
+        let rows = '';
+        if (onRows.length) rows += modelGroup('已启用', onRows, provider);
+        if (offRows.length) rows += modelGroup('未启用', offRows, provider);
+        if (!visible.length) rows = '<div class="ml-more">没有匹配的模型</div>';
+
+        return `<div class="ml-block">
+             <div class="ml-tabs">${tabs}</div>
+             <div class="ml-head">
+               <strong>${provider.models.length} 个模型</strong>
+               <label class="search">
+                 <svg class="icon-sm" viewBox="0 0 24 24" style="flex: none">
+                   <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+                 </svg>
+                 <input id="modelSearch" type="search" placeholder="搜索模型" autocomplete="off"
+                   value="${esc(AI.modelSearch)}" oninput="setModelSearch(this.value)" />
+               </label>
+               <button class="icon-btn" title="刷新模型列表" onclick="toast('原型仅演示：从服务商拉取最新模型列表')">
+                 <svg class="icon-sm" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6" /></svg>
+               </button>
+               <button class="btn btn-sm" onclick="toast('原型仅演示：添加自定义模型')">新增</button>
+             </div>
+             ${rows}
+           </div>`;
+      }
+
+      function renderProviderDetail() {
+        const provider = PROVIDER_BY_ID.get(AI.active);
+        if (!provider) return renderProviderGrid();
+
+        const on = AI.enabled.has(provider.id);
+        const checkState = AI.checked[provider.id];
+        const checkText = checkState === 'pending' ? '检查中…' : checkState === 'ok' ? '连接正常 · 312ms' : '';
+        const checkClass = checkState === 'error' ? 'pv-check-result is-error' : 'pv-check-result';
+
+        return `<div class="pv-crumb">
+             <button onclick="openProvider('all')">AI 服务商</button>
+             <span>/</span>
+             <span>${esc(provider.name)}</span>
+           </div>
+           <div class="pv-detail">
+             <div class="pv-detail-head">
+               <div class="pv-detail-title">
+                 <span class="pv-logo pv-logo-lg" style="--pv-color: ${providerColor(provider.id)}">${esc(providerInitial(provider.name))}</span>
+                 <div>
+                   <h2>${esc(provider.name)}</h2>
+                   <p class="pv-detail-sub">
+                     ${provider.custom ? '自定义服务商' : '内置服务商'} · ${provider.models.length} 个模型 ·
+                     已启用 ${enabledModelCount(provider)} 个 · 配置对全部用户生效
+                   </p>
+                 </div>
+               </div>
+               <label class="switch">
+                 <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleProvider('${provider.id}', this.checked)" />
+                 <span></span>
+               </label>
+             </div>
+
+             <div>
+               <div class="pv-config-row">
+                 <div class="pv-config-label">
+                   <strong>API Key</strong>
+                   <span>全局密钥，仅服务端调用时使用；用户端不下发</span>
+                 </div>
+                 <div class="pv-config-actions">
+                   <input class="pv-input" type="password" value="sk-admin-${esc(provider.id)}-••••••" />
+                   <button class="btn btn-sm" onclick="checkProvider('${provider.id}')">检查</button>
+                   <span class="${checkClass}" id="pvCheck">${checkText}</span>
+                 </div>
+               </div>
+               <div class="pv-config-row">
+                 <div class="pv-config-label">
+                   <strong>API 代理地址</strong>
+                   <span>必须包含 http(s)://；留空使用服务商默认地址，内网服务商必须填写</span>
+                 </div>
+                 <div class="pv-config-actions">
+                   <input class="pv-input" placeholder="https://api.example.com/v1"
+                     value="${provider.custom ? 'http://10.10.10.118:8080/v1' : ''}" />
+                 </div>
+               </div>
+               <div class="pv-config-row">
+                 <div class="pv-config-label">
+                   <strong>客户端请求</strong>
+                   <span>开启后由浏览器直连服务商，密钥随请求下发；托管模式保持关闭</span>
+                 </div>
+                 <div class="pv-config-actions">
+                   <label class="switch"><input type="checkbox" /><span></span></label>
+                 </div>
+               </div>
+             </div>
+
+             ${renderModelList(provider)}
+           </div>`;
+      }
+
+      function setModelTab(key) {
+        AI.tab = key;
+        renderProviderPane();
+      }
+
+      function setModelSearch(value) {
+        AI.modelSearch = value;
+        renderProviderPane();
+        const input = $('modelSearch');
+        if (input) {
+          input.focus();
+          const end = input.value.length;
+          input.setSelectionRange(end, end);
+        }
+      }
+
+      function toggleProvider(id, on) {
+        if (on) AI.enabled.add(id);
+        else AI.enabled.delete(id);
+        renderProviderMenu();
+        renderProviderPane();
+        if (state.page === 'service-model') renderServiceModel();
+        const provider = PROVIDER_BY_ID.get(id);
+        toast(`${on ? '已启用' : '已停用'} ${provider ? provider.name : id}`);
+      }
+
+      function toggleModel(input) {
+        const key = `${input.dataset.pid}:${input.dataset.mid}`;
+        if (input.checked) AI.offModels.delete(key);
+        else AI.offModels.add(key);
+        renderProviderPane();
+        if (state.page === 'service-model') renderServiceModel();
+      }
+
+      function checkProvider(id) {
+        AI.checked[id] = 'pending';
+        const node = $('pvCheck');
+        if (node) {
+          node.className = 'pv-check-result';
+          node.textContent = '检查中…';
+        }
+        setTimeout(() => {
+          AI.checked[id] = 'ok';
+          const live = $('pvCheck');
+          if (live) {
+            live.className = 'pv-check-result';
+            live.textContent = '连接正常 · 312ms';
           }
-        } else {
-          conf.models = [...conf.models, model];
+          toast('连通性正常');
+        }, 600);
+      }
+
+      /* ------------------------------------------------------------ 服务模型 */
+
+      const SM_FOLLOW = '__follow__';
+      const SM_OFF = '__off__';
+
+      const SM_SLOT_META = {
+        defaultAgent: { title: '新建助理', desc: '创建新助理时使用的模型' },
+        agentMeta: { title: '档案信息生成', desc: '从对话里提取档案信息' },
+        expertise: { title: 'Agent 自进化', desc: '总结并沉淀可复用的经验' },
+        goal: { title: '目标创建', desc: '把长任务拆成可执行目标' },
+        topicAutoSummary: { title: '话题自动总结', desc: '长会话自动生成标题与摘要' },
+        topic: { title: '话题自动命名', desc: '首条消息后生成话题名' },
+        thread: { title: '子话题自动命名', desc: '子话题生成名称' },
+        generationTopic: { title: 'AI 图片话题命名', desc: '生成图片任务的话题名' },
+        translation: { title: '消息内容翻译', desc: '跨语言消息即时翻译' },
+        promptRewrite: { title: '提示词改写', desc: '发送前优化提示词' },
+        memoryAnalysisAgentConfig: { title: '记忆分析', desc: '判断哪些内容值得记住' },
+        userMemoryPersonaWriter: { title: '记忆画像写入', desc: '把记忆合并进用户画像' },
+        inputCompletion: { title: '输入建议', desc: '输入框内的续写建议' },
+        followUpAction: { title: '跟进建议', desc: '回复后推荐下一步动作' },
+        verify: { title: '任务验收', desc: '检查交付是否满足要求（需支持视觉）' },
+        userMemoryEmbedding: { title: '记忆向量化', desc: '记忆检索的向量模型' },
+        fileEmbedding: { title: '文件与知识库向量化', desc: '上传文件与知识库切片入库' },
+        asr: { title: '语音消息转写', desc: '把语音消息转成文字' },
+        channelRouting: { title: '频道决策模型', desc: '群消息交给哪个 Agent 处理' },
+      };
+
+      const SM_TIERS = [
+        {
+          key: 'main',
+          title: '主模型',
+          desc: '创作、推理等看重质量的任务',
+          kind: 'chat',
+          rows: ['defaultAgent', 'agentMeta', 'expertise', 'goal', 'topicAutoSummary'],
+          advanced: ['agentMeta', 'expertise', 'goal', 'topicAutoSummary'],
+        },
+        {
+          key: 'flash',
+          title: 'Flash',
+          desc: '高频任务，速度与成本优先',
+          kind: 'chat',
+          rows: [
+            'topic',
+            'thread',
+            'generationTopic',
+            'translation',
+            'promptRewrite',
+            'memoryAnalysisAgentConfig',
+            'userMemoryPersonaWriter',
+            'inputCompletion',
+            'followUpAction',
+          ],
+        },
+        { key: 'verify', title: '验收模型', desc: '只列出支持视觉的模型', kind: 'vision', rows: ['verify'] },
+        {
+          key: 'embedding',
+          title: '记忆向量化',
+          desc: '记忆向量化模型；不影响文件和知识库（DEFAULT_FILES_CONFIG）',
+          kind: 'embedding',
+          rows: ['userMemoryEmbedding'],
+        },
+      ];
+
+      const SM_MEMORY_SLOTS = new Set(['memoryAnalysisAgentConfig', 'userMemoryEmbedding', 'userMemoryPersonaWriter']);
+
+      const SM_INITIAL = {
+        defaultAgent: { value: 'deepseek::deepseek-v4-flash' },
+        agentMeta: { value: 'openai::gpt-5.6-luna' },
+        expertise: { value: SM_FOLLOW },
+        goal: { value: SM_FOLLOW },
+        topicAutoSummary: { value: SM_FOLLOW, prompt: '' },
+        topic: { value: SM_FOLLOW },
+        thread: { value: SM_FOLLOW },
+        generationTopic: { value: SM_FOLLOW },
+        translation: { value: SM_FOLLOW },
+        promptRewrite: { value: SM_FOLLOW },
+        memoryAnalysisAgentConfig: { value: 'zhipu::glm-5.3-flash', limit: '8' },
+        userMemoryPersonaWriter: { value: SM_FOLLOW },
+        inputCompletion: { value: SM_FOLLOW },
+        followUpAction: { value: SM_FOLLOW },
+        verify: { value: SM_FOLLOW },
+        userMemoryEmbedding: { value: 'custom-gw::bge-m3', limit: '5' },
+        fileEmbedding: { value: SM_FOLLOW },
+        asr: { value: SM_FOLLOW },
+        channelRouting: { value: SM_FOLLOW },
+      };
+
+      let smSaveTimer = null;
+
+      function slotTier(key) {
+        const tier = SM_TIERS.find((entry) => entry.rows.includes(key));
+        if (tier) return tier.key;
+        if (key === 'fileEmbedding') return 'fileEmbedding';
+        if (key === 'asr') return 'asr';
+        if (key === 'channelRouting') return 'channelRouting';
+        return 'main';
+      }
+
+      function isCustomSlot(key) {
+        const slot = AI.slots[key];
+        return !!slot && slot.value !== SM_FOLLOW && slot.value !== SM_OFF;
+      }
+
+      function mainModelLabel() {
+        const slot = AI.slots.defaultAgent;
+        if (!slot) return '未设置';
+        const [providerId, modelId] = String(slot.value).split('::');
+        const provider = PROVIDER_BY_ID.get(providerId);
+        if (!provider) return '未设置';
+        const model = provider.models.find((entry) => entry[0] === modelId);
+        return model ? model[1] || model[0] : modelId || '未设置';
+      }
+
+      function slotKindMatch(type, kind) {
+        if (kind === 'embedding') return type === 'embedding';
+        if (kind === 'vision') return type === 'chat' || type === 'realtime';
+        if (kind === 'asr') return type === 'asr';
+        return type === 'chat';
+      }
+
+      function slotOptionGroups(kind, current) {
+        const groups = PROVIDER_DATA.filter((provider) => AI.enabled.has(provider.id))
+          .map((provider) => {
+            const models = provider.models.filter((model) => slotKindMatch(model[2], kind));
+            if (!models.length) return '';
+            const options = models
+              .map((model) => {
+                const value = `${provider.id}::${model[0]}`;
+                return `<option value="${esc(value)}" ${current === value ? 'selected' : ''}>${esc(model[1] || model[0])}</option>`;
+              })
+              .join('');
+            return `<optgroup label="${esc(provider.name)}">${options}</optgroup>`;
+          })
+          .filter(Boolean)
+          .join('');
+
+        return groups || '<optgroup label="没有可用模型"><option disabled>先启用带该类模型的服务商</option></optgroup>';
+      }
+
+      function slotSelect(key, kind, tierKey) {
+        const slot = AI.slots[key] || { value: SM_FOLLOW };
+        const value = slot.value;
+        const custom = value !== SM_FOLLOW && value !== SM_OFF;
+        const followLabel = tierKey === 'main' ? `跟随主模型（${mainModelLabel()}）` : '跟随系统推荐';
+
+        return `<select id="slot-${key}" class="sm-select ${custom ? '' : 'is-muted'}"
+             onchange="setSlot('${key}', this.value)" aria-label="${esc(SM_SLOT_META[key].title)}">
+             <option value="${SM_FOLLOW}" ${value === SM_FOLLOW ? 'selected' : ''}>${esc(followLabel)}</option>
+             <option value="${SM_OFF}" ${value === SM_OFF ? 'selected' : ''}>不启用</option>
+             ${slotOptionGroups(kind, custom ? value : '')}
+           </select>`;
+      }
+
+      function smRow(key, kind, tierKey) {
+        const meta = SM_SLOT_META[key];
+        const slot = AI.slots[key] || { value: SM_FOLLOW };
+        const off = slot.value === SM_OFF;
+        const extras = [];
+
+        if (SM_MEMORY_SLOTS.has(key) && isCustomSlot(key)) {
+          extras.push(`<input class="pv-input sm-limit" placeholder="上下文限制" value="${esc(slot.limit || '')}"
+            onchange="setSlotLimit('${key}', this.value)" />`);
+        }
+        if (key === 'topicAutoSummary') {
+          extras.push(`<textarea class="pv-input sm-prompt" placeholder="自定义总结提示词，留空使用默认"
+            onchange="setSlotPrompt('${key}', this.value)">${esc(slot.prompt || '')}</textarea>`);
         }
 
-        renderAi();
+        return `<div class="sm-row ${off ? 'is-off' : ''}">
+             <div>
+               <div class="sm-row-title">${esc(meta.title)}${off ? ' <span class="tag">不启用</span>' : ''}</div>
+               <span class="sm-row-desc">${esc(meta.desc)}</span>
+             </div>
+             <div class="sm-row-control">${slotSelect(key, kind, tierKey)}${extras.join('')}</div>
+           </div>`;
       }
 
-      function setDefaultProvider(id) {
-        ai.defaultModel.provider = id;
-        ai.defaultModel.model = ai.providers[id].models[0] || '';
-        renderDefaultModel();
+      function saveHint(tier) {
+        if (AI.saving === tier) return `<span class="sm-save" data-save-tier="${tier}">保存中…</span>`;
+        const label = AI.saved === tier ? '已保存 刚刚' : '已保存';
+        return `<span class="sm-save is-saved" data-save-tier="${tier}">${label}</span>`;
       }
 
-      function setDefaultModel(model) {
-        ai.defaultModel.model = model;
+      function smCard(tier, body) {
+        return `<div class="form-group">
+             <div class="form-group-card">
+               <div class="form-group-header">
+                 <div>
+                   <div class="form-group-title">${esc(tier.title)}</div>
+                   <div class="sm-tier-desc">${esc(tier.desc)}</div>
+                 </div>
+                 ${saveHint(tier.key)}
+               </div>
+               <div class="form-group-body">${body}</div>
+             </div>
+           </div>`;
+      }
+
+      function smAdvanced() {
+        const keys = ['agentMeta', 'expertise', 'goal', 'topicAutoSummary'];
+        const custom = keys.filter((key) => isCustomSlot(key)).length;
+        const summary = [`${keys.length} 项任务`, custom ? `${custom} 项自定` : '', '其余跟随主模型']
+          .filter(Boolean)
+          .join('，');
+
+        return `<details class="sm-advanced" ${AI.advancedOpen ? 'open' : ''}>
+             <summary onclick="toggleAdvanced(event)">
+               <svg class="pv-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>
+               <span>高级</span>
+               <span class="sm-row-desc">${summary}</span>
+               <span style="margin-inline-start: auto">${AI.advancedOpen ? '收起' : '展开'}</span>
+               ${custom ? '<button class="btn btn-sm btn-text" onclick="event.stopPropagation(); event.preventDefault(); restoreTier()">全部恢复</button>' : ''}
+             </summary>
+             <div class="sm-advanced-body">${keys.map((key) => smRow(key, 'chat', 'main')).join('')}</div>
+           </details>`;
+      }
+
+      function smVisibility() {
+        return `<div class="form-group sm-visibility" id="userMenuCard">
+             <div class="form-group-card">
+               <div class="form-group-header">
+                 <div>
+                   <div class="form-group-title">用户设置里的 AI 菜单</div>
+                   <div class="form-group-desc">
+                     控制普通用户在自己的「设置」里能否看到这两个菜单。控制台只有管理员能进，这里只影响用户侧。
+                   </div>
+                 </div>
+               </div>
+               <div class="form-group-body">
+                 <div class="setting-row">
+                   <div>
+                     <span class="setting-row-title">在用户设置中显示「AI 服务商」</span>
+                     <span class="setting-row-desc">关闭后该菜单从用户设置中消失；直达 URL 被拦回设置首页，服务端写入返回 FORBIDDEN</span>
+                   </div>
+                   <label class="switch" style="justify-self: end">
+                     <input type="checkbox" data-user-menu="hideProvider" ${AI.menu.hideProvider ? '' : 'checked'}
+                       onchange="setUserMenu('hideProvider', this.checked)" />
+                     <span></span>
+                   </label>
+                 </div>
+                 <div class="setting-row">
+                   <div>
+                     <span class="setting-row-title">在用户设置中显示「服务模型」</span>
+                     <span class="setting-row-desc">关闭后用户不再看到槽位配置；服务模型始终由管理员统一定义</span>
+                   </div>
+                   <label class="switch" style="justify-self: end">
+                     <input type="checkbox" data-user-menu="hideServiceModel" ${AI.menu.hideServiceModel ? '' : 'checked'}
+                       onchange="setUserMenu('hideServiceModel', this.checked)" />
+                     <span></span>
+                   </label>
+                 </div>
+                 <p class="tiny muted" id="userMenuSummary" style="margin: 4px 0 0">
+                   ${userMenuSummary()}
+                 </p>
+               </div>
+             </div>
+           </div>`;
+      }
+
+      function renderServiceModel() {
+        if (!AI.slots.defaultAgent) AI.slots = JSON.parse(JSON.stringify(SM_INITIAL));
+
+        const cards = SM_TIERS.map((tier) => {
+          if (tier.key === 'main') {
+            const body = `<p class="sm-note">
+                主模型用于所有未单独指定的任务；「新建助理」决定用户创建助理时的默认模型。
+              </p>${smRow('defaultAgent', 'chat', 'main')}${smAdvanced()}`;
+            return smCard(tier, body);
+          }
+          return smCard(
+            tier,
+            tier.rows.map((key) => smRow(key, tier.kind, tier.key)).join(''),
+          );
+        });
+
+        cards.push(
+          smCard(
+            { key: 'fileEmbedding', title: '文件与知识库向量化', desc: '影响文件和知识库检索；不设置时回落到记忆向量化模型' },
+            smRow('fileEmbedding', 'embedding', 'fileEmbedding'),
+          ),
+        );
+        cards.push(
+          smCard(
+            { key: 'asr', title: '语音消息转写', desc: '把语音消息转成文字；不设置时用户需手动输入' },
+            smRow('asr', 'asr', 'asr'),
+          ),
+        );
+        cards.push(
+          smCard(
+            { key: 'channelRouting', title: '频道决策模型', desc: '群消息交给哪个 Agent 处理；仅在开启频道时生效' },
+            smRow('channelRouting', 'chat', 'channelRouting'),
+          ),
+        );
+        cards.unshift(smVisibility());
+
+        $('serviceModelForm').innerHTML = cards.join('');
+        $('smFootNote').textContent = AI.savedAt
+          ? `最近保存 ${AI.savedAt}，已对全部 ${AFFECTED_USERS.toLocaleString('en-US')} 位用户生效。`
+          : `保存后立即对全部 ${AFFECTED_USERS.toLocaleString('en-US')} 位用户生效；未单独指定的任务跟随所在层的主模型。`;
+      }
+
+      function touchTier(tier) {
+        AI.saving = tier;
+        renderServiceModel();
+        clearTimeout(smSaveTimer);
+        smSaveTimer = setTimeout(() => {
+          AI.saving = null;
+          AI.saved = tier;
+          AI.savedAt = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+          renderServiceModel();
+        }, 450);
       }
 
       function setSlot(key, value) {
-        ai.slots[key] = value;
+        AI.slots[key] = Object.assign({}, AI.slots[key], { value });
+        touchTier(slotTier(key));
       }
 
-      function resetAi() {
-        ai = clone(aiSaved);
-        renderAi();
-        toast('已还原为上次保存的配置');
+      function markSaved(tier) {
+        AI.saved = tier;
+        AI.savedAt = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        const node = document.querySelector(`[data-save-tier="${tier}"]`);
+        if (!node) return;
+        node.className = 'sm-save is-saved';
+        node.textContent = '已保存 刚刚';
       }
 
-      function aiDiff() {
-        const lines = [];
-
-        if (ai.menu.hideProvider !== aiSaved.menu.hideProvider) {
-          lines.push(`「AI 服务商」菜单：${ai.menu.hideProvider ? '对非管理员隐藏' : '恢复可见'}`);
-        }
-        if (ai.menu.hideServiceModel !== aiSaved.menu.hideServiceModel) {
-          lines.push(`「服务模型」菜单：${ai.menu.hideServiceModel ? '对非管理员隐藏' : '恢复可见'}`);
-        }
-
-        const disabled = Object.keys(CATALOG).filter(
-          (id) => aiSaved.providers[id].enabled && !ai.providers[id].enabled,
-        );
-        if (disabled.length) {
-          lines.push(`停用服务商：${disabled.map((id) => CATALOG[id].name).join('、')}`);
-        }
-
-        const enabled = Object.keys(CATALOG).filter(
-          (id) => !aiSaved.providers[id].enabled && ai.providers[id].enabled,
-        );
-        if (enabled.length) {
-          lines.push(`启用服务商：${enabled.map((id) => CATALOG[id].name).join('、')}`);
-        }
-
-        const removed = Object.keys(CATALOG).reduce((sum, id) => {
-          const before = aiSaved.providers[id].models.length;
-          const after = ai.providers[id].models.length;
-          return sum + (ai.providers[id].enabled ? Math.max(0, before - after) : before);
-        }, 0);
-        if (removed) lines.push(`从白名单移除 ${removed} 个模型`);
-
-        const before = `${aiSaved.defaultModel.provider}/${aiSaved.defaultModel.model}`;
-        const after = `${ai.defaultModel.provider}/${ai.defaultModel.model}`;
-        if (before !== after) lines.push(`默认模型：${before} → ${after}`);
-
-        const slotChanges = SLOTS.filter(([key]) => ai.slots[key] !== aiSaved.slots[key]);
-        if (slotChanges.length) {
-          lines.push(`服务模型变更 ${slotChanges.length} 个槽位：${slotChanges.map(([, title]) => title).join('、')}`);
-        }
-
-        return lines;
+      function setSlotLimit(key, value) {
+        AI.slots[key] = Object.assign({}, AI.slots[key], { limit: value });
+        markSaved(slotTier(key));
       }
 
-      function openAiModal() {
-        const lines = aiDiff();
-        $('aiDiff').innerHTML = lines.length
-          ? `<ul style="margin: 0; padding-left: 18px">${lines.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>`
-          : '<span class="muted">没有需要保存的变更。</span>';
-        $('aiModal').classList.add('show');
+      function setSlotPrompt(key, value) {
+        AI.slots[key] = Object.assign({}, AI.slots[key], { prompt: value });
+        markSaved(slotTier(key));
       }
 
-      function closeAiModal() {
-        $('aiModal').classList.remove('show');
+      function toggleAdvanced(event) {
+        event.preventDefault();
+        AI.advancedOpen = !AI.advancedOpen;
+        renderServiceModel();
       }
 
-      function confirmAi() {
-        const lines = aiDiff();
-        aiSaved = clone(ai);
-        closeAiModal();
-        if (lines.length) {
-          logAudit({
-            action: 'ai.update',
-            target: '全局 AI 配置',
-            detail: { before: lines.length ? '见上一版配置' : '—', after: lines.join('；') },
-          });
-        }
-        toast(`已保存并同步 ${AFFECTED_USERS.toLocaleString('en-US')} 位用户`);
+      function restoreTier() {
+        ['agentMeta', 'expertise', 'goal', 'topicAutoSummary'].forEach((key) => {
+          AI.slots[key] = Object.assign({}, AI.slots[key], { value: SM_FOLLOW });
+        });
+        AI.saved = 'main';
+        renderServiceModel();
+        toast('高级任务已恢复为跟随主模型');
+      }
+
+      function resetServiceModel() {
+        AI.slots = JSON.parse(JSON.stringify(SM_INITIAL));
+        AI.saved = null;
+        AI.savedAt = '';
+        renderServiceModel();
+        toast('已还原为系统推荐配置');
+      }
+
+      /* ---------------------------------------------- 用户设置里的 AI 菜单 */
+
+      function userMenuSummary() {
+        const items = [
+          AI.menu.hideProvider ? '' : 'AI 服务商',
+          AI.menu.hideServiceModel ? '' : '服务模型',
+        ].filter(Boolean);
+        return items.length ? `用户侧「设置」中可见：${items.join('、')}` : '用户侧「设置」中不显示任何 AI 菜单';
+      }
+
+      function setUserMenu(key, visible) {
+        AI.menu[key] = !visible;
+        renderServiceModel();
+        toast(visible ? '已允许用户在设置中看到该菜单' : '已从用户设置中移除该菜单');
+      }
+
+      function initAiSurfaces() {
+        AI.slots = JSON.parse(JSON.stringify(SM_INITIAL));
+        renderProviderMenu();
+        renderServiceModel();
       }
 
       /* ------------------------------------------------------------ 用户 */
@@ -3629,17 +4979,7 @@
       }
 
       function deviceRows() {
-        if (!state.deviceEmpty) {
-          if (state.view === 'user') {
-            return DEVICES.filter(
-              (device) =>
-                device.audience === 'all' ||
-                (device.audience === 'users' && device.users.includes(PREVIEW_USER)),
-            );
-          }
-          return DEVICES;
-        }
-        return [];
+        return state.deviceEmpty ? [] : DEVICES;
       }
 
       function toggleDeviceEmpty() {
@@ -3650,7 +4990,6 @@
 
       function renderDevices() {
         const rows = deviceRows();
-        const inUserView = state.view === 'user';
 
         $('deviceCount').textContent = rows.length ? `共 ${rows.length} 台设备` : '设备池为空';
 
@@ -3679,9 +5018,7 @@
                   ? '<span class="tag tag-success">在线</span>'
                   : '<span class="tag">离线</span>'
               }</td>
-              <td>${
-                inUserView ? '<span class="tag tag-alpha">已分配给你</span>' : audienceBadge(device)
-              }</td>
+              <td>${audienceBadge(device)}</td>
               <td class="tiny muted">${esc(device.last)}</td>
             </tr>`,
           )
@@ -3691,11 +5028,6 @@
       function openDeviceDrawer(id) {
         const device = DEVICES.find((item) => item.id === id);
         if (!device) return;
-
-        if (state.view === 'user') {
-          toast('普通用户只能使用设备，不能修改分配（管理员视角可用）');
-          return;
-        }
 
         state.currentDevice = device;
         renderDeviceDrawer();
@@ -3948,8 +5280,10 @@
 
       function init() {
         document.documentElement.dataset.theme = 'light';
+        const navAvatar = $('navAvatar');
+        if (navAvatar) navAvatar.innerHTML = pixelAvatar('管理员');
         renderThemeIcon();
-        renderAi();
+        initAiSurfaces();
         renderUsers();
         renderDevices();
         renderAudit();
@@ -3959,7 +5293,6 @@
           if (event.key !== 'Escape') return;
           closeUserDrawer();
           closeDeviceDrawer();
-          closeAiModal();
           closeCliModal();
         });
       }

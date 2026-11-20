@@ -5,33 +5,33 @@
 
 第三版在第二版基础上做了一次**范围再收窄 + 侵入面重估**：
 
-| 第二版 | 第三版 |
-| --- | --- |
-| 四块并列（用户 / 审计 / AI / 设备） | 三块，且**用户与审计先行、可独立上线**；AI 与设备各自成阶段 |
-| 顺带提到外观 / 快捷键 / 数据统计 | 明确**连管理入口都不做**（§1.2 给了产品理由） |
-| AI 托管含菜单隐藏 + 写拒绝 + 传播 | 保留，但把写拒绝从「16 个 mutation 逐个改」压到「2 个 base procedure 各加 1 行」 |
-| 设备池落在自建 router + 改 device router 汇总 | 池接口挂到上游预留的 `businessDeviceRouter`，**device router 汇总文件零改动** |
-| 侵入清单按「新增 / 共享」粗列，路径有误 | 按「上游预留扩展槽 / 必须改」分类，逐文件标行数，`devices` 落在 `schemas/device.ts`（原文误写 `workspace.ts`） |
+| 第二版                                        | 第三版                                                                                                         |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 四块并列（用户 / 审计 / AI / 设备）           | 三块，且**用户与审计先行、可独立上线**；AI 与设备各自成阶段                                                    |
+| 顺带提到外观 / 快捷键 / 数据统计              | 明确**连管理入口都不做**（§1.2 给了产品理由）                                                                  |
+| AI 托管含菜单隐藏 + 写拒绝 + 传播             | 保留，但把写拒绝从「16 个 mutation 逐个改」压到「2 个 base procedure 各加 1 行」                               |
+| 设备池落在自建 router + 改 device router 汇总 | 池接口挂到上游预留的 `businessDeviceRouter`，**device router 汇总文件零改动**                                  |
+| 侵入清单按「新增 / 共享」粗列，路径有误       | 按「上游预留扩展槽 / 必须改」分类，逐文件标行数，`devices` 落在 `schemas/device.ts`（原文误写 `workspace.ts`） |
 
 第四版**不改架构**，只落实本轮产品方确认的五条决定，并订正第三版的两处计数：
 
-| 本轮确认 | 落点 |
-| --- | --- |
-| 外观 / 快捷键不做，连入口都不留 | §1.2 由「建议排除」升为「已确认排除」 |
-| 数据统计不做 | 同上；不占表、RPC、原型页位 |
-| 先做用户管理 + 审计日志 | §1.1、§10：P1 只交付两个页面，AI 与设备入口在 P1 不渲染 |
+| 本轮确认                                              | 落点                                                            |
+| ----------------------------------------------------- | --------------------------------------------------------------- |
+| 外观 / 快捷键不做，连入口都不留                       | §1.2 由「建议排除」升为「已确认排除」                           |
+| 数据统计不做                                          | 同上；不占表、RPC、原型页位                                     |
+| 先做用户管理 + 审计日志                               | §1.1、§10：P1 只交付两个页面，AI 与设备入口在 P1 不渲染         |
 | 设备全局注册给管理员，再由管理员分配「全员 / 部分人」 | §6.1：管理员持有的池行 + 授权表；`devices.userId` 保持 NOT NULL |
-| CLI 要能扩展 | §6.2：`lh device pool …` 挂在现有 `device` 命令组下 |
+| CLI 要能扩展                                          | §6.2：`lh device pool …` 挂在现有 `device` 命令组下             |
 
 ## 1. 范围
 
 ### 1.1 三块能力
 
-| 能力 | 用户可见结果 | 交付阶段 |
-| --- | --- | --- |
-| **用户管理 + 审计日志** | `/admin/users` 列表、搜索、详情、禁用/启用、设/撤管理员、会话失效；每次写操作落一条审计 | P1，**可单独上线** |
-| **AI 服务统一托管** | 管理员统一控制 Provider 默认值、可用模型、默认模型、服务模型（4 个层级）；非管理员**看不到**「AI 服务商」「服务模型」两个菜单，服务端同时拒绝其写配置 | P2 |
-| **设备池** | 设备登记进管理员池，管理员分配给全员或指定人；被分配的人在设备列表/选择器里看到并可用；CLI 提供 `lh device pool` 子命令 | P3 |
+| 能力                    | 用户可见结果                                                                                                                                          | 交付阶段           |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| **用户管理 + 审计日志** | `/admin/users` 列表、搜索、详情、禁用 / 启用、设 / 撤管理员、会话失效；每次写操作落一条审计                                                           | P1，**可单独上线** |
+| **AI 服务统一托管**     | 管理员统一控制 Provider 默认值、可用模型、默认模型、服务模型（4 个层级）；非管理员**看不到**「AI 服务商」「服务模型」两个菜单，服务端同时拒绝其写配置 | P2                 |
+| **设备池**              | 设备登记进管理员池，管理员分配给全员或指定人；被分配的人在设备列表 / 选择器里看到并可用；CLI 提供 `lh device pool` 子命令                             | P3                 |
 
 三者互不依赖：P1 交付后即使不做 AI 与设备，也已经是一个可用的「企业账号后台」。因此 **P1 的 `/admin` 只渲染「用户管理」「审计日志」两个导航项**，AI 服务与设备在 P2 / P3 上线时才出现，不交付点了没反应的空页面。
 
@@ -40,8 +40,8 @@
 **管理入口层面（本轮产品方已确认不做，不再作为候选）**：
 
 - 外观（主题、字号、语言）—— 纯个人偏好，管理员强制统一只会让用户困惑，且和「谁能用这套系统」无关；
-- 快捷键 —— 个人输入习惯，且桌面/浏览器差异大，服务端无法可靠校验；
-- 数据统计 —— 属于用量分析（`usage` / `dashboard` 已在上游产品里），不属于账号治理；企业要看出勤/配额应当另接 BI，不做半套统计页。
+- 快捷键 —— 个人输入习惯，且桌面 / 浏览器差异大，服务端无法可靠校验；
+- 数据统计 —— 属于用量分析（`usage` / `dashboard` 已在上游产品里），不属于账号治理；企业要看出勤 / 配额应当另接 BI，不做半套统计页。
 
 这三项不占 `/admin` 的路由、表、RPC 与原型页位。`user_settings` 里的外观与快捷键字段继续由用户自己控制，本方案不对其做任何默认值覆盖。
 
@@ -52,7 +52,7 @@
 - 「仅补齐 / 强制覆盖」双模式；
 - `pagePolicies` 五项（模型 / 实验室 / 服务模型 / 记忆 / 工具）。
 
-理由：这些字段要么是设备本地/用户私有，要么用户希望自己调；真正需要「统一」的只有 Provider 与模型的可用范围、服务模型层级，以及设备归属。
+理由：这些字段要么是设备本地 / 用户私有，要么用户希望自己调；真正需要「统一」的只有 Provider 与模型的可用范围、服务模型层级，以及设备归属。
 
 ### 1.3 保留但降级
 
@@ -61,37 +61,37 @@
 
 ### 1.4 本轮六个问题的结论
 
-| 问题 | 结论 | 理由 |
-| --- | --- | --- |
-| 外观 / 快捷键要做成管理项吗？ | 不做 | 纯个人偏好，强制统一只会让用户困惑，且与服务端权限无关 |
-| 数据统计要做吗？ | 不做 | 上游 `usage` / `dashboard` 已覆盖用量分析，账号治理不需要半套统计 |
-| AI 服务商的默认值和服务模型能统一控制吗？ | 能，两层分别管 | 默认值走 `getServerGlobalConfig` 的默认值链；服务模型走 `user_settings.system_agent` 的托管槽位，保存即传播（§5） |
-| 非管理员能看不到这两个菜单吗？ | 能，且服务端同时拒绝写入 | 菜单只做体验：`showProvider` / `showServiceModel` 由 flag 与管理员策略合成；写入由两个 base procedure 拦（§5.5–5.6） |
-| 设备能全局注册给管理员吗？ | 能，但保持 `devices.userId = 注册管理员` | 这个 `userId` 是 gateway 的寻址 principal（NOT NULL）。改成「无主」要动注册唯一键、gateway 寻址与全部派发路径；「管理员持有 + `pool` 标记 + 授权表」不改既有语义（§6.1） |
-| CLI 能扩展吗？ | 能，零风险 | `registerDeviceCommand` 内部就是 `device.command(...)` 链，新增 `pool` 子命令组只在 `commands/device.ts` 加一行注册（§6.2） |
+| 问题                                      | 结论                                     | 理由                                                                                                                                                                     |
+| ----------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 外观 / 快捷键要做成管理项吗？             | 不做                                     | 纯个人偏好，强制统一只会让用户困惑，且与服务端权限无关                                                                                                                   |
+| 数据统计要做吗？                          | 不做                                     | 上游 `usage` / `dashboard` 已覆盖用量分析，账号治理不需要半套统计                                                                                                        |
+| AI 服务商的默认值和服务模型能统一控制吗？ | 能，两层分别管                           | 默认值走 `getServerGlobalConfig` 的默认值链；服务模型走 `user_settings.system_agent` 的托管槽位，保存即传播（§5）                                                        |
+| 非管理员能看不到这两个菜单吗？            | 能，且服务端同时拒绝写入                 | 菜单只做体验：`showProvider` / `showServiceModel` 由 flag 与管理员策略合成；写入由两个 base procedure 拦（§5.5–5.6）                                                     |
+| 设备能全局注册给管理员吗？                | 能，但保持 `devices.userId = 注册管理员` | 这个 `userId` 是 gateway 的寻址 principal（NOT NULL）。改成「无主」要动注册唯一键、gateway 寻址与全部派发路径；「管理员持有 + `pool` 标记 + 授权表」不改既有语义（§6.1） |
+| CLI 能扩展吗？                            | 能，零风险                               | `registerDeviceCommand` 内部就是 `device.command(...)` 链，新增 `pool` 子命令组只在 `commands/device.ts` 加一行注册（§6.2）                                              |
 
 ## 2. 现状与关键发现
 
-| 能力 | 现状 | 位置 |
-| --- | --- | --- |
-| 认证 | Better Auth `admin()` 已启用，`adminClient()` 已装 | `src/libs/better-auth/define-config.ts`、`auth-client.ts` |
-| 用户创建 | `databaseHooks.user.create.after` → `UserService.initUser` → `initNewUserForBusiness` | `define-config.ts`、`apps/server/src/services/user/index.ts:30` |
-| 用户设置 | `user_settings` 按列存 jsonb：`language_model` / `default_agent` / `system_agent` | `packages/database/src/schemas/user.ts` |
-| 服务端全局配置 | `getServerGlobalConfig()` 输出 `GlobalServerConfig`，`aiProvider` / `defaultAgent` 在此组装 | `apps/server/src/globalConfig/index.ts:184` |
-| 配置下发 | `configRouter.getGlobalConfig` 是 `publicProcedure`，但带 `ctx.userId`，已调用 `getServerFeatureFlagsStateFromRuntimeConfig(ctx.userId)`；末尾 `...businessConfigEndpoints` | `apps/server/src/routers/lambda/config/index.ts` |
-| 用户级 flag | `RuntimeConfigProvider` 已有 Redis per-user override（`feature-flags-user-overrides`） | `apps/server/src/featureFlags/index.ts` |
-| 菜单开关 | `showProvider` 由 `provider_settings` flag 映射；**没有** `showServiceModel` | `packages/app-config/src/featureFlags/schema.ts:309`、`src/features/Settings/hooks/useCategory.tsx:83,167` |
-| 设备表 | `devices`：`userId`（NOT NULL）+ 可选 `workspaceId` + `visibility`，两条部分唯一索引 | **`packages/database/src/schemas/device.ts:18`**（第二版误写 workspace.ts） |
-| 设备查询 | `DeviceModel.queryPersonal()` / `queryWorkspaceDevices()` / `querySharedWorkspaceDevices()` | `packages/database/src/models/device.ts` |
-| 设备可见性汇总 | `getScopedOnlineDevices(serverDB, userId, workspaceId?)`，**9 个文件 / 11 个调用点共享** | `apps/server/src/services/deviceGateway/scopedDevices.ts:48` |
-| 设备列表 RPC | `device.listDevices` 自己并发查 personal/workspace/shared 三路 + 两路在线状态 | `apps/server/src/routers/lambda/device/registry.ts:214` |
-| 设备派发 | 所有 server runtime 都走 `executeAuthorizedDeviceToolCall`（5 个文件 / 7 个调用点：localSystem 1、skills 3、browser 1、auv 1、tfs 1） | `apps/server/src/services/deviceGateway/authorizedToolCall.ts:23` |
-| 派发前校验 | `resolveDeviceDispatchAuthorizationFailure`：**无 `workspaceId` 时直接放行**（personal 无校验） | `apps/server/src/services/deviceGateway/dispatchAuthorization.ts:28` |
-| 设备 router 汇总 | `mergeRouters(..., businessDeviceRouter)`，`businessDeviceRouter` 在 OSS 下是空 router | `apps/server/src/routers/lambda/device/index.ts`、`packages/business-server/src/lambda-routers/device.ts` |
-| 业务扩展槽（已有） | `getHiddenBuiltinModelsForUser` / `getModelRedirects`、`initNewUserForBusiness`、`getDevDockAccess` | `packages/business-server/src/{aiProvider,user,devDockAccess}.ts` |
-| 模型访问过滤 | `getUserScopedAiProviderRuntimeState` / `getUserScopedAiProviderModelList` 在仓库缓存之上叠加「按用户隐藏模型」，未解析到策略即 fail closed | `apps/server/src/services/aiProviderAccess.ts` |
-| 供应商 / 模型写入面 | `aiProvider` 6 个 mutation、`aiModel` 10 个 mutation，共用一个 base procedure | `apps/server/src/routers/lambda/{aiProvider,aiModel}.ts` |
-| CLI 设备 | `lh device list / info / delete`，注册走 `trpc.device.register` | `apps/cli/src/commands/device.ts`、`src/device/register.ts` |
+| 能力                | 现状                                                                                                                                                                        | 位置                                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 认证                | Better Auth `admin()` 已启用，`adminClient()` 已装                                                                                                                          | `src/libs/better-auth/define-config.ts`、`auth-client.ts`                                                  |
+| 用户创建            | `databaseHooks.user.create.after` → `UserService.initUser` → `initNewUserForBusiness`                                                                                       | `define-config.ts`、`apps/server/src/services/user/index.ts:30`                                            |
+| 用户设置            | `user_settings` 按列存 jsonb：`language_model` / `default_agent` / `system_agent`                                                                                           | `packages/database/src/schemas/user.ts`                                                                    |
+| 服务端全局配置      | `getServerGlobalConfig()` 输出 `GlobalServerConfig`，`aiProvider` / `defaultAgent` 在此组装                                                                                 | `apps/server/src/globalConfig/index.ts:184`                                                                |
+| 配置下发            | `configRouter.getGlobalConfig` 是 `publicProcedure`，但带 `ctx.userId`，已调用 `getServerFeatureFlagsStateFromRuntimeConfig(ctx.userId)`；末尾 `...businessConfigEndpoints` | `apps/server/src/routers/lambda/config/index.ts`                                                           |
+| 用户级 flag         | `RuntimeConfigProvider` 已有 Redis per-user override（`feature-flags-user-overrides`）                                                                                      | `apps/server/src/featureFlags/index.ts`                                                                    |
+| 菜单开关            | `showProvider` 由 `provider_settings` flag 映射；**没有** `showServiceModel`                                                                                                | `packages/app-config/src/featureFlags/schema.ts:309`、`src/features/Settings/hooks/useCategory.tsx:83,167` |
+| 设备表              | `devices`：`userId`（NOT NULL）+ 可选 `workspaceId` + `visibility`，两条部分唯一索引                                                                                        | **`packages/database/src/schemas/device.ts:18`**（第二版误写 workspace.ts）                                |
+| 设备查询            | `DeviceModel.queryPersonal()` / `queryWorkspaceDevices()` / `querySharedWorkspaceDevices()`                                                                                 | `packages/database/src/models/device.ts`                                                                   |
+| 设备可见性汇总      | `getScopedOnlineDevices(serverDB, userId, workspaceId?)`，**9 个文件 / 11 个调用点共享**                                                                                    | `apps/server/src/services/deviceGateway/scopedDevices.ts:48`                                               |
+| 设备列表 RPC        | `device.listDevices` 自己并发查 personal/workspace/shared 三路 + 两路在线状态                                                                                               | `apps/server/src/routers/lambda/device/registry.ts:214`                                                    |
+| 设备派发            | 所有 server runtime 都走 `executeAuthorizedDeviceToolCall`（5 个文件 / 7 个调用点：localSystem 1、skills 3、browser 1、auv 1、tfs 1）                                       | `apps/server/src/services/deviceGateway/authorizedToolCall.ts:23`                                          |
+| 派发前校验          | `resolveDeviceDispatchAuthorizationFailure`：**无 `workspaceId` 时直接放行**（personal 无校验）                                                                             | `apps/server/src/services/deviceGateway/dispatchAuthorization.ts:28`                                       |
+| 设备 router 汇总    | `mergeRouters(..., businessDeviceRouter)`，`businessDeviceRouter` 在 OSS 下是空 router                                                                                      | `apps/server/src/routers/lambda/device/index.ts`、`packages/business-server/src/lambda-routers/device.ts`  |
+| 业务扩展槽（已有）  | `getHiddenBuiltinModelsForUser` / `getModelRedirects`、`initNewUserForBusiness`、`getDevDockAccess`                                                                         | `packages/business-server/src/{aiProvider,user,devDockAccess}.ts`                                          |
+| 模型访问过滤        | `getUserScopedAiProviderRuntimeState` / `getUserScopedAiProviderModelList` 在仓库缓存之上叠加「按用户隐藏模型」，未解析到策略即 fail closed                                 | `apps/server/src/services/aiProviderAccess.ts`                                                             |
+| 供应商 / 模型写入面 | `aiProvider` 6 个 mutation、`aiModel` 10 个 mutation，共用一个 base procedure                                                                                               | `apps/server/src/routers/lambda/{aiProvider,aiModel}.ts`                                                   |
+| CLI 设备            | `lh device list / info / delete`，注册走 `trpc.device.register`                                                                                                             | `apps/cli/src/commands/device.ts`、`src/device/register.ts`                                                |
 
 **六条关键结论**
 
@@ -135,11 +135,11 @@
 
 ### 4.1 `admin_console_settings`（单例）
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `id` | text PK | 固定 `global` |
-| `config` | jsonb | 见下 |
-| `updated_at` | timestamptz | |
+| 字段         | 类型            | 说明                 |
+| ------------ | --------------- | -------------------- |
+| `id`         | text PK         | 固定 `global`        |
+| `config`     | jsonb           | 见下                 |
+| `updated_at` | timestamptz     |                      |
 | `updated_by` | text → users.id | `on delete set null` |
 
 ```ts
@@ -168,17 +168,17 @@ interface AdminConsoleSettings {
 
 ### 4.2 `admin_console_audit_logs`
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `id` | uuid PK | |
-| `actor_id` | text → users.id | `on delete set null` |
-| `actor_name` | text | 冗余快照，用户删除后仍可读 |
-| `action` | text | `user.ban` / `ai.update` / `device.grant` … |
-| `target_type` | text | `user` / `settings` / `device` |
-| `target_id` | text | 目标 id |
-| `detail` | jsonb | `{ before?, after?, meta? }`；敏感值（Key、token、密码）不落库 |
-| `ip` | text | 可选 |
-| `created_at` | timestamptz | 默认 `now()` |
+| 字段          | 类型            | 说明                                                           |
+| ------------- | --------------- | -------------------------------------------------------------- |
+| `id`          | uuid PK         |                                                                |
+| `actor_id`    | text → users.id | `on delete set null`                                           |
+| `actor_name`  | text            | 冗余快照，用户删除后仍可读                                     |
+| `action`      | text            | `user.ban` / `ai.update` / `device.grant` …                    |
+| `target_type` | text            | `user` / `settings` / `device`                                 |
+| `target_id`   | text            | 目标 id                                                        |
+| `detail`      | jsonb           | `{ before?, after?, meta? }`；敏感值（Key、token、密码）不落库 |
+| `ip`          | text            | 可选                                                           |
+| `created_at`  | timestamptz     | 默认 `now()`                                                   |
 
 索引：`(created_at desc)`、`(action, created_at desc)`、`(target_id, created_at desc)`。
 
@@ -186,14 +186,14 @@ interface AdminConsoleSettings {
 
 ### 4.3 `admin_console_device_grants`
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| `id` | uuid PK | |
-| `device_id` | uuid → devices.id | `on delete cascade` |
-| `audience` | text | `all`（全员） / `users`（指定人） |
-| `user_id` | text → users.id | `audience='users'` 时必填，`on delete cascade` |
-| `granted_by` | text → users.id | `on delete set null` |
-| `created_at` | timestamptz | |
+| 字段         | 类型              | 说明                                           |
+| ------------ | ----------------- | ---------------------------------------------- |
+| `id`         | uuid PK           |                                                |
+| `device_id`  | uuid → devices.id | `on delete cascade`                            |
+| `audience`   | text              | `all`（全员） / `users`（指定人）              |
+| `user_id`    | text → users.id   | `audience='users'` 时必填，`on delete cascade` |
+| `granted_by` | text → users.id   | `on delete set null`                           |
+| `created_at` | timestamptz       |                                                |
 
 - 唯一索引：`(device_id) WHERE audience='all'`；
 - 唯一索引：`(device_id, user_id) WHERE audience='users'`。
@@ -204,8 +204,8 @@ interface AdminConsoleSettings {
 
 文件是 **`packages/database/src/schemas/device.ts`**（不是 `workspace.ts`）。只加一列，不改既有语义：
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
+| 字段   | 类型              | 说明                     |
+| ------ | ----------------- | ------------------------ |
 | `pool` | text，默认 `null` | `'admin'` = 管理员池设备 |
 
 配套部分唯一索引：
@@ -284,18 +284,18 @@ export const assertModelsWithinPolicy = async (ctx, settings) => { ... };
 共享文件里只加两行调用。这样：
 
 - 用户改服务模型 → 保存成功但托管槽位不变（下一次读取仍是管理员值），不制造报错噪音；
-- 用户改 ASR / chat-preference → 完全不受影响；
+- 用户改 ASR /chat-preference → 完全不受影响；
 - 用户把模型切成白名单外的模型 → `FORBIDDEN`（这是明确越权，必须报错）。
 
 ### 5.4 白名单与 Provider 启停的生效点
 
 Provider 启停与模型白名单**不**物化到每个用户的行里，而是挂在已有的「按用户隐藏模型」管道上：只改一个 business 实现，所有消费方自动生效。
 
-| 管理员策略 | 展开成 | 结果 |
-| --- | --- | --- |
+| 管理员策略                     | 展开成                                   | 结果                                                                                         |
+| ------------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `providers[p].enabled = false` | 该 provider 的**全部内置模型**进隐藏集合 | `enabledAiModels` 里没有它的模型，由模型派生的 `enabledChat/Image/VideoAiProviders` 自动剔除 |
-| `providers[p].models = [...]` | 该 provider 下未勾选的内置模型进隐藏集合 | 只有勾选的模型出现在选择器、模型列表与运行时 |
-| `providers[p]` 缺省 | 不隐藏 | 保持今天的「用户行 OR 代码默认」 |
+| `providers[p].models = [...]`  | 该 provider 下未勾选的内置模型进隐藏集合 | 只有勾选的模型出现在选择器、模型列表与运行时                                                 |
+| `providers[p]` 缺省            | 不隐藏                                   | 保持今天的「用户行 OR 代码默认」                                                             |
 
 **落点只有一个文件**：`packages/business-server/src/aiProvider.ts` 的 `getHiddenBuiltinModelsForUser(userId)`（上游预留给 business 层的替换点，当前恒返回 `[]`）。
 
@@ -303,9 +303,9 @@ Provider 启停与模型白名单**不**物化到每个用户的行里，而是�
 export const getHiddenBuiltinModelsForUser = async (
   userId: string,
 ): Promise<BuiltinModelIdentifier[] | undefined> => {
-  const policy = await getAdminAiPolicyCached();       // 5s 内存缓存；未配置 → null
-  if (!policy) return [];                              // 已解析、无隐藏：与今天完全一致
-  return expandToHiddenModels(policy);                 // 被关 provider 的全部模型 + 未勾选模型
+  const policy = await getAdminAiPolicyCached(); // 5s 内存缓存；未配置 → null
+  if (!policy) return []; // 已解析、无隐藏：与今天完全一致
+  return expandToHiddenModels(policy); // 被关 provider 的全部模型 + 未勾选模型
 };
 ```
 
@@ -327,19 +327,19 @@ export const getHiddenBuiltinModelsForUser = async (
 
 ### 5.5 写拒绝
 
-| 入口 | 覆盖范围 | 实现 |
-| --- | --- | --- |
-| `aiProvider` router 的 6 个 mutation | `createAiProvider`、`toggleProviderEnabled`、`updateAiProvider`、`updateAiProviderConfig`、`updateAiProviderOrder`、`removeAiProvider` | base procedure 加 1 个中间件 |
-| `aiModel` router 的 10 个 mutation | `batchToggleAiModels`、`batchUpdateAiModels`、`clearModelsByProvider`、`clearRemoteModels`、`createAiModel`、`removeAiModel`、`toggleModelEnabled`、`updateAiModel`、`updateAiModelReasoningConfig`、`updateAiModelOrder` | 同上 |
-| `settingsRouter.updateSettings` | `languageModel`、`defaultAgent.config.model` → 白名单校验；`system_agent` → 托管槽位强制改写 | 调用 §5.3 的两个助手 |
+| 入口                                 | 覆盖范围                                                                                                                                                                                                                  | 实现                         |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| `aiProvider` router 的 6 个 mutation | `createAiProvider`、`toggleProviderEnabled`、`updateAiProvider`、`updateAiProviderConfig`、`updateAiProviderOrder`、`removeAiProvider`                                                                                    | base procedure 加 1 个中间件 |
+| `aiModel` router 的 10 个 mutation   | `batchToggleAiModels`、`batchUpdateAiModels`、`clearModelsByProvider`、`clearRemoteModels`、`createAiModel`、`removeAiModel`、`toggleModelEnabled`、`updateAiModel`、`updateAiModelReasoningConfig`、`updateAiModelOrder` | 同上                         |
+| `settingsRouter.updateSettings`      | `languageModel`、`defaultAgent.config.model` → 白名单校验；`system_agent` → 托管槽位强制改写                                                                                                                              | 调用 §5.3 的两个助手         |
 
 关键实现细节：两个 router 的所有过程（含读）都建在同一个 `aiProviderProcedure` / `aiModelProcedure` 上。**不要去改 16 个 mutation**，而是给 base 加一个按类型分流中间件：
 
 ```ts
 // packages/business-server/src/trpc-middlewares/adminManagedAi.ts
 export const withManagedAiWriteGuard = trpc.middleware(async (opts) => {
-  if (opts.type !== 'mutation') return opts.next();       // 读接口放行
-  await assertAdminOnlyOrThrow(opts.ctx);                 // 非管理员且已启用托管 → FORBIDDEN
+  if (opts.type !== 'mutation') return opts.next(); // 读接口放行
+  await assertAdminOnlyOrThrow(opts.ctx); // 非管理员且已启用托管 → FORBIDDEN
   return opts.next();
 });
 ```
@@ -368,7 +368,7 @@ const aiProviderProcedure = wsCompatProcedure
 3. `configRouter.getGlobalConfig`：拿到 `serverFeatureFlags` 后叠加管理员策略：
 
 ```ts
-const menu = await getAdminMenuPolicy(ctx.userId || undefined);   // business 层，5s 缓存
+const menu = await getAdminMenuPolicy(ctx.userId || undefined); // business 层，5s 缓存
 return {
   billboard,
   serverConfig,
@@ -382,6 +382,8 @@ return {
 ```
 
 `getAdminMenuPolicy` 内部：`userId` 缺失或 `role !== 'admin'` 时按 `config.menu` 判断；管理员恒 `true`；未启用托管时恒 `true`。
+
+两个开关本身由控制台写：落在管理员全局策略（`business/adminConsole/menuPolicy`，一行 jsonb，5s 缓存），保存后清缓存即传播。env 的 `provider_settings` / `service_model` 降为部署级总闸 —— 总闸关闭时管理员也不能单方面打开。原型里这两个开关在「服务模型」页顶部「用户设置里的 AI 菜单」卡片，卡片底部实时给出「用户侧设置里可见什么」的摘要。
 
 4. 客户端接入（各 1 行）：
 
@@ -398,12 +400,12 @@ const { hideDocs, showApiKeyManage, showProvider, showServiceModel } = useServer
 
 ### 5.7 用户看到的差异
 
-| 页面 | 非管理员 | 管理员 |
-| --- | --- | --- |
-| AI 服务商 | 菜单隐藏、路由重定向 | 完整编辑 |
-| 服务模型 | 菜单隐藏、路由重定向、托管槽位不可改 | 完整编辑 |
-| 会话内模型选择 | 只列出管理员启用的 provider / model；可切换，但白名单外被拒绝 | 同左（管理员不受白名单限制） |
-| 新用户默认模型 | 取管理员配置 | 同左 |
+| 页面           | 非管理员                                                     | 管理员                       |
+| -------------- | ------------------------------------------------------------ | ---------------------------- |
+| AI 服务商      | 菜单隐藏、路由重定向                                         | 完整编辑                     |
+| 服务模型       | 菜单隐藏、路由重定向、托管槽位不可改                         | 完整编辑                     |
+| 会话内模型选择 | 只列出管理员启用的 provider /model；可切换，但白名单外被拒绝 | 同左（管理员不受白名单限制） |
+| 新用户默认模型 | 取管理员配置                                                 | 同左                         |
 
 ## 6. 设备池
 
@@ -411,18 +413,18 @@ const { hideDocs, showApiKeyManage, showProvider, showServiceModel } = useServer
 
 产品语义是：设备不再只属于注册它的个人，而是先进管理员的池，再由管理员决定「给所有人」还是「给部分人」。实现上不新增设备种类，只给现有个人行加一个池标记 + 一张授权表。
 
-| 概念 | 实现 | 说明 |
-| --- | --- | --- |
-| 全局注册 | `devices.pool = 'admin'` | 管理员执行 `lh device pool register`，写的是他自己的一条**个人行**（`workspaceId IS NULL`） |
-| 归属管理员 | `devices.userId` | 这就是 owner，也是 gateway 寻址的 principal；`transferOwner` 可换人 |
-| 受众 | `admin_console_device_grants` | `audience='all'`（全员）或 `'users'`（名单），一台设备只有一种 |
-| 可见与可用 | 列表 / 选择器 / 派发 | 被授权的人在 `listDevices`、ChatInput 选择器、`getScopedOnlineDevices` 里看到它 |
+| 概念       | 实现                          | 说明                                                                                        |
+| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------- |
+| 全局注册   | `devices.pool = 'admin'`      | 管理员执行 `lh device pool register`，写的是他自己的一条**个人行**（`workspaceId IS NULL`） |
+| 归属管理员 | `devices.userId`              | 这就是 owner，也是 gateway 寻址的 principal；`transferOwner` 可换人                         |
+| 受众       | `admin_console_device_grants` | `audience='all'`（全员）或 `'users'`（名单），一台设备只有一种                              |
+| 可见与可用 | 列表 / 选择器 / 派发          | 被授权的人在 `listDevices`、ChatInput 选择器、`getScopedOnlineDevices` 里看到它             |
 
 **为什么不让 `devices.userId` 为空**：这一列是 gateway 的寻址 principal（`NOT NULL`），设备连接、`queryDeviceList(userId)`、在线状态与执行派发都按它分池。改成「无主」要同时改注册唯一键（`(userId, deviceId) WHERE workspace_id IS NULL`）、gateway 寻址、7 个派发入口与 workspace 语义；「管理员持有 + 池标记」只加一列和一张表，既有路径全部不动。用户看到的语义仍然是「管理员把这台设备分配给了谁」，而不是「它属于某个管理员」。
 
 - **注册**：管理员在要共享的机器上执行 `lh device pool register`，服务端写 `devices`（`pool='admin'`、`userId=注册管理员`、`workspaceId=NULL`）。
 - **转移**：`adminPool.transferOwner` 把 owner 换成另一个管理员（换人、离职、或专门的 `svc-admin` 账号）。
-- **分配**：`admin_console_device_grants` 决定谁能看到/使用；一台设备只有一种受众（全员或名单）。
+- **分配**：`admin_console_device_grants` 决定谁能看到 / 使用；一台设备只有一种受众（全员或名单）。
 - **使用**：被授权的用户在设备列表与 ChatInput 设备选择器里看到该设备，选中后由服务端以 owner 的 principal 派发，调用者不感知 owner 是谁。
 - **撤销**：删除授权行即刻失效（列表下一次查询即消失），不删除设备注册。
 - **连接**：注册只登记，设备仍需 `lh connect`（或设备守护进程）保持在线；池里显示「离线」时执行会被拒绝。
@@ -471,14 +473,14 @@ lh device pool remove <deviceId>                 # 从池中移除（清 pool �
 - 不新建 `routers/lambda/adminDevicePool/` 目录；
 - 不占用 `routers/lambda/index.ts`（除 `adminConsole` 一处，见 §8）。
 
-| 接口 | 作用 |
-| --- | --- |
-| `device.adminPool.register` | 复用 `DeviceModel.register` 写入，再置 `pool='admin'`；唯一冲突时返回已有记录 |
-| `device.adminPool.list` | 池设备 + 授权范围 + owner + 在线状态 |
-| `device.adminPool.grant` | `{ deviceId, audience: 'all' \| 'users', userIds? }`，事务内清另一类 |
-| `device.adminPool.revoke` | 撤销授权（全员或指定人） |
-| `device.adminPool.transferOwner` | 改 `devices.userId`（owner 必须是管理员） |
-| `device.adminPool.remove` | 清 `pool` 标记与授权（不删个人注册行） |
+| 接口                             | 作用                                                                          |
+| -------------------------------- | ----------------------------------------------------------------------------- |
+| `device.adminPool.register`      | 复用 `DeviceModel.register` 写入，再置 `pool='admin'`；唯一冲突时返回已有记录 |
+| `device.adminPool.list`          | 池设备 + 授权范围 + owner + 在线状态                                          |
+| `device.adminPool.grant`         | `{ deviceId, audience: 'all' \| 'users', userIds? }`，事务内清另一类          |
+| `device.adminPool.revoke`        | 撤销授权（全员或指定人）                                                      |
+| `device.adminPool.transferOwner` | 改 `devices.userId`（owner 必须是管理员）                                     |
+| `device.adminPool.remove`        | 清 `pool` 标记与授权（不删个人注册行）                                        |
 
 写入成功后统一调 `adminConsoleService.audit()`。
 
@@ -496,7 +498,7 @@ export const getScopedOnlineDevices = async (serverDB, userId, workspaceId?) => 
 };
 ```
 
-`workspaceId` 存在时整体跳过——workspace 会话不暴露池设备（§6.7）。
+`workspaceId` 存在时整体跳过 ——workspace 会话不暴露池设备（§6.7）。
 
 **(b) 设备列表：`device.listDevices`**
 
@@ -514,16 +516,17 @@ export const getScopedOnlineDevices = async (serverDB, userId, workspaceId?) => 
 if (!workspaceId) {
   if (!serverDB) return undefined;
   const granted = await new DeviceModel(serverDB, userId).findGrantedAdminPoolDevice(deviceId);
-  return granted ? undefined : undefined;   // 见下：授权失败交给调用方的既有错误路径
+  return granted ? undefined : undefined; // 见下：授权失败交给调用方的既有错误路径
 }
 ```
 
-   实际上更好的写法是：新增 `resolveDeviceOwner(serverDB, userId, deviceId)`，返回 `{ ownerId } | { errorData }`；`resolveDeviceDispatchAuthorizationFailure` **保持签名与返回值不变**（它有 6 个调用方），只在内部对池设备做一次授权查询，未授权时返回与「找不到设备」一致的 `DEVICE_NOT_FOUND`。
+实际上更好的写法是：新增 `resolveDeviceOwner(serverDB, userId, deviceId)`，返回 `{ ownerId } | { errorData }`；`resolveDeviceDispatchAuthorizationFailure` **保持签名与返回值不变**（它有 6 个调用方），只在内部对池设备做一次授权查询，未授权时返回与「找不到设备」一致的 `DEVICE_NOT_FOUND`。
 
 2. `authorizedToolCall.ts` 在执行前把 principal 换成 owner：
 
 ```ts
-const ownerId = (await resolveDeviceOwner(serverDB, params.userId, params.deviceId)) ?? params.userId;
+const ownerId =
+  (await resolveDeviceOwner(serverDB, params.userId, params.deviceId)) ?? params.userId;
 return deviceGateway.executeToolCall({ ...params, userId: ownerId }, toolCall, timeout);
 ```
 
@@ -531,7 +534,7 @@ return deviceGateway.executeToolCall({ ...params, userId: ownerId }, toolCall, t
 
 3. **覆盖范围**：`executeAuthorizedDeviceToolCall` 是 5 个文件 / 7 个调用点（`localSystem` 1、`skills` 3、`browser` 1、`auv` 1、`tfs/deviceCheckout` 1）的唯一出口，改这一处即覆盖「Agent 在池设备上跑工具」这条主路径。
 
-4. **v1 不支持、且 fail closed 的路径**：hetero（Claude Code 等）派发、MCP device tunnel、`device.agents.*` 的配额/能力探测 RPC 都直接用 `ctx.userId` 调 gateway，遇到池设备会得到 `DEVICE_NOT_FOUND`。这些入口在 P3 验收中要确认「不会误跑到别人的机器上」，而不是「能跑」。放开它们留到 P4（需要同时改 hetero 的凭据与工作目录语义）。
+4. **v1 不支持、且 fail closed 的路径**：hetero（Claude Code 等）派发、MCP device tunnel、`device.agents.*` 的配额 / 能力探测 RPC 都直接用 `ctx.userId` 调 gateway，遇到池设备会得到 `DEVICE_NOT_FOUND`。这些入口在 P3 验收中要确认「不会误跑到别人的机器上」，而不是「能跑」。放开它们留到 P4（需要同时改 hetero 的凭据与工作目录语义）。
 
 ### 6.6 安全边界
 
@@ -539,7 +542,7 @@ return deviceGateway.executeToolCall({ ...params, userId: ownerId }, toolCall, t
 - 池设备不传个人凭据：TFS / Git 凭据仍按调用者注入，设备上不落任何人的 secret（与 CUST-005「共享设备不接收个人凭据」一致）；
 - 池设备的 `friendlyName` 由管理员设置，用户不可改；
 - 撤销授权后，正在运行的任务不强制中断，但新的派发被拒绝；
-- 设备从池移除或 owner 账号删除时，`cascade` 清理授权；**删除/禁用管理员前必须先 `transferOwner`**（写进 P3 验收的运维说明）；
+- 设备从池移除或 owner 账号删除时，`cascade` 清理授权；**删除 / 禁用管理员前必须先 `transferOwner`**（写进 P3 验收的运维说明）；
 - 审计记录 `device.register` / `device.grant` / `device.revoke` / `device.transferOwner` / `device.remove`。
 
 ### 6.7 已知边界
@@ -572,21 +575,21 @@ return deviceGateway.executeToolCall({ ...params, userId: ownerId }, toolCall, t
 
 视觉复刻现有设置页外壳（`NavPanel` 280px、44px 页头、`MAX_WIDTH=1024`、`Form variant="filled" itemsType="group"`），不另造后台风格。
 
-原型 `prototypes/admin-console/index.html` 已按四页重建，带「普通用户视角」开关；第三版只补设备页的「归属管理员」列与「转移归属」动作，并更新 `prototypes/admin-console/README.md` 的版本说明。
+原型 `prototypes/admin-console/index.html`（第五版）按五页重建：用户管理、审计日志、AI 服务商、服务模型、设备。侧栏固定五项 —— 控制台本身只有管理员能进，所以不提供「切换视角」这类入口；AI 两页是现有「设置 → AI 服务商」的 1:1 复刻，服务模型页顶部多一张「用户设置里的 AI 菜单」卡片，把 §5.6 的两个开关做成控制台里的配置。版本与页面批次说明见 `prototypes/admin-console/README.md`。
 
 ## 8. 后端接口
 
 `apps/server/src/routers/lambda/adminConsole/`（新目录，需在 `routers/lambda/index.ts` 挂一行）：
 
-| 接口 | 作用 |
-| --- | --- |
-| `whoami` | `{ isAdmin, role, canBootstrap }`，首次访问做惰性提权 |
-| `listUsers` | 分页 + 搜索，join 账号摘要 |
-| `getUser` | 详情：账号、角色、状态、设备授权 |
-| `setUserRole` / `banUser` / `unbanUser` | 账号操作（包装 Better Auth admin） |
-| `revokeUserSessions` | 会话失效 |
-| `getAiConfig` / `updateAiConfig` | 读写 AI 托管配置，保存返回 `affectedUsers` |
-| `listAudit` | 审计分页 + 筛选 |
+| 接口                                    | 作用                                                  |
+| --------------------------------------- | ----------------------------------------------------- |
+| `whoami`                                | `{ isAdmin, role, canBootstrap }`，首次访问做惰性提权 |
+| `listUsers`                             | 分页 + 搜索，join 账号摘要                            |
+| `getUser`                               | 详情：账号、角色、状态、设备授权                      |
+| `setUserRole` / `banUser` / `unbanUser` | 账号操作（包装 Better Auth admin）                    |
+| `revokeUserSessions`                    | 会话失效                                              |
+| `getAiConfig` / `updateAiConfig`        | 读写 AI 托管配置，保存返回 `affectedUsers`            |
+| `listAudit`                             | 审计分页 + 筛选                                       |
 
 设备池接口见 §6.3，挂 `device.adminPool.*`。
 
@@ -620,51 +623,51 @@ apps/cli/src/device/pool.ts
 
 **A. 上游已预留的扩展槽（改的是 business 层实现，不是共享逻辑）**
 
-| 文件 | 改动 | 风险 |
-| --- | --- | --- |
-| `packages/business-server/src/aiProvider.ts` | 实现 `getHiddenBuiltinModelsForUser`（+ `model-bank` 依赖） | 低，上游指定的替换点 |
-| `packages/business-server/src/user.ts` | `initNewUserForBusiness` 里加一次 AI 配置物化 | 低，已被 `initUser` 调用 |
-| `packages/business-server/src/lambda-routers/device.ts` | 在空 `router({})` 里补 `adminPool.*`（已被 `deviceRouter` merge，汇总文件零改动） | 低 |
-| `packages/business-server/package.json` | 补 `"model-bank": "workspace:*"` | 极低 |
+| 文件                                                    | 改动                                                                              | 风险                     |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------ |
+| `packages/business-server/src/aiProvider.ts`            | 实现 `getHiddenBuiltinModelsForUser`（+ `model-bank` 依赖）                       | 低，上游指定的替换点     |
+| `packages/business-server/src/user.ts`                  | `initNewUserForBusiness` 里加一次 AI 配置物化                                     | 低，已被 `initUser` 调用 |
+| `packages/business-server/src/lambda-routers/device.ts` | 在空 `router({})` 里补 `adminPool.*`（已被 `deviceRouter` merge，汇总文件零改动） | 低                       |
+| `packages/business-server/package.json`                 | 补 `"model-bank": "workspace:*"`                                                  | 极低                     |
 
 **B. 设备链（6 处，按风险从低到高）**
 
-| 文件 | 改动 | 风险 |
-| --- | --- | --- |
-| `packages/database/src/schemas/device.ts` | `pool` 列 + 部分唯一索引 | 极低 |
-| `packages/database/src/models/device.ts` | 新增 `queryAdminPoolDevices` / `queryGrantedAdminPoolDevices` / `findGrantedAdminPoolDevice` / `setPool`（纯新增方法） | 低 |
-| `apps/server/src/routers/lambda/device/registry.ts` | `listDevices` 合并被授权池设备（~8 行） | 中低 |
-| `apps/server/src/services/deviceGateway/scopedDevices.ts` | 合并池设备 + 按 owner 批量查在线（~15 行） | 中 |
-| `apps/server/src/services/deviceGateway/dispatchAuthorization.ts` | personal 分支对池设备做授权校验（签名不变，~10 行） | 中 |
-| `apps/server/src/services/deviceGateway/authorizedToolCall.ts` | 派发前 owner 解析（~3 行） | 中 |
+| 文件                                                              | 改动                                                                                                                   | 风险 |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ---- |
+| `packages/database/src/schemas/device.ts`                         | `pool` 列 + 部分唯一索引                                                                                               | 极低 |
+| `packages/database/src/models/device.ts`                          | 新增 `queryAdminPoolDevices` / `queryGrantedAdminPoolDevices` / `findGrantedAdminPoolDevice` / `setPool`（纯新增方法） | 低   |
+| `apps/server/src/routers/lambda/device/registry.ts`               | `listDevices` 合并被授权池设备（\~8 行）                                                                               | 中低 |
+| `apps/server/src/services/deviceGateway/scopedDevices.ts`         | 合并池设备 + 按 owner 批量查在线（\~15 行）                                                                            | 中   |
+| `apps/server/src/services/deviceGateway/dispatchAuthorization.ts` | personal 分支对池设备做授权校验（签名不变，\~10 行）                                                                   | 中   |
+| `apps/server/src/services/deviceGateway/authorizedToolCall.ts`    | 派发前 owner 解析（\~3 行）                                                                                            | 中   |
 
 **C. AI 托管（5 处，每处 ≤ 6 行）**
 
-| 文件 | 改动 | 风险 |
-| --- | --- | --- |
-| `apps/server/src/globalConfig/index.ts` | `aiProvider` / `defaultAgent` 用管理员默认值覆盖 | 低 |
-| `apps/server/src/routers/lambda/aiProvider.ts` | base procedure `+ .use(withManagedAiWriteGuard)` | 低 |
-| `apps/server/src/routers/lambda/aiModel.ts` | 同上 | 低 |
+| 文件                                              | 改动                                                                   | 风险               |
+| ------------------------------------------------- | ---------------------------------------------------------------------- | ------------------ |
+| `apps/server/src/globalConfig/index.ts`           | `aiProvider` / `defaultAgent` 用管理员默认值覆盖                       | 低                 |
+| `apps/server/src/routers/lambda/aiProvider.ts`    | base procedure `+ .use(withManagedAiWriteGuard)`                       | 低                 |
+| `apps/server/src/routers/lambda/aiModel.ts`       | 同上                                                                   | 低                 |
 | `apps/server/src/routers/lambda/user/settings.ts` | 调用 `applyManagedSettingsPolicy` + `assertModelsWithinPolicy`（2 行） | 中，需回归设置保存 |
-| `apps/server/src/routers/lambda/config/index.ts` | 菜单策略合并（4 行） | 低 |
+| `apps/server/src/routers/lambda/config/index.ts`  | 菜单策略合并（4 行）                                                   | 低                 |
 
-**D. 菜单与路由（6 处，每处 1 行/1 段）**
+**D. 菜单与路由（6 处，每处 1 行 / 1 段）**
 
-| 文件 | 改动 |
-| --- | --- |
-| `packages/app-config/src/featureFlags/schema.ts` | `service_model` flag + `showServiceModel` 映射 |
-| `packages/types/src/serverConfig.ts` | `ServerFeatureFlags` 加 `showServiceModel` |
-| `src/features/Settings/hooks/useCategory.tsx` | 服务模型条目加 `hide` |
-| `src/routes/(mobile)/me/settings/features/useCategory.tsx` | 同上 |
-| `src/spa/router/desktopRouter.shared.tsx` | 注册 `/admin` |
-| `src/libs/better-auth/auth-client.ts` | 导出 `admin` |
+| 文件                                                       | 改动                                           |
+| ---------------------------------------------------------- | ---------------------------------------------- |
+| `packages/app-config/src/featureFlags/schema.ts`           | `service_model` flag + `showServiceModel` 映射 |
+| `packages/types/src/serverConfig.ts`                       | `ServerFeatureFlags` 加 `showServiceModel`     |
+| `src/features/Settings/hooks/useCategory.tsx`              | 服务模型条目加 `hide`                          |
+| `src/routes/(mobile)/me/settings/features/useCategory.tsx` | 同上                                           |
+| `src/spa/router/desktopRouter.shared.tsx`                  | 注册 `/admin`                                  |
+| `src/libs/better-auth/auth-client.ts`                      | 导出 `admin`                                   |
 
 **E. 汇总与 CLI（2 处）**
 
-| 文件 | 改动 |
-| --- | --- |
+| 文件                                      | 改动                                   |
+| ----------------------------------------- | -------------------------------------- |
 | `apps/server/src/routers/lambda/index.ts` | 挂 `adminConsole`（import + 1 个 key） |
-| `apps/cli/src/commands/device.ts` | 注册 `pool` 子命令组（1 行） |
+| `apps/cli/src/commands/device.ts`         | 注册 `pool` 子命令组（1 行）           |
 
 **合计**：新增 22 个文件 + 3 个目录（`src/features/AdminConsole/**`、`src/routes/admin/**`、`src/store/adminConsole/**`）；修改 23 个既有文件，其中 17 处是 1–6 行的接点，6 处集中在设备链（P3，最后做）。
 
@@ -755,7 +758,7 @@ apps/cli/src/device/pool.ts
 **P1 产品行为**
 
 - [ ] 管理员能在 `/admin/users` 搜到用户、禁用后该用户无法建立新会话；
-- [ ] 设/撤管理员立即生效，`whoami` 同步；
+- [ ] 设 / 撤管理员立即生效，`whoami` 同步；
 - [ ] 禁用、改角色、撤销会话各产生一条审计，含前后值；
 - [ ] 非管理员访问 `/admin/*` 被拒绝（服务端 `FORBIDDEN`，不只隐藏菜单）。
 
@@ -764,7 +767,7 @@ apps/cli/src/device/pool.ts
 - [ ] 未配置 AI 托管时，新用户与服务端运行行为与现在完全一致（`enabled: false` 短路）；
 - [ ] 管理员关闭某 Provider 后，用户会话内模型选择器不再出现该 Provider 的模型；
 - [ ] 管理员改服务模型后，已有用户与新用户看到的服务模型页一致；
-- [ ] 非管理员改服务模型成功但托管槽位不变；改 ASR / chat-preference 正常生效；
+- [ ] 非管理员改服务模型成功但托管槽位不变；改 ASR /chat-preference 正常生效；
 - [ ] 非管理员把模型切到白名单外返回 `FORBIDDEN`；
 - [ ] 非管理员调用 `aiProvider` / `aiModel` 任一 mutation 返回 `FORBIDDEN`；
 - [ ] 非管理员看不到「AI 服务商」「服务模型」菜单；直达 URL 被重定向；
@@ -773,12 +776,12 @@ apps/cli/src/device/pool.ts
 **P3 产品行为**
 
 - [ ] `lh device pool register` 后设备出现在 `/admin` 设备页，且 `lh device list` 只对管理员显示池标记；
-- [ ] 分配「全员」后，任意用户在自己的设备列表看到并可选中，Agent 工具（local tool / browser / skills 各一条）在该机器上执行成功；
+- [ ] 分配「全员」后，任意用户在自己的设备列表看到并可选中，Agent 工具（local tool /browser/skills 各一条）在该机器上执行成功；
 - [ ] 分配「指定人」后，未授权用户在列表与选择器里都看不到，直接构造 dispatch 被拒绝；
 - [ ] 撤销授权后，用户下一次刷新即看不到，新的派发被拒绝；
 - [ ] 池设备执行不落任何调用者的个人凭据；
 - [ ] workspace 会话不会出现池设备，`fail closed` 语义未变；
-- [ ] 删除/禁用 owner 前 `transferOwner` 可让设备继续可用。
+- [ ] 删除 / 禁用 owner 前 `transferOwner` 可让设备继续可用。
 
 **工程验证**
 
@@ -793,7 +796,7 @@ apps/cli/src/device/pool.ts
 
 ### 13.1 已定稿
 
-1. **只做三块**（产品方本轮确认）：用户+审计、AI 托管、设备池。外观 / 快捷键 / 数据统计不做管理入口（§1.2），也不留空壳页面。
+1. **只做三块**（产品方本轮确认）：用户 + 审计、AI 托管、设备池。外观 / 快捷键 / 数据统计不做管理入口（§1.2），也不留空壳页面。
 2. **默认模型与服务模型的传播时机**：保存即全量覆盖。不提供「仅补齐」，也不再加一次「同步到存量用户」按钮。
 3. **用户在白名单内可自由切换模型**，但不能新增 provider / 模型，也不能改服务模型 —— 「统一控制」管的是可用范围与默认值，不是锁死单次选择。
 4. **池设备的注册鉴权**：管理员自己的 CLI 登录态（`lh device pool register`），非管理员返回 `FORBIDDEN`。一次性 enrollment token 留到 P4。
