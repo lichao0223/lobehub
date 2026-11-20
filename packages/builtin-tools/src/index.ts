@@ -16,6 +16,7 @@ import {
   agentSignalReviewManifest,
   agentSignalSkillManagementManifest,
 } from '@lobechat/builtin-tool-agent-signal';
+import { ArtboardManifest } from '@lobechat/builtin-tool-artboard';
 import { AttachmentsManifest } from '@lobechat/builtin-tool-attachments';
 import { AuvManifest } from '@lobechat/builtin-tool-auv';
 import { BriefManifest } from '@lobechat/builtin-tool-brief';
@@ -57,6 +58,7 @@ import { VideoGenerationManifest } from '@lobechat/builtin-tool-video-generation
 import { WebBrowsingManifest } from '@lobechat/builtin-tool-web-browsing';
 import { WebOnboardingManifest } from '@lobechat/builtin-tool-web-onboarding';
 import { WebhookManifest } from '@lobechat/builtin-tool-webhook';
+import { WorkManifest } from '@lobechat/builtin-tool-work';
 import { isDesktop, RECOMMENDED_SKILLS, RecommendedSkillType } from '@lobechat/const';
 import {
   type AgentPluginEntry,
@@ -274,7 +276,23 @@ export const AGENT_SHARE_ALLOWED_BUILTIN_IDENTIFIERS = new Set<string>([
   // API of the tool is blocked. See the allowed-builtins section of
   // `shareGate/README.md`.
   SkillsManifest.identifier,
+  // `lobe-work`: on in every visitor run without a creator grant (see
+  // {@link AGENT_SHARE_IMPLIED_BUILTIN_IDENTIFIERS}). Its runtime takes the run
+  // (operation, topic, tool call) from the execution context only, writes under
+  // the share scope pinned to the visitor topic (`resolveRunWorkAccessScope`),
+  // and changes or deletes only Works this conversation created. Collection images
+  // must be generated images or run outputs (`resolveAgentWorkCollectionItems`).
+  // See the allowed-builtins section of `shareGate/README.md`.
+  WorkManifest.identifier,
 ]);
+
+/**
+ * Builtins every share visitor run gets without an owner grant: the server
+ * implies their grant (`resolveEffectiveShareToolGrants`) and enables them
+ * (`getShareGrantActivatedPluginIds`). The owner share-settings picker leaves
+ * them out, since a toggle there would change nothing.
+ */
+export const AGENT_SHARE_IMPLIED_BUILTIN_IDENTIFIERS = new Set<string>([WorkManifest.identifier]);
 
 /**
  * Subset of {@link AGENT_SHARE_ALLOWED_BUILTIN_IDENTIFIERS} whose server-side
@@ -462,6 +480,15 @@ const builtinToolRegistry: LobeBuiltinTool[] = [
     type: 'builtin',
   },
   {
+    // On demand: hidden and absent from the defaults, but discoverable, so the activator enables
+    // it when the agent has a collection or a published link to show. A share visitor's run gets it
+    // without a creator grant (see `shareGate/grants.ts`): its Works stay in the visitor's topic.
+    hidden: true,
+    identifier: WorkManifest.identifier,
+    manifest: WorkManifest,
+    type: 'builtin',
+  },
+  {
     hidden: true,
     identifier: KnowledgeBaseManifest.identifier,
     manifest: KnowledgeBaseManifest,
@@ -594,6 +621,15 @@ const builtinToolRegistry: LobeBuiltinTool[] = [
   {
     identifier: CanvasManifest.identifier,
     manifest: CanvasManifest,
+    type: 'builtin',
+  },
+  {
+    // Server tool discovery adds it to project conversations only; it has no
+    // client executor, so it must never be pinned or discovered.
+    discoverable: false,
+    hidden: true,
+    identifier: ArtboardManifest.identifier,
+    manifest: ArtboardManifest,
     type: 'builtin',
   },
   {

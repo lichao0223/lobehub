@@ -47,6 +47,7 @@ import { aiChatRouter } from './aiChat';
 import { aiModelRouter } from './aiModel';
 import { aiProviderRouter } from './aiProvider';
 import { apiKeyRouter } from './apiKey';
+import { artboardRouter } from './artboard';
 import { asrRouter } from './asr';
 import { authRouter } from './auth';
 import { botMessageRouter } from './botMessage';
@@ -156,6 +157,7 @@ export const lambdaRouter = router({
   agentRunBoard: agentRunBoardRouter,
   agentSignal: agentSignalRouter,
   agentSteerQueue: agentSteerQueueRouter,
+  artboard: artboardRouter,
   canvas: canvasRouter,
   changelog: changelogRouter,
   channel: channelRouter,
