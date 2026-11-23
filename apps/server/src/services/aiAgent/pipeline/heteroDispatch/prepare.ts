@@ -42,6 +42,7 @@ import { heteroOperationCapabilities } from '../heteroOperationCapabilities';
 import { buildHeteroProjectContext } from '../projectContext';
 import { traceHeteroStage } from '../sendTracing';
 import { buildViewedTaskContextPrompt, joinSystemContext } from '../viewedTaskContext';
+import { resolveDispatchCollaborationMode } from './codexCollaboration';
 import { resolveDispatchPermissionMode } from './permissionMode';
 import type { HeteroDispatchDeps, HeteroDispatchInput } from './types';
 import { settleInOrder } from './utils';
@@ -210,6 +211,11 @@ export const prepareHeteroRun = async (
       (error) => log('execAgent: permission mode report marker failed: %O', error),
     );
     return mode;
+  });
+
+  const collaborationModePromise = resolveDispatchCollaborationMode(deps.db, deps.userId, {
+    heteroType,
+    topicMetadata: topic?.metadata,
   });
 
   // The primary resumed attempt already has native history and must not get
@@ -402,6 +408,9 @@ export const prepareHeteroRun = async (
       heteroType === 'claude-code' && heterogeneousProvider?.type === heteroType
         ? resolveDispatchedClaudeCodeEntrypoint(heterogeneousProvider.env)
         : undefined,
+    // The Codex Plan switch before the runtime is known; the device dispatch
+    // narrows it (`forDeviceRuntime`), and the cloud sandbox (`codex exec`) ignores it.
+    collaborationMode: await collaborationModePromise,
     githubToken,
     imageList: heteroImageList,
     jwt: operationJwt,
