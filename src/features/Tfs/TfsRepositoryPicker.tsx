@@ -95,7 +95,7 @@ export const TfsRepositoryPicker = ({
           <Button
             onClick={() => {
               onLeave?.();
-              navigate('/settings/integrations/tfs');
+              navigate('/settings/tfs');
             }}
           >
             {t('tfs.connect')}
