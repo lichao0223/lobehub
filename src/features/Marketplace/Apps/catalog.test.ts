@@ -1,13 +1,15 @@
-import { getConnectorCatalog, OFFICIAL_MCP_SERVERS } from '@lobechat/const';
+import { getConnectorCatalog, getConnectorCategory, OFFICIAL_MCP_SERVERS } from '@lobechat/const';
 import { describe, expect, it } from 'vitest';
 
 import type { MessengerPlatformItem } from '@/store/messenger/projection';
 
 import {
   buildMarketplaceApps,
+  getAppFacts,
   getAppHome,
   getInlineConnectTool,
   hasAppConnection,
+  isAppCategory,
   TFS_APP_ID,
   TFS_SETTINGS_PATH,
 } from './catalog';
@@ -36,7 +38,7 @@ describe('marketplace apps', () => {
     const matches = apps.filter((app) => app.id === 'slack');
     expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
-      category: 'chat',
+      category: 'communication',
       channel: slack,
       channelPending: true,
       tool: { type: 'composio' },
@@ -91,7 +93,7 @@ describe('marketplace apps', () => {
   it('lists the fork TFS card as an entry to its settings page', () => {
     const app = buildMarketplaceApps(inputs).find((entry) => entry.id === TFS_APP_ID)!;
 
-    expect(app).toMatchObject({ category: 'developer', integrationConnected: false });
+    expect(app).toMatchObject({ category: 'coding', integrationConnected: false });
     expect(app.tool).toBeUndefined();
     expect(hasAppConnection(app)).toBe(false);
     expect(getInlineConnectTool(app, true)).toBeUndefined();
@@ -110,8 +112,8 @@ describe('marketplace apps', () => {
     expect(channelOnly).toHaveLength(2);
     expect(channelOnly[0].tool).toBeUndefined();
     const toolsOnly = buildMarketplaceApps({ ...inputs, channels: [] });
-    expect(toolsOnly.find((app) => app.id === 'slack')?.category).toBe('chat');
-    expect(toolsOnly.find((app) => app.id === 'whatsapp')?.category).toBe('chat');
+    expect(toolsOnly.find((app) => app.id === 'slack')?.category).toBe('communication');
+    expect(toolsOnly.find((app) => app.id === 'whatsapp')?.category).toBe('communication');
     expect(toolsOnly.every((app) => !app.channel)).toBe(true);
   });
 
@@ -127,7 +129,7 @@ describe('marketplace apps', () => {
     expect(notionApps[0].tool).toBeDefined();
     expect(notionApps[0].officialMcp).toBeUndefined();
     const sentry = apps.find((app) => app.id === 'sentry')!;
-    expect(sentry).toMatchObject({ category: 'developer', toolConnected: true });
+    expect(sentry).toMatchObject({ category: 'coding', toolConnected: true });
     expect(sentry.tool).toBeUndefined();
     expect(hasAppConnection(sentry)).toBe(true);
     expect(getInlineConnectTool(sentry, true)).toBeUndefined();
@@ -143,5 +145,41 @@ describe('marketplace apps', () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.filter((id) => taken.has(id))).toEqual([]);
     for (const server of OFFICIAL_MCP_SERVERS) expect(new URL(server.url).protocol).toBe('https:');
+  });
+
+  it('files every LobeHub and Composio app under a named category', () => {
+    const uncategorized = getConnectorCatalog({ composio: true, lobehub: true })
+      .map((item) => (item.type === 'lobehub' ? item.provider.id : item.serverType.identifier))
+      .filter((id) => getConnectorCategory(id) === 'other');
+    expect(uncategorized).toEqual([]);
+  });
+});
+
+describe('getAppFacts', () => {
+  it('names the vendor as developer and the integrator apart', () => {
+    expect(
+      getAppFacts({ id: 'notion', name: 'Notion', tool: { type: 'composio' } as any }),
+    ).toEqual({ integrator: 'Composio', vendor: 'Notion', vendorUrl: 'https://www.notion.com' });
+  });
+
+  it('falls back to the integrator for an app without a known vendor', () => {
+    expect(getAppFacts({ id: 'acme', name: 'Acme', tool: { type: 'lobehub' } as any })).toEqual({
+      vendor: 'LobeHub',
+    });
+  });
+
+  it('names a channel-only app by its vendor', () => {
+    expect(getAppFacts({ id: 'telegram', name: 'Telegram' })).toEqual({
+      vendor: 'Telegram',
+      vendorUrl: 'https://telegram.org',
+    });
+  });
+});
+
+describe('isAppCategory', () => {
+  it('accepts catalog categories only', () => {
+    expect(isAppCategory('coding')).toBe(true);
+    expect(isAppCategory('social')).toBe(false);
+    expect(isAppCategory(null)).toBe(false);
   });
 });
