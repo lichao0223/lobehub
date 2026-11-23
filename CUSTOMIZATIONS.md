@@ -79,6 +79,7 @@
 5. 代码只初始化到个人工作目录或临时沙箱；公共网盘和旧实例构建入口尚不支持 TFS。详见 TFS 文档的使用限制，不能将 “可保存来源” 误当成 “所有执行方式都已支持”。
 6. 本 Fork Docker 工作流的 NTLM curl 构建参数、部署脚本的缺省 Collection/API 配置。
 7. TFS 独立的 agent 仓库上下文与云端 CLI 提示：普通服务端 / 浏览器运行、云端 CLI、连接设备 CLI 和桌面本地 CLI 都能读取当前作用域允许的地址、分支与环境；旧对话也按当前项目关联读取。GitHub 的 `GITHUB_REPOS`、预克隆和认证流程保持原逻辑。公开 TFS 项目来源的自动检出使用调用者个人盘，旧的自动项目目录在运行时纠正；手选公共目录仍禁止 TFS 检出。
+8. 市场 → 应用里的 TFS 入口卡片：`Marketplace/Apps/catalog.ts` 的 `TFS_APP_ID` 合成条目与 `getAppHome` 跳转、`useMarketplaceApps.ts` 传入的 `tfsConnected`、`AppIcon.tsx` 的图标分支，以及 `apps.summary.tool.tfs` 的 default / en-US / zh-CN 文案。卡片只做入口，绑定与解绑仍在 `/settings/tfs`，不复制 `AppDetail` 渲染；`tfs` 故意不进 `WORKSPACE_SETTINGS_TABS`，因为绑定属于个人而非工作空间。上游重构应用目录时逐个接点复查，不能让卡片消失或退回「无连接」状态。
 
 ### TFS 权限与后续 Git 操作补全（2026-11-16）
 

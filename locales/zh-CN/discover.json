@@ -44,6 +44,7 @@
   "apps.summary.tool.salesforce": "跟进销售线索，更新商机",
   "apps.summary.tool.slack": "搜索对话，发送消息",
   "apps.summary.tool.supabase": "查询数据库，管理存储空间",
+  "apps.summary.tool.tfs": "绑定个人 TFS 账号，在项目中使用 Git 仓库",
   "apps.summary.tool.twitter": "发布帖子，查看谁提到了你",
   "apps.summary.tool.vercel": "查看部署状态和构建日志",
   "apps.summary.tool.whatsapp": "发送消息，回复客户",

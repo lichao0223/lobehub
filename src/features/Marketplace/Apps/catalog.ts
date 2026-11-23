@@ -46,6 +46,11 @@ const categoryByTool: Record<string, AppCategory> = {
   'whatsapp': 'chat',
 };
 
+// Fork-only: TFS keeps its binding page in Settings. The Marketplace card is an
+// entry point to it, not an install flow of its own.
+export const TFS_APP_ID = 'tfs';
+export const TFS_SETTINGS_PATH = '/settings/tfs';
+
 export const hasAppConnection = (app: MarketplaceApp) =>
   app.channelLinked || app.toolConnected || app.integrationConnected;
 
@@ -57,6 +62,7 @@ export const getInlineConnectTool = (app: MarketplaceApp, lobehubEnabled: boolea
 };
 
 export const getAppHome = (app: MarketplaceApp) => {
+  if (app.id === TFS_APP_ID) return TFS_SETTINGS_PATH;
   const path = marketplaceAppPath(app.id);
   return app.channel && app.toolConnected && !app.channelLinked ? `${path}?capability=tools` : path;
 };
@@ -67,6 +73,7 @@ export const buildMarketplaceApps = ({
   integrationConnected,
   installedChannels,
   linkedChannels,
+  tfsConnected = false,
   tools,
 }: {
   channels: readonly MessengerPlatformItem[];
@@ -74,6 +81,8 @@ export const buildMarketplaceApps = ({
   integrationConnected: (id: string) => boolean;
   installedChannels: ReadonlySet<string>;
   linkedChannels: ReadonlySet<string>;
+  /** Fork-only: whether this member already bound a personal TFS account. */
+  tfsConnected?: boolean;
   tools: readonly ConnectorCatalogItem[];
 }): MarketplaceApp[] => {
   const apps = new Map<string, MarketplaceApp>();
@@ -108,6 +117,19 @@ export const buildMarketplaceApps = ({
       toolConnected: app?.toolConnected ?? false,
     });
   }
+
+  // Fork-only: the deployment-local TFS / Azure DevOps binding. It has no
+  // connector catalog entry, so the card is added here instead of coming from
+  // `tools`; opening it lands on the settings tab that manages the binding.
+  apps.set(TFS_APP_ID, {
+    category: 'developer',
+    channelLinked: false,
+    channelPending: false,
+    id: TFS_APP_ID,
+    integrationConnected: tfsConnected,
+    name: 'TFS / Azure DevOps',
+    toolConnected: false,
+  });
 
   return [...apps.values()];
 };

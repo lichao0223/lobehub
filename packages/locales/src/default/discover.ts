@@ -133,6 +133,7 @@ export default {
   'apps.summary.tool.salesforce': 'Track leads and update opportunities',
   'apps.summary.tool.slack': 'Search conversations and send messages',
   'apps.summary.tool.supabase': 'Query databases and manage storage',
+  'apps.summary.tool.tfs': 'Bind your personal TFS account and use Git repositories in projects',
   'apps.summary.tool.twitter': 'Publish posts and track mentions',
   'apps.summary.tool.vercel': 'Check deployments and build logs',
   'apps.summary.tool.whatsapp': 'Send messages and reply to customers',

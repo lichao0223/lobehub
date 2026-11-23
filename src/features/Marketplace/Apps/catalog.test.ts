@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest';
 
 import type { MessengerPlatformItem } from '@/store/messenger/projection';
 
-import { buildMarketplaceApps, getInlineConnectTool, hasAppConnection } from './catalog';
+import {
+  buildMarketplaceApps,
+  getAppHome,
+  getInlineConnectTool,
+  hasAppConnection,
+  TFS_APP_ID,
+  TFS_SETTINGS_PATH,
+} from './catalog';
 
 const slack: MessengerPlatformItem = {
   appId: 'slack-app',
@@ -81,9 +88,26 @@ describe('marketplace apps', () => {
     ).toBeUndefined();
   });
 
+  it('lists the fork TFS card as an entry to its settings page', () => {
+    const app = buildMarketplaceApps(inputs).find((entry) => entry.id === TFS_APP_ID)!;
+
+    expect(app).toMatchObject({ category: 'developer', integrationConnected: false });
+    expect(app.tool).toBeUndefined();
+    expect(hasAppConnection(app)).toBe(false);
+    expect(getInlineConnectTool(app, true)).toBeUndefined();
+    expect(getAppHome(app)).toBe(TFS_SETTINGS_PATH);
+
+    const bound = buildMarketplaceApps({ ...inputs, tfsConnected: true }).find(
+      (entry) => entry.id === TFS_APP_ID,
+    )!;
+    expect(hasAppConnection(bound)).toBe(true);
+    expect(getAppHome(bound)).toBe(TFS_SETTINGS_PATH);
+  });
+
   it('lists only the supported capabilities on each deployment', () => {
     const channelOnly = buildMarketplaceApps({ ...inputs, tools: [] });
-    expect(channelOnly).toHaveLength(1);
+    // The fork's TFS card is unconditional and carries no connector capability.
+    expect(channelOnly).toHaveLength(2);
     expect(channelOnly[0].tool).toBeUndefined();
     const toolsOnly = buildMarketplaceApps({ ...inputs, channels: [] });
     expect(toolsOnly.find((app) => app.id === 'slack')?.category).toBe('chat');

@@ -3,6 +3,7 @@ import isEqual from 'fast-deep-equal';
 import { CONNECTOR_PAGE_IDS } from '@/features/Integrations/connectorPage';
 import { useLinearConnections } from '@/features/Integrations/useLinearIntegration';
 import { buildIntegrationItems } from '@/features/Settings/skill/features/connectorSections';
+import { useTfsConnection } from '@/features/Tfs/useTfsConnection';
 import { integrationActions, integrationSelectors, useIntegrationStore } from '@/store/integration';
 import { messengerActions, messengerSelectors, useMessengerStore } from '@/store/messenger';
 import { serverConfigSelectors, useServerConfigStore } from '@/store/serverConfig';
@@ -28,6 +29,7 @@ export const useMarketplaceApps = () => {
   const installations = useMessengerStore(messengerSelectors.installations);
   const github = useIntegrationStore(integrationSelectors.scmInstallations);
   const platformsSettled = useMessengerStore(messengerSelectors.isPlatformsSettled);
+  const tfs = useTfsConnection();
 
   const useComposio = useToolStore((s) => s.useFetchUserComposioConnections);
   const useLobehub = useToolStore((s) => s.useFetchLobehubSkillConnections);
@@ -62,6 +64,8 @@ export const useMarketplaceApps = () => {
       (id === 'linear' && Boolean(linear.data?.length)),
     installedChannels: new Set(installations?.map((s) => s.platform)),
     linkedChannels: new Set(links?.map((s) => s.platform)),
+    // Fork-only: drives the TFS card's "manage" label and the connected view.
+    tfsConnected: Boolean(tfs.connection?.identity),
     tools,
   });
   const syncs = [
