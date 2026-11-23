@@ -6,16 +6,16 @@
 
 ## 功能总表
 
-| 编号     | 二开功能                            | 用户入口 / 行为                                                                             | 维护位置                                                                     | 状态                                                          |
-| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                  | `.github/workflows/publish-custom-image.yml`                                 | 历史已有；本轮增加 TFS curl 构建参数                          |
-| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈 | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md) | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话 |
-| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                  | 同上；`scripts/deploy-custom-image.test.py`                                  | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增 |
-| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                             | 下方列出的五个 `.github/workflows/` 文件                                     | 历史已有                                                      |
-| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md) | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成 |
-| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                  | 本次新增；需要 Fork 自己的 npm Token                        |
-| CUST-007 | 统一认证平台 SSO_TICKET 接入        | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话               | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)      | 开发中；单测已交付，待与真实认证中心联调                      |
-| CUST-008 | 管理员控制台（设计阶段）            | `/admin`：用户管理与审计、模型服务（Tellhow 企业内置厂商：地址 / 密钥 / 模型目录，不下发模型） | [设计与原型](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`           | 仅设计 / 原型（第七版），未改产品代码；待评审后按 P1 → P2 实施           |
+| 编号     | 二开功能                            | 用户入口 / 行为                                                                                        | 维护位置                                                                                          | 状态                                                                      |
+| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                             | `.github/workflows/publish-custom-image.yml`                                                      | 历史已有；本轮增加 TFS curl 构建参数                                      |
+| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈            | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                      | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话             |
+| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                             | 同上；`scripts/deploy-custom-image.test.py`                                                       | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增             |
+| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                        | 下方列出的五个 `.github/workflows/` 文件                                                          | 历史已有                                                                  |
+| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md) | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                |
+| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                      | 本次新增；需要 Fork 自己的 npm Token                                      |
+| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                           | 开发中；单测已交付，待与真实认证中心联调                                  |
+| CUST-008 | 管理员控制台（P1 已交付）           | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                      | P1 已落地（2026-11-23，`feat/admin-console-p1`），本地验收通过；P2 未开工 |
 
 ## CUST-001：自定义镜像
 
@@ -80,15 +80,18 @@
 5. 代码只初始化到个人工作目录或临时沙箱；公共网盘和旧实例构建入口尚不支持 TFS。详见 TFS 文档的使用限制，不能将 “可保存来源” 误当成 “所有执行方式都已支持”。
 6. 本 Fork Docker 工作流的 NTLM curl 构建参数、部署脚本的缺省 Collection/API 配置。
 7. TFS 独立的 agent 仓库上下文与云端 CLI 提示：普通服务端 / 浏览器运行、云端 CLI、连接设备 CLI 和桌面本地 CLI 都能读取当前作用域允许的地址、分支与环境；旧对话也按当前项目关联读取。GitHub 的 `GITHUB_REPOS`、预克隆和认证流程保持原逻辑。公开 TFS 项目来源的自动检出使用调用者个人盘，旧的自动项目目录在运行时纠正；手选公共目录仍禁止 TFS 检出。
-8. 市场 → 应用里的 TFS 入口卡片：`Marketplace/Apps/catalog.ts` 的 `TFS_APP_ID` 合成条目与 `getAppHome` 跳转、`useMarketplaceApps.ts` 传入的 `tfsConnected`、`AppIcon.tsx` 的图标分支，以及 `apps.summary.tool.tfs` 的 default / en-US / zh-CN 文案。卡片只做入口，绑定与解绑仍在 `/settings/tfs`，不复制 `AppDetail` 渲染；`tfs` 故意不进 `WORKSPACE_SETTINGS_TABS`，因为绑定属于个人而非工作空间。上游重构应用目录时逐个接点复查，不能让卡片消失或退回「无连接」状态。
+8. 市场 → 应用里的 TFS 入口卡片：`Marketplace/Apps/catalog.ts` 的 `TFS_APP_ID` 合成条目与 `getAppHome` 跳转、`useMarketplaceApps.ts` 传入的 `tfsConnected`、`AppIcon.tsx` 的图标分支，以及 `apps.summary.tool.tfs` 的 default /en-US/zh-CN 文案。卡片只做入口，绑定与解绑仍在 `/settings/tfs`，不复制 `AppDetail` 渲染；`tfs` 故意不进 `WORKSPACE_SETTINGS_TABS`，因为绑定属于个人而非工作空间。上游重构应用目录时逐个接点复查，不能让卡片消失或退回「无连接」状态。
 
 ### TFS 权限与后续 Git 操作补全（2026-11-16）
 
 - 个人设备上的 TFS checkout 会把临时 Git credential helper 随本次 agent 请求传给设备 CLI，后续普通 `fetch`、`pull`、`push` 命令继承同一认证环境。设备必须运行包含该协议字段处理的本 Fork CLI，旧 CLI 会完成首次 checkout 但不会为后续 Git 操作注入凭据；共享设备和工作区设备仍不接收个人凭据。
 
 - 共享 agent 仓库上下文排除调用者私有环境，覆盖 Topic 和无 Topic 任务；GitHub 上下文不改。
+
 - 新增独立 `tfs.git/gitOperation`、`lh tfs git` 和随服务端交付的 TFS CLI shim。后续云端 fetch / 快进 pull / 非强制 push 按当前调用者重新授权，只操作当前 Topic 选中来源，凭据不返回 agent、不落 Git 配置；临时沙箱可用，实际公共盘和旧实例继续拒绝。
+
 - 合并时保留 `services/tfs/{git,gitCommand,cliShim}.ts`、`routers/lambda/tfsGit.ts`、`apps/cli/src/commands/tfs.ts`，以及普通云端 `lh` 预处理和 TFS CLI 启动的派发接点。详细协议、测试和待验收项见 TFS 说明。
+
 - 2026-11-19 上游合并后的沙盒初始化继续区分临时沙盒与公共持久目录：临时沙盒允许调用者个人 TFS 凭据初始化，workspace public drive 拒绝 TFS 克隆和后续 Git 操作；公共盘判断在统一 `resolveSandboxSessionConfig` 路径回归覆盖。
 
 ## CUST-006：Fork CLI 发布
@@ -103,17 +106,52 @@
 - 上下文区分 “项目已关联来源”“对话选中环境” 和 “实际已检出代码”；不宣称元数据等于克隆成功，不把密码 / PAT 或环境变量发给模型。调用者自己的网关管理设备只在空工作目录首次调用时用一次性凭据初始化，初始化成功后同一运行上下文的普通 Git 命令继承临时配置；共享设备、桌面直连和其他未完成个人初始化的命令继续使用设备自身凭据管理器。
 - 尚无实际部署的页面 /agent 对话验收；自动化验证及当前边界见 TFS 详细说明。合并时保留浏览器上下文、桌面本地 CLI、服务端运行和云端 / 设备分发的所有接点。
 
-## CUST-008：管理员控制台（设计阶段）
+## CUST-008：管理员控制台（P1 用户管理已交付）
 
-完整方案、数据模型、侵入清单与分阶段计划见 [ADMIN_CONSOLE_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。
+完整方案、数据模型、侵入清单与实施偏差见 [ADMIN\_CONSOLE\_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。P1 分支：`feat/admin-console-p1`（2026-11-23）。验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8/8 passed）。
 
-范围由产品方确认为两块，按阶段独立上线：**用户管理 + 审计日志**（P1，先交付，`/admin` 只渲染这两页）、**模型服务**（P2，Tellhow 企业内置厂商：管理员维护服务地址、加密保存的 API Key 与模型目录；用户侧表现为常驻已启用的内置服务商，无需填 Key，自行勾选模型，也可继续添加自己的厂商）。
+### P1 交付内容
 
-「不下发模型」是本轮的核心边界：控制台只写 `admin_console_settings.config.ai`，不写任何用户的 `user_settings`；模型目录是唯一事实源，用户的启用 / 停用属于用户自己的行。
+- **数据库**：fork 保留区迁移 `9001_admin_console_settings.sql` 新增单行表 `admin_console_settings`（`id='singleton'`、`config jsonb`、`updated_by`、时间戳）。**0 个上游表结构变更**；`scripts/fork/reconcileMigrations.ts` 的 `FORK_TABLES` 已补该表。
+- **业务层**：`packages/business-server/src/adminConsole/permissions.ts`（`isAdminRole`、环境变量名单惰性提权、`adminProcedure`、最后管理员串行锁）；`packages/database/src/models/adminConsole.ts`（列表 / 详情 / 改角色 / 禁用 / 解禁 / 撤会话）；`packages/types/src/adminConsole.ts`。
+- **接口**：`adminConsole` router 挂到 `apps/server/src/routers/lambda/index.ts`。`whoami` 用 authed；`listUsers` / `getUser` / `setUserRole` / `banUser` / `unbanUser` / `revokeUserSessions` 用 admin。账号状态只写 Better Auth 已有的 `users.role` / `banned` / `banReason` / `banExpires`，不新增 `is_admin` 列。
+- **页面**：`src/features/AdminConsole/*`；`/admin` 注册在 `src/spa/router/desktopRouter.shared.tsx`（`preloadId: 'adminConsole'`），`/admin/users` 为兼容别名；用户菜单入口在 `src/features/User/UserPanel/useMenu.tsx`，仅管理员渲染。移动端不注册。
+- **原生端点拦截**：`src/app/(backend)/api/auth/[...all]/route.ts` 对 `POST /api/auth/admin/*` 返回 404（规则在 `src/libs/better-auth/adminEndpointGuard.ts`），保证账号状态唯一写入口是 `adminConsole.*`（§12.6）。
+- **环境变量**：`ADMIN_CONSOLE_BOOTSTRAP_EMAILS`（邮箱或用户名，逗号分隔，大小写不敏感）、`ADMIN_CONSOLE_BOOTSTRAP_USER_IDS`。命中且当前非 admin、且「实例无启用 admin」或「从未 bootstrap」时惰性提升为 admin；只升不降，名单移除不自动降权。
+- **文案**：`packages/locales/src/default/{common,setting}.ts` 与 `locales/en-US|zh-CN/{common,setting}.json`。
 
-当前只交付设计与原型，**没有修改产品代码**。实施时按设计文档第 8 节控制改动面：新增独立目录（`adminConsole` router、`src/features/AdminConsole`、`packages/business-server/src/companyProvider.ts`、model-bank 的 tellhow 定义），共享文件只加单点接点并控制在 10 行内 —— `ModelRuntime` 默认分支注入业务层凭据（`getParamsFromPayload` 随之改 async）、`getServerGlobalConfig` 合并 tellhow 模型目录、`routers/lambda/index.ts` 挂载、`desktopRouter.shared.tsx` 注册路由、用户菜单加入口、model-bank 两个 index 导出。**不改** `aiProvider` / `aiModel` 任何 mutation、`updateSettings` 策略与 feature flags。
+### 共享文件改动（§8.2）
 
-密钥不变量：非管理员任何接口都不返回明文或密文；用户侧运行时状态不含 `keyVaults`；`fetchOnClient = false`，请求全部经服务端转发；审计只记 `ai.keyUpdate` 动作，不记内容。禁用账号时仍要同时禁用其 API Key（§12.3），否则 CLI 仍可调用。合并上游后按设计文档第 10 节逐条复查。
+| 文件                                              | 改动                                           |
+| ------------------------------------------------- | ---------------------------------------------- |
+| `apps/server/src/routers/lambda/index.ts`         | +2，挂载 `adminConsole`                        |
+| `src/spa/router/desktopRouter.shared.tsx`         | +4，注册 `/admin`                              |
+| `src/features/User/UserPanel/useMenu.tsx`         | +3，菜单入口接线                               |
+| `src/features/NavPanel/routeKey.ts`               | +5，`admin → admin` 单点映射（控制台自有侧栏） |
+| `src/app/(backend)/api/auth/[...all]/route.ts`    | +7，拦截原生 admin 端点                        |
+| `packages/database/src/index.ts`                  | +1，导出 model                                 |
+| `packages/database/src/schemas/index.ts`          | +1，导出 schema                                |
+| `packages/database/migrations/meta/_journal.json` | +7，注册 9001                                  |
+| `packages/types/src/index.ts`                     | +1，导出类型                                   |
+| `packages/locales/src/default/common.ts`          | +2                                             |
+| `packages/locales/src/default/setting.ts`         | +60                                            |
+| `locales/{en-US,zh-CN}/{common,setting}.json`     | 各 +2 / +58                                    |
+| `scripts/fork/reconcileMigrations.ts`             | `FORK_TABLES` +1 项（其余为格式化）            |
+
+§8.2 原列 8 个文件只覆盖 P2 运行时接点；P1 实际超出清单的都是**注册类单点追加**（包入口导出、迁移 journal、i18n 文案、鉴权拦截、NavPanel key）。逐项理由与验收口径见设计文档 §15；没有修改上游表结构、`src/features/Settings/**` 或 `updateSettings` 策略。
+
+### 上游合并时必须保留
+
+1. 迁移 9001 保持在 journal 队尾、`idx` 在 9000+ 保留区；合并上游后跑 `bun run db:fork:reconcile`。
+2. `adminConsole` router 挂载、`/admin` 路由 / `preloadId` / 菜单入口、`whoami` 守卫。
+3. `users.role` 仍是唯一管理员来源；不新增 `is_admin`，不启用 Better Auth 原生 `/api/auth/admin/*`。
+4. 禁用级联顺序：① `api_keys.enabled=false` → ② 写 `banned` / `banReason` / `banExpires` → ③ 尽力撤 session。**解禁不恢复 API Key**。
+5. 最后管理员保护（`pg_advisory_xact_lock(hashtext('admin_console:last_admin'))`）与自助操作 `SELF_LOCKOUT` 的 `CONFLICT` 语义。
+6. en-US /zh-CN 文案与 en-US 源文案同步；上游改 `users` 表、`api_keys` 或 Better Auth admin 插件时会话字段时逐项复查。
+
+### P2（未开工）
+
+Tellhow 内置厂商、`config.ai` 加密、`companyProvider`、运行时凭据注入、测试连接 / 目录同步、`/admin` 模型服务页。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
 
 ## 上游合并统一流程
 
@@ -131,18 +169,30 @@
 ## 本轮检查记录
 
 - 提交前已 rebase 到远端 `canary` / `124c7ebaed`，无冲突；补齐上游新增钉钉适配器的本机 workspace 依赖后，69 个提交文件的检查通过：208 项相关测试通过、全仓类型检查通过，lint 仅有既有 1 条导入风格 warning。依赖同步未修改受版本管理的清单。
+
 - TFS 前轮：208 项测试通过，类型检查通过，lint 无错误、既有 1 条 warning；真实 NTLM REST 查询与本机 Git 克隆成功。细节见 TFS 文档。
+
 - 本轮部署补充：15 项 Python 测试通过，覆盖首次安装密钥生成、老部署补缺省值、保留已有 / 禁用 / 托管的 TFS 设置、原密钥与 `.env` 不被更改，以及既有回滚和 Onlyboxes 协议测试。
+
 - 本轮相关文件 `bun run check --lint --test` 通过，22 项部署相关 TypeScript 测试通过，lint 无错误；`bash -n` 和 `git diff --check` 通过。Python / Shell / Dockerfile 等没有对应 linter 的文件不计为已 lint。
+
 - 本轮部署自动重跑（2026-11-17）：`python3 scripts/deploy-custom-image.test.py` 24 项通过（登记先于结算、只登记运行中会话、跳过 `waiting_for_human` 陈留、写入失败不阻塞结算、`RESUME_AFTER_DEPLOY=0` 不登记、dry-run 不登记、`RETURNING` 计数不被 psql 命令标签污染）；`pnpm exec vitest run apps/server/src/services/deployResume/index.test.ts` 19 项通过；`pnpm exec oxlint` 覆盖改动文件 0 warning / 0 error；`pnpm exec tsrs --noEmit -p tsconfig.type-check.json` 退出码 0；`bash -n scripts/deploy-custom-image.sh` 通过。本机没有 `bun`，`bun run check` 按其组成（lint + 相关测试 + 全仓类型检查）分别执行。迁移 `9000` 与 `queue_resumes()` 的真实 SQL 已在 `lobe-postgres` 的临时库 `deploy_resume_probe` 上跑通：建表建索引、3 行登记（2 任务 + 1 对话）、二次部署就地重新武装（总行数仍为 3）、`RESUME_AFTER_DEPLOY=0` 写 0 行、按 id 的 `claim` 只有一方成功、`listPending` 命中 `(status, created_at)` 索引。
+
 - 同批修正一个既有类型错误：`apps/server/src/services/tfs/git.ts` 读取 `getUserSettings()` 返回的 `market` jsonb 时被推断为 `{}`，导致全仓 `type-check` 失败；按 `MarketAuthTokens` 收窄后再读 `accessToken`。与部署自动重跑无关，仅因阻塞类型检查门禁一并修复。
+
 - 尚未执行：真实造一次中断（更新时正在跑的任务 / 对话）后由新容器启动自动重跑的端到端验收、Docker 镜像构建、目标服务器升级。线上容器镜像早于本次改动，单纯重启只会跑旧代码；真实验收要先构建并推送镜像再走一次更新。库表与脚本 SQL 已在真实 PostgreSQL 上验证，但这不等于产品级恢复验收。
+
 - 尚未执行 Docker 镜像构建、真实 Compose 解析、目标服务器升级及真实页面验收；不能据此宣称已经上线或全链路通过。
+
 - 上游同步（2026-11-18）：已 rebase 到 `upstream/canary` `55c24e8fb6`，保留 TFS、Fork CLI、部署结算与自动恢复定制；上游 `0220_channel_sections` 与本 Fork 的恢复队列迁移使用 `9000_nosy_tag` 保留区，两份 snapshot 和 journal 已连续校验。
+
 - 上游同步（2026-11-19）：合并 `upstream/canary` `0410a4a148`，保留项目环境的一环境多仓库模型，并将 TFS 授权、项目来源校验、云端初始化和个人设备兼容入口迁移到新调用链。冲突集中在项目环境 / 沙盒初始化共享接点；Fork 的 `9000_nosy_tag` 迁移未受影响。
-- 上游同步（2026-11-20）：合并 `upstream/canary` `1ce7bdcefb`（14 个提交，含一环境多仓库的环境重构、channel 线程与交付记录、异种 agent 权限模式、density Compact）。Git 冲突只有 `packages/database/migrations/meta/_journal.json`：上游 `0224_agent_deliveries_and_contact_request_source` 占用 idx 224，Fork 的 `9000_nosy_tag` 顺延为 idx 225，`9000_snapshot` 以 0224 快照为 `prevId` 重建，journal 连续无空洞。语义冲突（上游删掉接口、Fork 文件仍引用）三处，均按上游新接口在 Fork 侧适配、未回退上游：`apps/server/src/services/tfs/agentContext.ts` 的 `ProjectModel.listEnvironments` → `ProjectEnvironmentRepository.get`；`sandboxEnvironmentOptions.ts` 的 `repositorySelection` 统一为双参数签名并由 `SandboxDrivePicker` 同步调用；`src/features/Projects/AddEnvironmentModal.tsx` 的 `attachRepository` / `attachEnvironment` 与 `environment.add.*` 文案在上游移除后补回客户端 service、store 动作和 en-US / zh-CN 文案，接点改走服务端保留的兼容过程。结果：`tsrs --noEmit` 0 错误（合并中途为 15 处 / 3 文件）、改动文件 oxlint 0 错误、`agentContext` / `sandboxEnvironmentOptions` / `SandboxDrivePicker` 共 36 项测试通过。未执行：真实页面验收、Docker 构建、目标服务器升级。
-- 上游同步（2026-11-20，第二次）：合并 `upstream/canary` `89b7d51732`（2 个提交：运行资源设置页合并 workspace / private 视图、删除 artboard 来源列）。冲突只有 `_journal.json`：上游 `0225_artboard_boards_drop_old_sources` 占 idx 225，Fork `9000_nosy_tag` 顺延为 idx 226，`9000_snapshot` 的 `prevId` 改为 0225 快照。已校验 journal idx 连续（0–226）与快照链；本机没有 `node_modules`，未执行 `tsrs` / 测试，需在 CI 或安装依赖后补跑。
-- 迁移编号与快照修正（2026-11-20）：`9000_nosy_tag` 的 journal `idx` 由 226 改为 9000，固定在保留区，避免 fork 下次 `db:generate` 按 `last.idx + 1` 抢到上游的 `0227` 编号与文件名。同时发现 `9000_snapshot.json` 只是把 `prevId` 指向 0225，表结构仍停留在 0224 之前：`public.artboard_boards` 还带 `source_file_id` / `source_work_version_id` 及对应索引与 check，与已执行的 `0225_artboard_boards_drop_old_sources` 不符，下次 `db:generate` 会重复生成已执行过的 `DROP COLUMN` 并在新库上报错。现按「0225 快照 + `deploy_resume_queue`」重建（表数 251 不变，只有 `artboard_boards` 变化，`prevId` 仍为 0225 快照 `df89ac9e…`）。新增 `scripts/fork/reconcileMigrations.ts` 与 `bun run db:fork:reconcile` 固化「队尾排序 / when 单调 / 快照基准重建」三步；脚本已在本地实跑两轮，`--check` 通过。
+
+- 上游同步（2026-11-20）：合并 `upstream/canary` `1ce7bdcefb`（14 个提交，含一环境多仓库的环境重构、channel 线程与交付记录、异种 agent 权限模式、density Compact）。Git 冲突只有 `packages/database/migrations/meta/_journal.json`：上游 `0224_agent_deliveries_and_contact_request_source` 占用 idx 224，Fork 的 `9000_nosy_tag` 顺延为 idx 225，`9000_snapshot` 以 0224 快照为 `prevId` 重建，journal 连续无空洞。语义冲突（上游删掉接口、Fork 文件仍引用）三处，均按上游新接口在 Fork 侧适配、未回退上游：`apps/server/src/services/tfs/agentContext.ts` 的 `ProjectModel.listEnvironments` → `ProjectEnvironmentRepository.get`；`sandboxEnvironmentOptions.ts` 的 `repositorySelection` 统一为双参数签名并由 `SandboxDrivePicker` 同步调用；`src/features/Projects/AddEnvironmentModal.tsx` 的 `attachRepository` / `attachEnvironment` 与 `environment.add.*` 文案在上游移除后补回客户端 service、store 动作和 en-US /zh-CN 文案，接点改走服务端保留的兼容过程。结果：`tsrs --noEmit` 0 错误（合并中途为 15 处 / 3 文件）、改动文件 oxlint 0 错误、`agentContext` / `sandboxEnvironmentOptions` / `SandboxDrivePicker` 共 36 项测试通过。未执行：真实页面验收、Docker 构建、目标服务器升级。
+
+- 上游同步（2026-11-20，第二次）：合并 `upstream/canary` `89b7d51732`（2 个提交：运行资源设置页合并 workspace /private 视图、删除 artboard 来源列）。冲突只有 `_journal.json`：上游 `0225_artboard_boards_drop_old_sources` 占 idx 225，Fork `9000_nosy_tag` 顺延为 idx 226，`9000_snapshot` 的 `prevId` 改为 0225 快照。已校验 journal idx 连续（0–226）与快照链；本机没有 `node_modules`，未执行 `tsrs` / 测试，需在 CI 或安装依赖后补跑。
+
+- 迁移编号与快照修正（2026-11-20）：`9000_nosy_tag` 的 journal `idx` 由 226 改为 9000，固定在保留区，避免 fork 下次 `db:generate` 按 `last.idx + 1` 抢到上游的 `0227` 编号与文件名。同时发现 `9000_snapshot.json` 只是把 `prevId` 指向 0225，表结构仍停留在 0224 之前：`public.artboard_boards` 还带 `source_file_id` / `source_work_version_id` 及对应索引与 check，与已执行的 `0225_artboard_boards_drop_old_sources` 不符，下次 `db:generate` 会重复生成已执行过的 `DROP COLUMN` 并在新库上报错。现按「0225 快照 + `deploy_resume_queue`」重建（表数 251 不变，只有 `artboard_boards` 变化，`prevId` 仍为 0225 快照 `df89ac9e…`）。新增 `scripts/fork/reconcileMigrations.ts` 与 `bun run db:fork:reconcile` 固化「队尾排序 /when 单调 / 快照基准重建」三步；脚本已在本地实跑两轮，`--check` 通过。
 
 - 上游同步（2026-11-20，第三次）：合并 `upstream/canary` `930fefdc53`（76 个提交，含 Marketplace 应用能力重构、Agent 头像、Channel 多项、OpenAPI 生成接口、调度任务表等）。冲突 9 处，处理如下：
   1. `packages/database/migrations/meta/_journal.json`：上游新增 `0226_agent_share_grants`。取上游 journal 后重新追加 `9000_nosy_tag`，再跑 `db:fork:reconcile`：idx 固定 9000、`when` 取上游最后一条 +1ms、`9000_snapshot.json` 以 0226 快照 + `deploy_resume_queue` 重建。
@@ -152,4 +202,4 @@
   5. `src/features/EnvironmentManager/CreateEnvironmentModal.tsx`：上游改为多仓库 `RepositoryField`。采用上游结构，保留 TFS 来源：新增「添加 TFS 仓库」按钮，选中后把 `{ name, remoteUrl, defaultBranch }` 追加到同一 `repositories` 列表，沿用 `layoutRepositorySources`。
   6. `src/features/Projects/CreateFromGithub/Content.tsx`：保留 `provider === 'tfs'` 分支，GitHub 跳转改用上游 `buildConnectorPagePath('github')`，TFS 跳转改为 `/settings/tfs`。
   7. 新增 `SettingsTabs.Tfs = 'tfs'`、`src/features/Tfs/SettingsPage.tsx`、`/settings/tfs`（复用设置 `:tab` 路由）、侧栏「TFS / Azure DevOps」入口与 `setting:tab.tfs` 文案；旧 `/settings/integrations/tfs` 由 `buildLegacyIntegrationPath` 跳到新页。
-  验证：`db:fork:reconcile --check` 通过；改动文件 esbuild 语法检查通过、相关 JSON 可解析；本机无 `node_modules`，未跑 `bun run check` / 类型检查 / 测试。
+     验证：`db:fork:reconcile --check` 通过；改动文件 esbuild 语法检查通过、相关 JSON 可解析；本机无 `node_modules`，未跑 `bun run check` / 类型检查 / 测试。
