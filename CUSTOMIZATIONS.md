@@ -47,6 +47,7 @@
 - 尚未覆盖的边界：只重跑一轮，不做断点续传；多副本同时启动靠 `claim` 只会有一个容器跑；`SETTLE` 未开启的部署（`SETTLE=0`）不会登记；计划任务 / 心跳在下一次 tick 自然恢复，不走本清单；恢复计费不设防（自用部署，用户明确要求全开）。
 - 历史依据：`e3c84a0ad6`、`d0b8fa56a2`、`20b371eeb8`、`ecd6a41479`、`a574f77ca9`。后两项分别修复 Compose `$` 反转义和终端不可 seek 的输入问题，合并时不要丢。
 - 上游改变服务名、Compose 模板位置、启动命令或健康检查时，同步检查脚本的 `SERVICE`、模板清单和 `--wait` 流程。镜像发布与部署脚本更新是两件事：本地改源码后，服务器拉取旧标签不会得到新功能。
+- 脚本只升级应用服务：更新路径是 `compose pull $SERVICE` + `up -d --wait --no-deps $SERVICE`，`gateway` / `postgres` / `redis` / `rustfs` / `searxng` 既不拉取也不重建；已有部署的基线 `docker-compose.yml` 只备份不重写。这些服务的版本完全由 `docker-compose/deploy/docker-compose.yml` 的 pin 决定（首次安装下载该模板，之后需手动改 tag 再 `docker compose up -d <service>`）。当前 pin：`ghcr.io/lobehub/lobehub-gateway:0.5.3`（`docker-compose/deploy` 与 `docker-compose/eval` 同步；升级原因：0.5.1 修设备磁盘指标，0.5.2/0.5.3 修断线 replay/resume）。Go 网关不支持 admin API 与 device tunnels，端口分享入口仍会读不到链接，与版本无关。
 
 ## CUST-003：Onlyboxes / Market 部署切换
 
