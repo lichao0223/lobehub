@@ -1,4 +1,5 @@
 export * from './core/db-adaptor';
+export * from './models/adminConsole';
 export * from './models/agentCopyJob';
 export * from './models/agentHistoryJob';
 export * from './models/agentTransferJob';

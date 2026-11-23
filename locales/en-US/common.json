@@ -566,6 +566,8 @@
   "upgradeVersion.newVersion": "Update available: {{version}}",
   "upgradeVersion.serverVersion": "Server: {{version}}",
   "userPanel.accountSetting": "Account Settings",
+  "userPanel.adminConsole": "Admin Console",
+  "userPanel.adminRole": "Admin",
   "userPanel.anonymousNickName": "Anonymous User",
   "userPanel.billing": "Billing",
   "userPanel.cloud": "Launch {{name}}",

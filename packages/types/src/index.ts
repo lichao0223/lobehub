@@ -1,3 +1,4 @@
+export * from './adminConsole';
 export * from './agent';
 export * from './agentAccount';
 export * from './agentAvailability';

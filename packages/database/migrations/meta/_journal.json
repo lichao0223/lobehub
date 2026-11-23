@@ -1596,6 +1596,13 @@
       "when": 1795232920078,
       "tag": "9000_nosy_tag",
       "breakpoints": true
+    },
+    {
+      "idx": 9001,
+      "version": "7",
+      "when": 1795410491358,
+      "tag": "9001_admin_console_settings",
+      "breakpoints": true
     }
   ],
   "version": "6"

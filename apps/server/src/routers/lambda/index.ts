@@ -25,6 +25,7 @@ import { publicProcedure, router } from '@/libs/trpc/lambda';
 
 import { acceptanceRouter } from './acceptance';
 import { acceptanceCommentRouter } from './acceptanceComment';
+import { adminConsoleRouter } from './adminConsole';
 import { agentRouter } from './agent';
 import { agentAccountRouter } from './agentAccount';
 import { agentAvailabilityRouter } from './agentAvailability';
@@ -137,6 +138,7 @@ import { workspaceUserSettingsRouter } from './workspaceUserSettings';
 export const lambdaRouter = router({
   tfs: tfsRouter,
   acceptance: acceptanceRouter,
+  adminConsole: adminConsoleRouter,
   acceptanceComment: acceptanceCommentRouter,
   agent: agentRouter,
   agentAccount: agentAccountRouter,

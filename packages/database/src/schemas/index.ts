@@ -1,6 +1,7 @@
 export * from './acceptanceComment';
 export * from './acceptanceFlow';
 export * from './acceptanceReview';
+export * from './adminConsoleSettings';
 export * from './agent';
 export * from './agentAccount';
 export * from './agentBotProvider';
