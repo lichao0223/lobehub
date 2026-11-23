@@ -200,6 +200,6 @@ Tellhow 内置厂商、`config.ai` 加密、`companyProvider`、运行时凭据�
   3. `packages/database/src/models/taskTopic.ts`：双方各自新增类型与操作符，合并为同时导入 `TaskRecentRun`、`TaskRunTrigger` 与 `lte`。
   4. `src/features/Integrations/{index.tsx,Overview.tsx,registry.ts}`（modify/delete）：上游把集成目录迁到 Marketplace 并删除该页，Fork 只在其上注册过 TFS。接受删除，TFS 改为独立设置页，不再依赖集成目录。
   5. `src/features/EnvironmentManager/CreateEnvironmentModal.tsx`：上游改为多仓库 `RepositoryField`。采用上游结构，保留 TFS 来源：新增「添加 TFS 仓库」按钮，选中后把 `{ name, remoteUrl, defaultBranch }` 追加到同一 `repositories` 列表，沿用 `layoutRepositorySources`。
-  6. `src/features/Projects/CreateFromGithub/Content.tsx`：保留 `provider === 'tfs'` 分支，GitHub 跳转改用上游 `buildConnectorPagePath('github')`，TFS 跳转改为 `/settings/tfs`。
+  6. `src/features/Projects/CreateFromGithub/Content.tsx`：以上游结构为骨架（单一 `repositories` 状态、`RepositoryField` + `AdvancedRepositories`、`useDefaultMainAgent`），只在 `provider === 'tfs'` 处把 TFS 选择器作为同一列表的入口，TFS 跳转改为 `/settings/tfs`。不要再用单仓库表单整体替换上游文件，否则每次上游改动都会重新冲突。
   7. 新增 `SettingsTabs.Tfs = 'tfs'`、`src/features/Tfs/SettingsPage.tsx`、`/settings/tfs`（复用设置 `:tab` 路由）、侧栏「TFS / Azure DevOps」入口与 `setting:tab.tfs` 文案；旧 `/settings/integrations/tfs` 由 `buildLegacyIntegrationPath` 跳到新页。
      验证：`db:fork:reconcile --check` 通过；改动文件 esbuild 语法检查通过、相关 JSON 可解析；本机无 `node_modules`，未跑 `bun run check` / 类型检查 / 测试。

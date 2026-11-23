@@ -137,35 +137,36 @@ Docker 是 **LobeHub 服务怎么部署**；下表是 **Agent 运行时把代码
 
 ### 修改既有文件（逐个手工合并接点）
 
-| 路径                                                                                                        | 必须保留的增量                                                                             |
-| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `packages/types/src/index.ts`、`scm.ts`                                                                     | 导出 TFS 类型，SCM provider 增加 tfs，个人凭据增加可选 tfs 字段                            |
-| `.env.example`、`Dockerfile`                                                                                | 部署配置示例、可选 NTLM curl 运行时；合并后检查最终运行层是否仍包含 curl 动态库            |
-| `.github/workflows/publish-custom-image.yml`、`scripts/deploy-custom-image.sh`                              | 本 Fork 镜像启用 NTLM curl；新安装和旧部署更新补缺省 Collection/API，不覆盖既有配置或密钥  |
-| `scripts/deploy-custom-image.test.py`、`scripts/deploy-custom-image.md`                                     | 部署缺省值 / 保留已有配置和密钥的回归，面向 Docker 用户的操作说明                          |
-| `CUSTOMIZATIONS.md`、`AGENTS.md`                                                                            | 通用二开功能总清单及合并前阅读入口；本文保留为 TFS 详细说明                                |
-| `packages/database/src/models/scm/identity.ts`                                                              | 按 provider + 当前用户删除绑定，不能扩大删除范围                                           |
-| `packages/database/src/models/environment.ts`                                                               | TFS 来源规范化；GitHub 旧路径继续工作                                                      |
-| `apps/server/src/routers/lambda/index.ts`                                                                   | 注册 tfsRouter                                                                             |
-| `apps/server/src/routers/lambda/_schema/environment.ts`                                                     | 新来源仅接受配置 Collection 的无凭据 Git URL                                               |
-| `apps/server/src/routers/lambda/project.ts`                                                                 | 创建带仓库项目时先验证个人 TFS 读取权限                                                    |
-| `apps/server/src/routers/lambda/projectWorkingDirectory.ts`                                                 | attachRepository 保存前验证个人 TFS 读取权限                                               |
-| `apps/server/src/routers/lambda/environment.ts`                                                             | create/update 来源权限校验；旧 GitHub 不发 TFS 请求                                        |
-| `apps/server/src/services/scm/cloneCredential.ts`                                                           | 运行时解析当前调用者个人 TFS 凭据，不能用环境所有者的身份                                  |
-| `apps/server/src/services/scm/changeRequestUrl.ts`                                                          | 原 GitHub PR parser 的结果继续限定为 github，不能因扩展 provider union 而误宣称处理 TFS PR |
-| `apps/server/src/services/sandbox/environmentInit.ts`、`session.ts`                                         | TFS 临时 Git 认证及失败时停止初始化；不持久化凭据                                          |
-| `apps/server/src/services/sandbox/providers/market.ts`                                                      | TFS 认证初始化命令整体脱敏，不能只遮住部分 shell 引号                                      |
-| `apps/server/src/routers/lambda/sandboxStorage/instanceBuild.ts`                                            | 对 TFS 明确拒绝旧环境实例构建协议，改用工作目录初始化                                      |
-| `src/features/Integrations/{registry,index,Overview}.tsx`                                                   | 注册卡片、详情和个人绑定状态（registry 实际为 .ts）                                        |
-| `src/features/Projects/List/index.tsx`                                                                      | 从 TFS 创建入口                                                                            |
-| `src/features/Projects/CreateFromGithub/{index,Content}.tsx`                                                | 可选 provider，复用原表单，不能删除 GitHub 默认值                                          |
-| `src/features/Projects/AddEnvironmentModal.tsx`                                                             | TFS 环境来源入口；一环境多仓库后由服务端兼容过程向项目唯一环境追加仓库，不得删文件 |
-| `src/features/EnvironmentManager/{CreateEnvironmentModal,EnvironmentForm}.tsx`、`repository.ts`             | 平台选择、仓库显示和分支处理                                                               |
-| `src/store/utils/userDataStores.ts`                                                                         | 登出时清理 TFS 内存数据                                                                    |
-| `src/features/ChatInput/ControlBar/sandboxEnvironmentOptions.ts`                                            | 环境列表显示 TFS 的 project/repository，避免把 Collection/\_git 路径当仓库名               |
-| `apps/server/src/services/sandbox/__tests__/{environmentInit,session}.test.ts`、`providers/market.test.ts`  | TFS 未授权 / 公共 drive 停止初始化、授权恢复重试、clone 后清除 helper 与日志整体脱敏       |
-| `packages/database/src/models/scm/__tests__/identity.test.ts`、`src/store/utils/userDataStores.test.ts`     | 一对一和解绑用户隔离；登出清理新增内存 store，补齐原用例的 store 边界 mock                 |
-| `packages/locales/src/default/{integration,project}.ts`、`locales/{en-US,zh-CN}/{integration,project}.json` | 新功能文案，两种语言同批维护                                                               |
+| 路径                                                                                                        | 必须保留的增量                                                                                                                                           |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/types/src/index.ts`、`scm.ts`                                                                     | 导出 TFS 类型，SCM provider 增加 tfs，个人凭据增加可选 tfs 字段                                                                                          |
+| `.env.example`、`Dockerfile`                                                                                | 部署配置示例、可选 NTLM curl 运行时；合并后检查最终运行层是否仍包含 curl 动态库                                                                          |
+| `.github/workflows/publish-custom-image.yml`、`scripts/deploy-custom-image.sh`                              | 本 Fork 镜像启用 NTLM curl；新安装和旧部署更新补缺省 Collection/API，不覆盖既有配置或密钥                                                                |
+| `scripts/deploy-custom-image.test.py`、`scripts/deploy-custom-image.md`                                     | 部署缺省值 / 保留已有配置和密钥的回归，面向 Docker 用户的操作说明                                                                                        |
+| `CUSTOMIZATIONS.md`、`AGENTS.md`                                                                            | 通用二开功能总清单及合并前阅读入口；本文保留为 TFS 详细说明                                                                                              |
+| `packages/database/src/models/scm/identity.ts`                                                              | 按 provider + 当前用户删除绑定，不能扩大删除范围                                                                                                         |
+| `packages/database/src/models/environment.ts`                                                               | TFS 来源规范化；GitHub 旧路径继续工作                                                                                                                    |
+| `apps/server/src/routers/lambda/index.ts`                                                                   | 注册 tfsRouter                                                                                                                                           |
+| `apps/server/src/routers/lambda/_schema/environment.ts`                                                     | 新来源仅接受配置 Collection 的无凭据 Git URL                                                                                                             |
+| `apps/server/src/routers/lambda/project.ts`                                                                 | 创建带仓库项目时先验证个人 TFS 读取权限                                                                                                                  |
+| `apps/server/src/routers/lambda/projectWorkingDirectory.ts`                                                 | attachRepository 保存前验证个人 TFS 读取权限                                                                                                             |
+| `apps/server/src/routers/lambda/environment.ts`                                                             | create/update 来源权限校验；旧 GitHub 不发 TFS 请求                                                                                                      |
+| `apps/server/src/services/scm/cloneCredential.ts`                                                           | 运行时解析当前调用者个人 TFS 凭据，不能用环境所有者的身份                                                                                                |
+| `apps/server/src/services/scm/changeRequestUrl.ts`                                                          | 原 GitHub PR parser 的结果继续限定为 github，不能因扩展 provider union 而误宣称处理 TFS PR                                                               |
+| `apps/server/src/services/sandbox/environmentInit.ts`、`session.ts`                                         | TFS 临时 Git 认证及失败时停止初始化；不持久化凭据                                                                                                        |
+| `apps/server/src/services/sandbox/providers/market.ts`                                                      | TFS 认证初始化命令整体脱敏，不能只遮住部分 shell 引号                                                                                                    |
+| `apps/server/src/routers/lambda/sandboxStorage/instanceBuild.ts`                                            | 对 TFS 明确拒绝旧环境实例构建协议，改用工作目录初始化                                                                                                    |
+| `src/features/Integrations/{registry,index,Overview}.tsx`                                                   | 注册卡片、详情和个人绑定状态（registry 实际为 .ts）                                                                                                      |
+| `src/features/Projects/List/index.tsx`                                                                      | 从 TFS 创建入口                                                                                                                                          |
+| `src/features/Projects/CreateFromGithub/{index,Content}.tsx`                                                | 上游结构为骨架（`RepositoryField` / `AdvancedRepositories` / `useDefaultMainAgent`），TFS 只是同一 `repositories` 列表的增量入口；不能删除 GitHub 默认值 |
+| `src/features/Tfs/TfsRepositoryPicker.tsx`                                                                  | 单选默认行为不变；`multiple` 模式支持每个仓库独立分支，切换项目不清空已选                                                                                |
+| `src/features/Projects/AddEnvironmentModal.tsx`                                                             | TFS 环境来源入口；一环境多仓库后由服务端兼容过程向项目唯一环境追加仓库，不得删文件                                                                       |
+| `src/features/EnvironmentManager/{CreateEnvironmentModal,EnvironmentForm}.tsx`、`repository.ts`             | 平台选择、仓库显示和分支处理                                                                                                                             |
+| `src/store/utils/userDataStores.ts`                                                                         | 登出时清理 TFS 内存数据                                                                                                                                  |
+| `src/features/ChatInput/ControlBar/sandboxEnvironmentOptions.ts`                                            | 环境列表显示 TFS 的 project/repository，避免把 Collection/\_git 路径当仓库名                                                                             |
+| `apps/server/src/services/sandbox/__tests__/{environmentInit,session}.test.ts`、`providers/market.test.ts`  | TFS 未授权 / 公共 drive 停止初始化、授权恢复重试、clone 后清除 helper 与日志整体脱敏                                                                     |
+| `packages/database/src/models/scm/__tests__/identity.test.ts`、`src/store/utils/userDataStores.test.ts`     | 一对一和解绑用户隔离；登出清理新增内存 store，补齐原用例的 store 边界 mock                                                                               |
+| `packages/locales/src/default/{integration,project}.ts`、`locales/{en-US,zh-CN}/{integration,project}.json` | 新功能文案，两种语言同批维护                                                                                                                             |
 
 无需新增数据库迁移：复用既有 SCM identity 表及其唯一索引。不要将 tfs provider 改成 github，否则会混淆授权和关联数据。
 
@@ -223,9 +224,9 @@ git diff --check
 
 覆盖账号一对一、加密存储、不能借用其他用户身份、Collection 变更后解绑、未配置密钥拒绝绑定、受限 Collection、URL 穿越、PAT 本机 HTTP 传输、不跟随重定向、错误脱敏、分页、PR 检查失败与空结果区分、失败构建语义、TFVC 跨项目路径拒绝、日志行数限制、临时 Git helper 清理、未授权恢复重试、公共 drive 拒绝初始化和登出缓存重置。
 
-2026-11-19 上游切换到“一项目一环境、多仓库”后，沙盒统一入口补回了公共盘边界。实际持久公共盘拒绝 TFS 初始化，workspace 默认的临时沙盒仍允许当前用户凭据克隆；新增回归覆盖这两个结果，并确认公共盘拒绝时不会读取 TFS 凭据。
+2026-11-19 上游切换到 “一项目一环境、多仓库” 后，沙盒统一入口补回了公共盘边界。实际持久公共盘拒绝 TFS 初始化，workspace 默认的临时沙盒仍允许当前用户凭据克隆；新增回归覆盖这两个结果，并确认公共盘拒绝时不会读取 TFS 凭据。
 
-2026-11-20 合并 `upstream/canary` `1ce7bdcefb` 后，Fork 的 TFS 接点改动两处：`apps/server/src/services/tfs/agentContext.ts` 不再调用上游删除的 `ProjectModel.listEnvironments`，改用 `ProjectEnvironmentRepository.get(projectId)`（与上游 `projectPlacement.ts` 同构），其 17 项测试通过；`sandboxEnvironmentOptions.ts` 的 `repositorySelection` 保持 TFS 个人盘判断，签名与 `SandboxDrivePicker` 统一。`AddEnvironmentModal` 依赖的 store 方法与 `environment.add.*` 文案在上游一并移除，本 Fork 已补回，接点落到服务端保留的兼容过程 `attachRepository` / `attachEnvironment`（向项目唯一环境追加仓库，不再“关联环境”）。未重跑真实 NTLM 克隆与页面验收。
+2026-11-20 合并 `upstream/canary` `1ce7bdcefb` 后，Fork 的 TFS 接点改动两处：`apps/server/src/services/tfs/agentContext.ts` 不再调用上游删除的 `ProjectModel.listEnvironments`，改用 `ProjectEnvironmentRepository.get(projectId)`（与上游 `projectPlacement.ts` 同构），其 17 项测试通过；`sandboxEnvironmentOptions.ts` 的 `repositorySelection` 保持 TFS 个人盘判断，签名与 `SandboxDrivePicker` 统一。`AddEnvironmentModal` 依赖的 store 方法与 `environment.add.*` 文案在上游一并移除，本 Fork 已补回，接点落到服务端保留的兼容过程 `attachRepository` / `attachEnvironment`（向项目唯一环境追加仓库，不再 “关联环境”）。未重跑真实 NTLM 克隆与页面验收。
 
 后续 Docker 部署补充：`bash -n scripts/deploy-custom-image.sh` 与 15 项 Python 测试通过，覆盖首次安装自动生成加密密钥、预制公司地址、老部署补缺省值、保留原 Collection/API/ 禁用值、保留原密钥与 `.env`。相关文件 lint 无错误，22 项部署相关 TypeScript 测试通过。Docker 镜像构建和真实 Compose 解析仍未执行。
 
