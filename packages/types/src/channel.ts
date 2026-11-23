@@ -159,7 +159,13 @@ export type ChannelMemberMetadata = Record<string, unknown> & {
 };
 
 /** Free-form channel state that does not need its own column. */
-export type ChannelMetadata = Record<string, unknown>;
+export type ChannelMetadata = Record<string, unknown> & {
+  /**
+   * The Channel a project starts with. Clients show it under the project's name (see
+   * `ChannelListItem.displayTitle`) while its own `title` stays as stored; renaming keeps the mark.
+   */
+  projectDefault?: boolean;
+};
 
 /** Free-form grant state that does not need its own column. */
 export type ChannelMemberGrantMetadata = Record<string, unknown>;
@@ -744,6 +750,8 @@ export type ChannelAuditDetails = Record<string, boolean | number | string | str
 /** A public group Channel the caller has not joined yet, as the browse list shows it. */
 export interface ChannelJoinableItem {
   createdAt: Date;
+  /** What clients show as its name; see `ChannelListItem.displayTitle`. */
+  displayTitle: string;
   id: string;
   /** Active people in it, Agents not counted. */
   memberCount: number;
@@ -775,6 +783,11 @@ export interface ChannelLastMessage {
   content: string;
   createdAt: Date;
   /**
+   * An Agent's acknowledgement posted before its run ("got it, checking the logs first"): it says
+   * the work started, not what came of it, so it raises no desktop notification.
+   */
+  opening?: boolean;
+  /**
    * The Thread it was posted in, named by its title or else the first line of its root message;
    * null for the main conversation.
    */
@@ -799,6 +812,12 @@ export interface ChannelListItem {
   /** Server-computed for the current member. */
   canDelete: boolean;
   createdAt: Date;
+  /**
+   * What clients show as the Channel's name, computed by the server on every read: the project's
+   * name for a project's default Channel (`metadata.projectDefault`) while that project is live
+   * and named, otherwise `title`. Clients only read it; renaming still edits `title`.
+   */
+  displayTitle: string;
   /**
    * The caller hid the conversation from their list; new activity brings it back. Set by the
    * Channel list. Personal: other members never see it.
