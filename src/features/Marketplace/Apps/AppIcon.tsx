@@ -12,6 +12,7 @@ export const AppIcon = ({ app, size = 24 }: { app: MarketplaceApp; size?: number
   if (app.channel) return <PlatformBrandIcon platform={app.channel.id} size={size} />;
   // Fork-only: TFS has no connector entry to take an icon from.
   if (app.id === TFS_APP_ID) return <TfsIcon size={size} />;
+  if (app.officialMcp) return <Avatar alt={app.name} avatar={app.officialMcp.icon} size={size} />;
   const BrandIcon =
     app.tool?.type === 'lobehub' ? app.tool.provider.icon : app.tool?.serverType.icon;
   if (!BrandIcon) return null;
