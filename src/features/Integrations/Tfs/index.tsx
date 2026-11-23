@@ -13,7 +13,7 @@ import { TfsBrowser } from './Browser';
 import { TfsConnect } from './Connect';
 import { TfsIcon } from './definition';
 
-export const TfsIntegration = ({ onBack }: { onBack: () => void }) => {
+export const TfsIntegration = ({ onBack }: { onBack?: () => void }) => {
   const { t } = useTranslation('integration');
   const status = useTfsConnection();
   const [error, setError] = useState<Error>();
@@ -42,10 +42,12 @@ export const TfsIntegration = ({ onBack }: { onBack: () => void }) => {
     });
   return (
     <Flexbox gap={24}>
-      <Flexbox horizontal justify="space-between">
-        <Button size="small" onClick={onBack}>
-          {t('tfs.back')}
-        </Button>
+      <Flexbox horizontal justify={onBack ? 'space-between' : 'flex-end'}>
+        {onBack && (
+          <Button size="small" onClick={onBack}>
+            {t('tfs.back')}
+          </Button>
+        )}
         <Button
           href={connection?.collectionUrl ?? 'https://learn.microsoft.com/azure/devops/'}
           rel="noopener noreferrer"

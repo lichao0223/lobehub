@@ -16,6 +16,9 @@ export const componentMap = {
   [SettingsTabs.Appearance]: dynamic(() => import('../appearance'), {
     loading: loading('Settings > Appearance'),
   }),
+  [SettingsTabs.Conversation]: dynamic(() => import('../conversation'), {
+    loading: loading('Settings > Conversation'),
+  }),
   [SettingsTabs.Provider]: dynamic(() => import('../provider'), {
     loading: loading('Settings > Provider'),
   }),
@@ -24,12 +27,6 @@ export const componentMap = {
   }),
   [SettingsTabs.Memory]: dynamic(() => import('../memory'), {
     loading: loading('Settings > Memory'),
-  }),
-  [SettingsTabs.Messenger]: dynamic(() => import('../messenger'), {
-    loading: loading('Settings > Messenger'),
-  }),
-  [SettingsTabs.Integrations]: dynamic(() => import('../integrations'), {
-    loading: loading('Settings > Integrations'),
   }),
   [SettingsTabs.Notification]: dynamic(
     () => import('@/business/client/BusinessSettingPages/Notification'),
@@ -97,6 +94,10 @@ export const componentMap = {
   }),
   [SettingsTabs.Tools]: dynamic(() => import('../tools'), {
     loading: loading('Settings > Tools'),
+  }),
+  // Fork-only tab: TFS / Azure DevOps bindings.
+  [SettingsTabs.Tfs]: dynamic(() => import('@/features/Tfs/SettingsPage'), {
+    loading: loading('Settings > TFS'),
   }),
 
   [SettingsTabs.Plans]: dynamic(() => import('@/business/client/BusinessSettingPages/Plans'), {

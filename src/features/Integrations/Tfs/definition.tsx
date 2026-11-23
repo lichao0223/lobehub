@@ -1,14 +1,10 @@
 import { Icon } from '@lobehub/ui';
 import { GitBranchIcon } from 'lucide-react';
 
-import { registerIntegration } from '../registry';
-
+/**
+ * TFS has a settings tab of its own, so it is not registered in an integration
+ * catalog: upstream retired the shared directory that used to own one.
+ */
 export const TfsIcon = ({ size = 24 }: { size?: number }) => (
   <Icon icon={GitBranchIcon} size={size} />
 );
-registerIntegration({
-  docsUrl: 'https://learn.microsoft.com/azure/devops/',
-  icon: TfsIcon,
-  id: 'tfs',
-  name: 'TFS / Azure DevOps',
-});

@@ -49,6 +49,7 @@ export type WorkingSidebarTab =
   | 'review'
   | 'search'
   | 'skills'
+  | 'tools'
   | 'web'
   | (string & {});
 
@@ -78,11 +79,12 @@ export enum SettingsTabs {
   Appearance = 'appearance',
   Automations = 'automations',
   Billing = 'billing',
-  /** @deprecated Use Appearance instead */
+  /** @deprecated Use Conversation instead */
   ChatAppearance = 'chat-appearance',
   /** @deprecated Use Appearance instead */
   Common = 'common',
   Connector = 'connector',
+  Conversation = 'conversation',
   Credits = 'credits',
   Creds = 'credential',
   Devices = 'devices',
@@ -90,12 +92,10 @@ export enum SettingsTabs {
   Hotkey = 'hotkey',
   /** @deprecated Use ServiceModel instead */
   Image = 'image',
-  Integrations = 'integrations',
   Labels = 'labels',
   Labs = 'labs',
   LLM = 'llm',
   Memory = 'memory',
-  Messenger = 'messenger',
   Notification = 'notification',
   OAuthApps = 'oauth-apps',
   // business
@@ -112,6 +112,8 @@ export enum SettingsTabs {
   Storage = 'storage',
   SubscriptionAccounts = 'subscription-accounts',
   SystemTools = 'system-tools',
+  /** Fork-only: the member's TFS / Azure DevOps account. */
+  Tfs = 'tfs',
   Tools = 'tools',
   Trash = 'trash',
   /** @deprecated Use ServiceModel instead */

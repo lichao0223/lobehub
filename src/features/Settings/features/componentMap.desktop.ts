@@ -3,6 +3,7 @@ import Credits from '@/business/client/BusinessSettingPages/Credits';
 import Plans from '@/business/client/BusinessSettingPages/Plans';
 import Referral from '@/business/client/BusinessSettingPages/Referral';
 import Usage from '@/business/client/BusinessSettingPages/Usage';
+import Tfs from '@/features/Tfs/SettingsPage';
 import { SettingsTabs } from '@/store/global/initialState';
 
 import About from '../about';
@@ -10,15 +11,14 @@ import Advanced from '../advanced';
 import APIKey from '../apikey';
 import Appearance from '../appearance';
 import Automations from '../automations';
+import Conversation from '../conversation';
 import Creds from '../creds';
 import Devices from '../devices';
 import Environments from '../environments';
 import Hotkey from '../hotkey';
-import Integrations from '../integrations';
 import Labels from '../labels';
 import Labs from '../labs';
 import Memory from '../memory';
-import Messenger from '../messenger';
 import { DesktopNotificationSettings } from '../notification';
 import OAuthApps from '../oauth-apps';
 import Profile from '../profile';
@@ -38,11 +38,10 @@ export const componentMap = {
   [SettingsTabs.Advanced]: Advanced,
   [SettingsTabs.Labs]: Labs,
   [SettingsTabs.Appearance]: Appearance,
+  [SettingsTabs.Conversation]: Conversation,
   [SettingsTabs.Provider]: Provider,
   [SettingsTabs.ServiceModel]: ServiceModel,
   [SettingsTabs.Memory]: Memory,
-  [SettingsTabs.Messenger]: Messenger,
-  [SettingsTabs.Integrations]: Integrations,
   [SettingsTabs.Notification]: DesktopNotificationSettings,
   [SettingsTabs.About]: About,
   [SettingsTabs.Hotkey]: Hotkey,
@@ -65,6 +64,8 @@ export const componentMap = {
   [SettingsTabs.Automations]: Automations,
   [SettingsTabs.Webhooks]: Webhooks,
   [SettingsTabs.Tools]: Tools,
+  // Fork-only tab: TFS / Azure DevOps bindings.
+  [SettingsTabs.Tfs]: Tfs,
 
   [SettingsTabs.Plans]: Plans,
   [SettingsTabs.Credits]: Credits,

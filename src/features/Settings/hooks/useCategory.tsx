@@ -16,15 +16,14 @@ import {
   FlaskConical,
   GaugeIcon,
   Gift,
+  GitBranchIcon,
   Info,
   KeyboardIcon,
   KeyIcon,
-  KeyRound,
   Map,
-  MessageCircleIcon,
+  MessagesSquareIcon,
   MonitorSmartphoneIcon,
   PaletteIcon,
-  PlugIcon,
   Sparkles,
   TagIcon,
   TerminalSquare,
@@ -110,6 +109,11 @@ export const useCategory = () => {
         icon: PaletteIcon,
         key: SettingsTabs.Appearance,
         label: t('tab.appearance'),
+      },
+      {
+        icon: MessagesSquareIcon,
+        key: SettingsTabs.Conversation,
+        label: t('tab.conversation'),
       },
       !mobile && {
         icon: KeyboardIcon,
@@ -198,18 +202,6 @@ export const useCategory = () => {
     // Connection group — the outside services agents can reach, whoever owns
     // the binding. Every entry here is already the user's own.
     const connectionItems: CategoryItem[] = [
-      // The bots are LobeHub-operated: their credentials are only ever written
-      // by the cloud admin, so a self-hosted deployment has nothing to bind to.
-      enableBusinessFeatures && {
-        icon: MessageCircleIcon,
-        key: SettingsTabs.Messenger,
-        label: t('tab.messenger'),
-      },
-      {
-        icon: PlugIcon,
-        key: SettingsTabs.Integrations,
-        label: t('tab.integrations'),
-      },
       // What connectors fire on their own: the event subscriptions agents made
       // through them. Connectors themselves are managed in the Marketplace.
       enableWebhook && {
@@ -223,13 +215,23 @@ export const useCategory = () => {
         key: SettingsTabs.Webhooks,
         label: t('tab.webhooks'),
       },
+      // Fork-only: the member's own TFS / Azure DevOps account. The page itself
+      // explains when the deployment has no TFS collection configured.
+      {
+        icon: GitBranchIcon,
+        key: SettingsTabs.Tfs,
+        label: t('tab.tfs'),
+      },
     ].filter(Boolean) as CategoryItem[];
 
-    groups.push({
-      items: connectionItems,
-      key: SettingsGroupKey.Connection,
-      title: t('group.connection'),
-    });
+    // TFS is always offered; the others depend on features this deployment
+    // turned on, so the group itself can never be empty.
+    if (connectionItems.length > 0)
+      groups.push({
+        items: connectionItems,
+        key: SettingsGroupKey.Connection,
+        title: t('group.connection'),
+      });
 
     // Resource group — where agents run.
     const resourceItems: CategoryItem[] = [
@@ -245,19 +247,13 @@ export const useCategory = () => {
         key: SettingsTabs.SubscriptionAccounts,
         label: t('tab.subscriptionAccounts'),
       },
-      // Always there: a code environment is a definition, written down before
-      // anything runs it, and useful with or without a drive to run it on.
+      // Environments & Vault, always there: what a run starts from and
+      // the secrets it reads, in one place. An environment is a definition,
+      // written down before anything runs it, so it needs no drive.
       {
         icon: ContainerIcon,
         key: SettingsTabs.Environments,
-        label: t('tab.environments'),
-      },
-      // Secrets the agents' runs read at execution time, next to the
-      // environments that consume them.
-      {
-        icon: KeyRound,
-        key: SettingsTabs.Creds,
-        label: t('tab.creds'),
+        label: t('tab.environmentsAndCreds'),
       },
       isDesktop && {
         icon: EthernetPort,

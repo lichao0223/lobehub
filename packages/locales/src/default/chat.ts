@@ -14,7 +14,8 @@ export default {
   'heteroAgent.antigravityQuota.resetUnconfirmed':
     'Reset time reached. Refresh to check the latest quota.',
   'heteroAgent.antigravityQuota.stale': 'Showing the last query. Refresh to confirm current quota.',
-  'heteroAgent.antigravityQuota.authRequired': 'Run agy in a terminal to sign in, then refresh.',
+  'heteroAgent.antigravityQuota.authRequired':
+    'Sign in with agy on the execution device, then try again.',
   'heteroAgent.antigravityQuota.cliNotFound':
     'Antigravity CLI was not found on this device. Install agy, then refresh.',
   'heteroAgent.antigravityQuota.unsupported':
@@ -316,7 +317,7 @@ export default {
   'agentDocument.portal.titlePlaceholder': 'Untitled document',
   'agentDocument.portal.export': 'Export',
   'agentNotFound.desc':
-    'This agent does not exist or is no longer accessible — it may have been deleted or set to private by its owner.',
+    "It may have been deleted, or it's another member's private agent. Ask its creator to publish it to the workspace.",
   'permission.configAccess.agentChatOnly':
     'You can only use this Agent, not configure it. You were returned to chat.',
   'permission.configAccess.agentManageRestricted':
@@ -327,7 +328,9 @@ export default {
     'You can only use this Agent Group, not configure it. You were returned to chat.',
   'permission.configAccess.groupRoleRestricted':
     'Your workspace role cannot configure Agent Groups. You were returned to chat.',
-  'agentNotFound.title': 'Agent Unavailable',
+  'agentNotFound.descPersonal': 'It may have been deleted, or the link is wrong.',
+  'agentNotFound.title': "This agent doesn't exist or you don't have access",
+  'agentNotFound.viewAgents': 'View all agents',
   'agentSkillModal.frontmatterInvalid':
     "This skill's SKILL.md has malformed frontmatter, so its name and description come from the last saved version. Open the document to fix it.",
   'agentSkillModal.loadFailed': "Couldn't load this skill",
@@ -1339,6 +1342,17 @@ export default {
   'minimap.senderAssistant': 'Agent',
   'minimap.senderUser': 'You',
   'modelSelector.model': 'Model',
+  'privateAgentLink.desc':
+    "This is your private agent, so other members can't open the link. Publish it to the workspace to share it.",
+  'privateAgentLink.title': 'Link copied, but only you can open it',
+  'createVisibility.inheritedPrivate': 'Follows its folder: only you can see it.',
+  'createVisibility.inheritedPublic': 'Follows its folder: everyone in the workspace can see it.',
+  'createVisibility.label': 'Visibility',
+  'createVisibility.private': 'Private',
+  'createVisibility.privateHint':
+    "Only you can see it. Other members can't open its link until you publish it to the workspace.",
+  'createVisibility.public': 'Workspace',
+  'createVisibility.publicHint': 'Everyone in the workspace can see and use it.',
   'createModal.createBlank': 'Start Blank',
   'createModal.groupPlaceholder': 'Describe what this Group should do...',
   'createModal.groupTitle': 'What should this Group do?',
@@ -1622,6 +1636,12 @@ export default {
   'agent.publishToWorkspaceErrorFixedPrivateDevice':
     'Publish the fixed device to the workspace, or let members choose a device, before publishing this Agent.',
   'agent.publishToWorkspaceSuccess': 'Published to workspace',
+  'agent.visibility': 'Visibility',
+  'agent.visibility.change': 'Change visibility',
+  'agent.visibility.private': 'Private',
+  'agent.visibility.privateDesc': 'Only you can see it',
+  'agent.visibility.workspace': 'Workspace',
+  'agent.visibility.workspaceDesc': 'Workspace members can access it',
   'resources.publishToWorkspace.menu': 'Publish to Workspace',
   'resources.publishToWorkspace.confirm':
     'Other workspace members will be able to see this file. You will not be able to make it private again.',
@@ -2154,6 +2174,8 @@ export default {
   'tab.profileBasic': 'Profile',
   'tab.skills': 'Skills',
   'tab.search': 'Search',
+  'tab.goalsAndTasks': 'Tasks and goals',
+  'tab.scheduled': 'Scheduled',
   'tab.tasks': 'Tasks',
   'task.activity.calling': 'Calling Skill...',
   'task.activity.clientExecuting': 'Executing locally...',
@@ -2552,6 +2574,7 @@ export default {
   'createTask.expandToInline': 'Dock to page',
   'createTask.instructionPlaceholder': 'Add task instruction...',
   'createTask.submit': 'Create task',
+  'createTask.removeSchedule': 'Remove schedule',
   'createTask.submitScheduled': 'Create scheduled task',
   'createTask.titlePlaceholder': 'Task title',
   'createTask.visibility.changeFailed': 'Failed to change task visibility',
@@ -3196,12 +3219,48 @@ export default {
   'goalProcess.lifecycle.kind.hazard': 'hazard',
   'goalProcess.lifecycle.kind.dead_end': 'dead end',
   'goalProcess.lifecycle.kind.template': 'recipe',
+  'goalProcess.lifecycle.note.agentChanged': 'The Agent running this goal changed',
   'goalProcess.lifecycle.note.budgetExhausted': 'The goal or the main Agent ran out of turns',
+  'goalProcess.lifecycle.note.deadlinePassed': 'The deadline has passed; no new tasks will start',
+  'goalProcess.lifecycle.note.decisionPending': 'Waiting on a pending decision',
+  'goalProcess.lifecycle.note.descriptionRefined': 'The description was refined during planning',
+  'goalProcess.lifecycle.note.experimentLimit':
+    'Experiment limit reached ({{used}}/{{max}}) before the goal passed acceptance. {{detail}}',
+  'goalProcess.lifecycle.note.explorationBudget':
+    'The budget ran out before exploration could continue',
+  'goalProcess.lifecycle.note.explorationFailed':
+    'Exploration planning failed. Resume the goal to retry',
+  'goalProcess.lifecycle.note.foldedIntoBatch': 'Folded into the batch before the goal started',
+  'goalProcess.lifecycle.note.goalRenamed': 'The goal was renamed',
+  'goalProcess.lifecycle.note.lateRunUnstoppable':
+    'A planning run that started after the goal closed could not be stopped. Close the goal again to stop it',
   'goalProcess.lifecycle.note.mainAgent': 'Main Agent: {{text}}',
+  'goalProcess.lifecycle.note.measuredNotMet': 'Measured acceptance not met: {{detail}}',
+  'goalProcess.lifecycle.note.measurementCleared':
+    'The measured results met the acceptance criteria; the goal continued',
+  'goalProcess.lifecycle.note.noEligibleTask': 'No task can move forward right now',
+  'goalProcess.lifecycle.note.patternBreak':
+    'The batch broke its pattern and needs a decision: {{detail}}',
+  'goalProcess.lifecycle.note.planRevisionFailed':
+    'The main Agent could not take the plan revision. Resume the goal to send the correction again',
+  'goalProcess.lifecycle.note.planSentBack': 'The plan was sent back to the main Agent to revise',
+  'goalProcess.lifecycle.note.recipeSuperseded': 'Replaced by a newer recipe revision',
   'goalProcess.lifecycle.note.recoveredAbandoned':
     'The previous run stopped responding; a new attempt started automatically',
+  'goalProcess.lifecycle.note.releaseApproved': 'Release approved',
+  'goalProcess.lifecycle.note.releaseReview': 'The batch release needs approval: {{detail}}',
+  'goalProcess.lifecycle.note.reportSubmitted': 'The goal report was submitted',
+  'goalProcess.lifecycle.note.reportWriting': 'Writing the goal report',
+  'goalProcess.lifecycle.note.retiredWithPrerequisite':
+    'Retired along with its prerequisite "{{title}}"',
   'goalProcess.lifecycle.note.retryAfterVerification':
     'Verification did not pass; the next attempt started automatically',
+  'goalProcess.lifecycle.note.revisionLimit':
+    'The experiment used all {{count}} protocol corrections. Resume the goal to replan',
+  'goalProcess.lifecycle.note.stoppingBeforeClose': 'Stopped before closing the goal',
+  'goalProcess.lifecycle.note.stoppingBeforeDelete': 'Stopped before deleting the goal',
+  'goalProcess.lifecycle.note.taskMissing': 'The task responsible for this step no longer exists',
+  'goalProcess.lifecycle.note.topicMoved': 'The goal moved to another conversation',
   'goalProcess.metricDetail.budget.controlTitle': 'Budget control',
   'goalProcess.metricDetail.budget.perTaskEmpty': 'No run has been billed yet.',
   'goalProcess.metricDetail.budget.perTaskTitle': 'Where it went',
@@ -3487,7 +3546,36 @@ export default {
   'taskList.mine.emptyAssigned': 'No tasks assigned to you yet',
   'taskList.mine.emptyCreated': "You haven't created any tasks yet",
   'taskList.mine.title': 'My tasks',
+  'taskList.scheduled.columns.assignee': 'Assignee',
+  'taskList.scheduled.columns.cadence': 'Frequency',
+  'taskList.scheduled.columns.nextRun': 'Next run',
+  'taskList.scheduled.columns.recentRuns': 'Recent runs',
+  'taskList.scheduled.columns.task': 'Task',
   'taskList.scheduled.empty': 'No scheduled tasks yet',
+  'taskList.scheduled.group.attention': 'Needs attention',
+  'taskList.scheduled.group.running': 'Running',
+  'taskList.scheduled.group.scheduled': 'Scheduled',
+  'taskList.scheduled.runs.none': 'No runs yet',
+  'taskList.scheduled.runs.outcome.canceled': 'Canceled',
+  'taskList.scheduled.runs.outcome.failed': 'Failed',
+  'taskList.scheduled.runs.outcome.interrupted': 'Interrupted',
+  'taskList.scheduled.runs.outcome.running': 'Running',
+  'taskList.scheduled.runs.outcome.succeeded': 'Succeeded',
+  'taskList.scheduled.runs.tooltip': 'Run #{{seq}} · {{outcome}} · {{time}}',
+  'taskList.scheduled.state.awaitingHuman': 'Waiting for your reply',
+  'taskList.scheduled.state.awaitingHuman.hint':
+    'Runs are skipped until you answer the question on this task',
+  'taskList.scheduled.state.awaitingReview': 'Pending review',
+  'taskList.scheduled.state.awaitingReview.hint': 'Open the task to review its latest result',
+  'taskList.scheduled.state.nextRunUnknown': 'Schedule can’t be read',
+  'taskList.scheduled.state.overrun': 'Running for {{duration}}, not finished',
+  'taskList.scheduled.state.overrun.hint': 'Later runs are skipped until this run ends',
+  'taskList.scheduled.state.running': 'Running · {{duration}}',
+  'taskList.scheduled.state.runningNoDuration': 'Running',
+  'taskList.scheduled.state.stopped_one': 'Stopped after {{count}} failed run',
+  'taskList.scheduled.state.stopped_other': 'Stopped after {{count}} failed runs',
+  'taskList.scheduled.state.stopped.hint':
+    'It won’t run again until a run succeeds. Open the task to see the error, then run it now',
   'taskList.scheduled.title': 'Scheduled tasks',
   'taskList.subtaskProgress.loadFailed':
     "Couldn't load sub-tasks. Click the progress badge to retry.",
