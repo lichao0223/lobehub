@@ -70,6 +70,8 @@ describe('settings useCategory', () => {
       SettingsGroupKey.Account,
       SettingsGroupKey.Subscription,
       SettingsGroupKey.Agent,
+      // Fork-only: TFS keeps the group present even when the `webhook` flag is off.
+      SettingsGroupKey.Connection,
       SettingsGroupKey.Resource,
       SettingsGroupKey.System,
     ]);
@@ -83,7 +85,9 @@ describe('settings useCategory', () => {
       SettingsTabs.Stats,
     ]);
 
-    expect(groupKeys(SettingsGroupKey.Connection)).toBeUndefined();
+    // Upstream hides the group when no connection entry applies; the fork's TFS
+    // tab is unconditional, so the group always holds exactly that entry here.
+    expect(groupKeys(SettingsGroupKey.Connection)).toEqual([SettingsTabs.Tfs]);
     expect(getItemKeys()).not.toContain(SettingsTabs.Skill);
     expect(getItemKeys()).not.toContain(SettingsTabs.Connector);
 
@@ -185,11 +189,16 @@ describe('settings useCategory automations', () => {
     expect(connectionKeys(false) ?? []).not.toContain(SettingsTabs.Automations);
   });
 
+  it('keeps the fork TFS tab even while MCP Events is off', () => {
+    expect(connectionKeys(false)).toEqual([SettingsTabs.Tfs]);
+  });
+
   it('keeps Automations and Webhooks now that connectors live in the Marketplace', () => {
     const keys = connectionKeys(true) ?? [];
 
     expect(keys).not.toContain(SettingsTabs.Connector);
     expect(keys).not.toContain('integrations');
     expect(keys.indexOf(SettingsTabs.Webhooks)).toBe(keys.indexOf(SettingsTabs.Automations) + 1);
+    expect(keys.at(-1)).toBe(SettingsTabs.Tfs);
   });
 });
