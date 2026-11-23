@@ -1,29 +1,29 @@
 # 管理员控制台（CUST-008）设计方案
 
-> 状态：设计评审（第八版，2026-11-20 对照上游 `68994288e7` 重新核对；审计日志本轮不做，已从文档与原型移除；§8.0 补充最小侵入原则与预算）。原型见 `prototypes/admin-console/`，尚未改产品代码。
+> 状态：P1（用户管理）已实现并通过本地验收（2026-11-23，分支 `feat/admin-console-p1`，实施偏差见 §15）；P2（模型服务）仍为设计，未开工。审计日志不做。原型见 `prototypes/admin-console/`。
 
 ## 1. 范围
 
-| 能力 | 用户可见结果 | 阶段 |
-| ---- | ------------ | ---- |
-| **用户管理** | `/admin` 用户列表、搜索、详情、禁用 / 启用、设 / 撤管理员、会话失效 | P1，可单独上线 |
-| **模型服务（Tellhow）** | 管理员维护公司网关地址、密钥与模型目录；用户在设置里看到一个常驻已启用的内置服务商，自己勾选模型 | P2 |
+| 能力                    | 用户可见结果                                                                                     | 阶段           |
+| ----------------------- | ------------------------------------------------------------------------------------------------ | -------------- |
+| **用户管理**            | `/admin` 用户列表、搜索、详情、禁用 / 启用、设 / 撤管理员、会话失效                              | P1，可单独上线 |
+| **模型服务（Tellhow）** | 管理员维护公司网关地址、密钥与模型目录；用户在设置里看到一个常驻已启用的内置服务商，自己勾选模型 | P2             |
 
 接口与页面互不依赖：P1 交付后即可作为企业账号后台使用，`/admin` 只渲染已交付的入口。P2 复用 P1 建好的单行配置表 `admin_console_settings`，所以在 P1 之后开工。
 
 ## 2. 现状与关键发现
 
-| 事实 | 位置 |
-| ---- | ---- |
-| Better Auth `admin()` 已启用，`adminClient()` 已安装 | `src/libs/better-auth/define-config.ts:320` |
-| 服务端厂商配置由 `genServerAiProvidersConfig()` 组装，产出 `enabled` / `enabledModels` / `serverModelLists` / `fetchOnClient` | `apps/server/src/globalConfig/genServerAiProviderConfig.ts` |
-| 模型请求解析时，若 provider ∈ `ModelProvider`、`runtimeProvider` 缺省或等于 provider、且 payload 不带 `baseURL` / `cloudflareBaseURLOrAccountID`，会用部署级密钥 `<PROVIDER>_API_KEY` 与 `<PROVIDER>_PROXY_URL`（`canUseServerProviderConfig`，`:215`） | `apps/server/src/modules/ModelRuntime/index.ts`（`getParamsFromPayload`，`:229`） |
-| `lobehub` 厂商是「用户不可配置、只能挑模型」的现成范式：`showConfig: false`、`modelEditable: false`、`showModelFetcher: false` | `packages/model-bank/src/modelProviders/lobehub.ts` |
-| 模型类型枚举（按代码顺序）：`chat / embedding / tts / asr / image / video / text2music / realtime / decision` | `packages/model-bank/src/types/aiModel.ts:21` |
-| 厂商枚举 | `packages/model-bank/src/const/modelProvider.ts` |
-| 设置页外壳：`NavPanel` 240–400px 可拖拽（默认 280）、`NavHeader` 高度取密度 token、`SettingContainer` `maxWidth=1024` | `src/features/NavPanel`、`src/features/Settings/Layout`、`src/features/Setting/SettingContainer.tsx` |
-| 界面密度两档：loose 正文 14/22、控件 32、列表行 48、圆角 8；compact 正文 13/20、控件 28、列表行 40、圆角 6 | `src/styles/densityScale.ts` |
-| 出站请求 SSRF 策略：用户 / 厂商可控 URL 统一走 `ssrfSafeFetch`，内网地址需 `SSRF_ALLOW_PRIVATE_IP_ADDRESS=1` 或 `SSRF_ALLOW_IP_ADDRESS_LIST` | `packages/ssrf-safe-fetch/index.ts`、`packages/model-runtime/src/utils/ssrfFetch.ts` |
+| 事实                                                                                                                                                                                                                                                    | 位置                                                                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Better Auth `admin()` 已启用，`adminClient()` 已安装                                                                                                                                                                                                    | `src/libs/better-auth/define-config.ts:320`                                                          |
+| 服务端厂商配置由 `genServerAiProvidersConfig()` 组装，产出 `enabled` / `enabledModels` / `serverModelLists` / `fetchOnClient`                                                                                                                           | `apps/server/src/globalConfig/genServerAiProviderConfig.ts`                                          |
+| 模型请求解析时，若 provider ∈ `ModelProvider`、`runtimeProvider` 缺省或等于 provider、且 payload 不带 `baseURL` / `cloudflareBaseURLOrAccountID`，会用部署级密钥 `<PROVIDER>_API_KEY` 与 `<PROVIDER>_PROXY_URL`（`canUseServerProviderConfig`，`:215`） | `apps/server/src/modules/ModelRuntime/index.ts`（`getParamsFromPayload`，`:229`）                    |
+| `lobehub` 厂商是「用户不可配置、只能挑模型」的现成范式：`showConfig: false`、`modelEditable: false`、`showModelFetcher: false`                                                                                                                          | `packages/model-bank/src/modelProviders/lobehub.ts`                                                  |
+| 模型类型枚举（按代码顺序）：`chat / embedding / tts / asr / image / video / text2music / realtime / decision`                                                                                                                                           | `packages/model-bank/src/types/aiModel.ts:21`                                                        |
+| 厂商枚举                                                                                                                                                                                                                                                | `packages/model-bank/src/const/modelProvider.ts`                                                     |
+| 设置页外壳：`NavPanel` 240–400px 可拖拽（默认 280）、`NavHeader` 高度取密度 token、`SettingContainer` `maxWidth=1024`                                                                                                                                   | `src/features/NavPanel`、`src/features/Settings/Layout`、`src/features/Setting/SettingContainer.tsx` |
+| 界面密度两档：loose 正文 14/22、控件 32、列表行 48、圆角 8；compact 正文 13/20、控件 28、列表行 40、圆角 6                                                                                                                                              | `src/styles/densityScale.ts`                                                                         |
+| 出站请求 SSRF 策略：用户 / 厂商可控 URL 统一走 `ssrfSafeFetch`，内网地址需 `SSRF_ALLOW_PRIVATE_IP_ADDRESS=1` 或 `SSRF_ALLOW_IP_ADDRESS_LIST`                                                                                                            | `packages/ssrf-safe-fetch/index.ts`、`packages/model-runtime/src/utils/ssrfFetch.ts`                 |
 
 **关键结论**
 
@@ -55,7 +55,7 @@ type AdminConsoleSettings = {
       enabled: boolean;
       baseURL: string;
       apiKey: {
-        ciphertext: string;      // KeyVault 加密后的密文
+        ciphertext: string; // KeyVault 加密后的密文
         last4: string;
         updatedAt: string;
         updatedBy: string;
@@ -81,15 +81,15 @@ type AdminConsoleSettings = {
 };
 
 type CompanyModel = {
-  id: string;                    // 请求体里的 model
-  name: string;                  // 用户侧显示名
-  type: AiModelType;             // 9 种类型之一
+  id: string; // 请求体里的 model
+  name: string; // 用户侧显示名
+  type: AiModelType; // 9 种类型之一
   contextWindowTokens?: number;
   capabilities?: Array<'vision' | 'functionCall' | 'reasoning'>;
-  open: boolean;                 // 是否出现在用户侧
+  open: boolean; // 是否出现在用户侧
   source: 'sync' | 'manual';
-  pending?: boolean;             // 待确认
-  removedAt?: string;            // 上游已移除，不自动删除
+  pending?: boolean; // 待确认
+  removedAt?: string; // 上游已移除，不自动删除
 };
 ```
 
@@ -152,16 +152,16 @@ type CompanyModel = {
 1. 用已保存的密钥请求 `/v1/models`；
 2. 上游通常只返回 `id` / `owned_by` / `created`，按命名规则推断类型：
 
-| 规则 | 类型 |
-| ---- | ---- |
-| `embed / bge / gte / text-embedding` | 向量化 |
-| `music / suno / melody / text2music` | 音乐 |
-| `tts / speech / voice` | TTS |
-| `whisper / asr / stt / transcribe / audio` | ASR |
-| `dall-e / flux / diffusion / image / sd-` | 图片 |
-| `video / sora / veo / kling` | 视频 |
-| `realtime` / `decision` | 实时 / 决策 |
-| 其余（含 `vl / vision / multimodal`） | 对话（视觉能力待确认） |
+| 规则                                       | 类型                   |
+| ------------------------------------------ | ---------------------- |
+| `embed / bge / gte / text-embedding`       | 向量化                 |
+| `music / suno / melody / text2music`       | 音乐                   |
+| `tts / speech / voice`                     | TTS                    |
+| `whisper / asr / stt / transcribe / audio` | ASR                    |
+| `dall-e / flux / diffusion / image / sd-`  | 图片                   |
+| `video / sora / veo / kling`               | 视频                   |
+| `realtime` / `decision`                    | 实时 / 决策            |
+| 其余（含 `vl / vision / multimodal`）      | 对话（视觉能力待确认） |
 
 3. 命中仓库已有模型目录时带出显示名、上下文与能力；未命中的标「待确认」，由管理员补；
 4. 弹窗里每个模型都可改类型后再导入。
@@ -185,14 +185,14 @@ type CompanyModel = {
 
 ### 5.6 失败与回滚
 
-| 场景 | 行为 |
-| ---- | ---- |
-| 密钥无效 / 过期 | `PROVIDER_AUTH_FAILED`，不泄露上游响应体 |
-| 网关不可达 | `PROVIDER_UNREACHABLE`，保留上一次成功配置 |
+| 场景             | 行为                                            |
+| ---------------- | ----------------------------------------------- |
+| 密钥无效 / 过期  | `PROVIDER_AUTH_FAILED`，不泄露上游响应体        |
+| 网关不可达       | `PROVIDER_UNREACHABLE`，保留上一次成功配置      |
 | 未配置地址或密钥 | `PROVIDER_NOT_CONFIGURED`，用户侧不出现 Tellhow |
-| 关闭 `enabled` | 用户侧立即不可见；下一次请求提示切换模型 |
-| 并发保存 | `updated_at` 乐观锁，后提交者 `CONFLICT` |
-| 回滚 | 代码回滚即可，用户设置不受影响 |
+| 关闭 `enabled`   | 用户侧立即不可见；下一次请求提示切换模型        |
+| 并发保存         | `updated_at` 乐观锁，后提交者 `CONFLICT`        |
+| 回滚             | 代码回滚即可，用户设置不受影响                  |
 
 ## 6. 管理端界面
 
@@ -209,23 +209,23 @@ type CompanyModel = {
 
 不复用的部分：路由表、`componentMap`、设置页的搜索作用域；`/admin/*` 只注册在 `desktopRouter.shared.tsx`，移动端不注册。
 
-用户侧服务商页（P2）不在 `/admin` 内，它属于产品设置：原型按真实的 `src/features/Settings/provider` 实现三列——设置侧栏 / 服务商菜单（280，搜索、可折叠分组、启用绿点、底部统计）/ 内容区（已启用与未启用卡片网格）。泰豪 AI 在已启用首位，详情不展示密钥与代理配置，只有说明 + 模型列表，并跟随管理端「对全员开放」。
+用户侧服务商页（P2）不在 `/admin` 内，它属于产品设置：原型按真实的 `src/features/Settings/provider` 实现三列 —— 设置侧栏 / 服务商菜单（280，搜索、可折叠分组、启用绿点、底部统计）/ 内容区（已启用与未启用卡片网格）。泰豪 AI 在已启用首位，详情不展示密钥与代理配置，只有说明 + 模型列表，并跟随管理端「对全员开放」。
 
 ### 6.2 视觉规范（对齐 `densityScale.ts`）
 
 两档密度由「设置 → 外观 → 界面密度」决定，控制台不另造一套数字：
 
-| token | loose（默认） | compact |
-| ----- | ------------- | ------- |
-| 正文 / 行高 | 14 / 22 | 13 / 20 |
-| 页头高度 | 44 | 40 |
-| 控件高度 | 32 | 28 |
-| 列表行高 | 48 | 40 |
-| 圆角 | 8 | 6 |
-| 页面左右内边距 | 24 | 16 |
-| 页面顶部内边距 | 32 | 24 |
-| 分组间距 | 16 | 12 |
-| 工具栏高度 | 40 | 36 |
+| token          | loose（默认） | compact |
+| -------------- | ------------- | ------- |
+| 正文 / 行高    | 14 / 22       | 13 / 20 |
+| 页头高度       | 44            | 40      |
+| 控件高度       | 32            | 28      |
+| 列表行高       | 48            | 40      |
+| 圆角           | 8             | 6       |
+| 页面左右内边距 | 24            | 16      |
+| 页面顶部内边距 | 32            | 24      |
+| 分组间距       | 16            | 12      |
+| 工具栏高度     | 40            | 36      |
 
 固定不随密度变化的：
 
@@ -239,26 +239,26 @@ type CompanyModel = {
 
 ### 6.3 两页结构
 
-- **用户管理**：搜索、筛选（全部 / 管理员 / 已禁用）；行 = 头像 + 姓名/邮箱、工号、角色、状态、最后活跃、chevron；点行开 520px 详情抽屉（概览 / 操作）；
+- **用户管理**：搜索、筛选（全部 / 管理员 / 已禁用）；行 = 头像 + 姓名 / 邮箱、工号、角色、状态、最后活跃、chevron；点行开 520px 详情抽屉（概览 / 操作）；
 - **模型服务**：服务连接、模型目录（拉取 + 手工添加 + 编辑弹窗）、默认值（可选）。
 
 ### 6.4 与最新代码的对齐（v8 记录）
 
 第七版写作时密度系统尚未落地，视觉规范按 36px 控件、固定 14/22 正文硬编码。第八版逐条核对当前代码后修正：
 
-| 项 | v7 | v8（核对结果） |
-| -- | -- | -------------- |
-| 控件高度 | 36 | 32 / 28（密度 token） |
-| 列表行高 | 12px 内边距 | 48 / 40（`listRowHeight`） |
-| 正文字号 | 固定 14/22 | 14/22 或 13/20，跟随密度 |
-| 圆角 | 输入 6 / 按钮 8 | 统一 `radius` 8 / 6（输入框用 `radius-sm`） |
-| 侧栏 | 固定 280 | 240–400 可拖拽，默认 280 |
-| 页面内边距 | 24 | 24/32（loose）、16/24（compact） |
-| 标题层级 | 14 固定 | 顶栏 14/13（正文级）、区块标题 `pageTitleFontSize` 16/14、抽屉小标题 12 |
-| 出站请求 | 未涉及 | 控制台「测试连接」与厂商网关的媒体下载走 `ssrfSafeFetch`；内网网关需在部署侧加白名单，不全局放开私有 IP |
+| 项         | v7                          | v8（核对结果）                                                                                               |
+| ---------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 控件高度   | 36                          | 32 / 28（密度 token）                                                                                        |
+| 列表行高   | 12px 内边距                 | 48 / 40（`listRowHeight`）                                                                                   |
+| 正文字号   | 固定 14/22                  | 14/22 或 13/20，跟随密度                                                                                     |
+| 圆角       | 输入 6 / 按钮 8             | 统一 `radius` 8 / 6（输入框用 `radius-sm`）                                                                  |
+| 侧栏       | 固定 280                    | 240–400 可拖拽，默认 280                                                                                     |
+| 页面内边距 | 24                          | 24/32（loose）、16/24（compact）                                                                             |
+| 标题层级   | 14 固定                     | 顶栏 14/13（正文级）、区块标题 `pageTitleFontSize` 16/14、抽屉小标题 12                                      |
+| 出站请求   | 未涉及                      | 控制台「测试连接」与厂商网关的媒体下载走 `ssrfSafeFetch`；内网网关需在部署侧加白名单，不全局放开私有 IP      |
 | 运行时接点 | `getParamsFromPayload` 同步 | 仍为同步 `apps/server/src/modules/ModelRuntime/index.ts:229`；已取消「改 async」计划，改为在默认分支注入凭据 |
 
-原型右上角的「密度」按钮即用于演示 loose / compact 两档。
+原型右上角的「密度」按钮即用于演示 loose /compact 两档。
 
 ### 6.5 为什么不做成设置页的一个 Tab
 
@@ -271,19 +271,19 @@ type CompanyModel = {
 
 `apps/server/src/routers/lambda/adminConsole/`，在 `routers/lambda/index.ts` 挂一行：
 
-| 接口 | 入参 | 作用 |
-| ---- | ---- | ---- |
-| `whoami` | — | `{ isAdmin, role, canBootstrap, bootstrapConfigured }`；命中名单时惰性提权 |
-| `listUsers` | `{ q?, role?, status?, page, pageSize }` | 分页 + 搜索，默认 20/页 |
-| `getUser` | `{ userId }` | 账号、角色、banned、最近活跃 |
-| `setUserRole` | `{ userId, role }` | 撤销最后一个 admin / 改自己 → `CONFLICT` |
-| `banUser` | `{ userId, reason, expiresAt? }` | 禁用 API Key + 设 banned + 尽力撤 session |
-| `unbanUser` | `{ userId }` | 清 banned；不恢复 API Key |
-| `revokeUserSessions` | `{ userId }` | 只撤 Web 会话 |
-| `getModelServiceConfig` | — | 返回配置；密钥只返回 `last4` |
-| `updateModelServiceConfig` | `{ enabled, baseURL?, apiKey?, models?, defaults?, expectedUpdatedAt? }` | 校验后写配置，无传播 |
-| `testModelServiceConnection` | — | 请求 `/models`，返回状态 / 延迟 / 模型数 / 错误码 |
-| `refreshModelCatalog` | `{ apply: boolean }` | 拉取并返回 diff；`apply` 时写入新增模型 |
+| 接口                         | 入参                                                                     | 作用                                                                       |
+| ---------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `whoami`                     | —                                                                        | `{ isAdmin, role, canBootstrap, bootstrapConfigured }`；命中名单时惰性提权 |
+| `listUsers`                  | `{ q?, role?, status?, page, pageSize }`                                 | 分页 + 搜索，默认 20 / 页                                                  |
+| `getUser`                    | `{ userId }`                                                             | 账号、角色、banned、最近活跃                                               |
+| `setUserRole`                | `{ userId, role }`                                                       | 撤销最后一个 admin / 改自己 → `CONFLICT`                                   |
+| `banUser`                    | `{ userId, reason, expiresAt? }`                                         | 禁用 API Key + 设 banned + 尽力撤 session                                  |
+| `unbanUser`                  | `{ userId }`                                                             | 清 banned；不恢复 API Key                                                  |
+| `revokeUserSessions`         | `{ userId }`                                                             | 只撤 Web 会话                                                              |
+| `getModelServiceConfig`      | —                                                                        | 返回配置；密钥只返回 `last4`                                               |
+| `updateModelServiceConfig`   | `{ enabled, baseURL?, apiKey?, models?, defaults?, expectedUpdatedAt? }` | 校验后写配置，无传播                                                       |
+| `testModelServiceConnection` | —                                                                        | 请求 `/models`，返回状态 / 延迟 / 模型数 / 错误码                          |
+| `refreshModelCatalog`        | `{ apply: boolean }`                                                     | 拉取并返回 diff；`apply` 时写入新增模型                                    |
 
 全部使用 `adminProcedure`；`whoami` 用 `authedProcedure`。
 
@@ -303,13 +303,13 @@ type CompanyModel = {
 
 **侵入预算**
 
-| 类别 | 预算 |
-| ---- | ---- |
-| 新增文件 | 不限，但必须落在 8.1 的目录内 |
+| 类别     | 预算                                               |
+| -------- | -------------------------------------------------- |
+| 新增文件 | 不限，但必须落在 8.1 的目录内                      |
 | 共享文件 | 8 个（见 8.2），每处 ≤ 10 行；超出需在 PR 写明理由 |
-| 数据库 | 1 张新表；0 个上游表结构变更 |
-| 路由 | 1 条 `/admin` |
-| 上游测试 | 不修改；确需修改时单独说明 |
+| 数据库   | 1 张新表；0 个上游表结构变更                       |
+| 路由     | 1 条 `/admin`                                      |
+| 上游测试 | 不修改；确需修改时单独说明                         |
 
 ### 8.1 新增（Fork 自有）
 
@@ -326,16 +326,16 @@ src/services/adminConsole.ts
 
 ### 8.2 必须改的共享文件（每处 ≤ 10 行）
 
-| 文件 | 改动 |
-| ---- | ---- |
-| `packages/model-bank/src/modelProviders/index.ts` | 导出 tellhow provider |
-| `packages/model-bank/src/aiModels/index.ts` | 导出 tellhow 模型目录 |
-| `packages/model-bank/src/const/modelProvider.ts` | `ModelProvider` 追加 `tellhow` |
-| `apps/server/src/modules/ModelRuntime/index.ts` | 默认分支注入业务层凭据；`getParamsFromPayload` 保持同步、不改签名 |
-| `apps/server/src/globalConfig/index.ts` | 合并 tellhow 模型目录 |
-| `apps/server/src/routers/lambda/index.ts` | 挂 `adminConsole` |
-| `src/spa/router/desktopRouter.shared.tsx` | 注册 `/admin`，`preloadId: 'adminConsole'` |
-| `src/features/User/UserPanel/useMenu.tsx` | 管理员菜单入口 |
+| 文件                                              | 改动                                                              |
+| ------------------------------------------------- | ----------------------------------------------------------------- |
+| `packages/model-bank/src/modelProviders/index.ts` | 导出 tellhow provider                                             |
+| `packages/model-bank/src/aiModels/index.ts`       | 导出 tellhow 模型目录                                             |
+| `packages/model-bank/src/const/modelProvider.ts`  | `ModelProvider` 追加 `tellhow`                                    |
+| `apps/server/src/modules/ModelRuntime/index.ts`   | 默认分支注入业务层凭据；`getParamsFromPayload` 保持同步、不改签名 |
+| `apps/server/src/globalConfig/index.ts`           | 合并 tellhow 模型目录                                             |
+| `apps/server/src/routers/lambda/index.ts`         | 挂 `adminConsole`                                                 |
+| `src/spa/router/desktopRouter.shared.tsx`         | 注册 `/admin`，`preloadId: 'adminConsole'`                        |
+| `src/features/User/UserPanel/useMenu.tsx`         | 管理员菜单入口                                                    |
 
 共 8 个共享文件。SSRF 只在上面的新文件里调用 `ssrfSafeFetch`，不修改 `packages/ssrf-safe-fetch` 本身。
 
@@ -420,11 +420,11 @@ src/services/adminConsole.ts
 
 ### 12.1 身份判定
 
-| 事实 | 位置 |
-| ---- | ---- |
-| `users.role` 是可空 `text`；admin 插件要求的 `banned` / `banReason` / `banExpires` 已在表里 | `packages/database/src/schemas/user.ts:38-43` |
-| Better Auth `admin()` 已注册 | `src/libs/better-auth/define-config.ts:320` |
-| 开工前核查（2026-11-20）：实例用户 `role` 均为 `user` / `NULL`，尚无管理员 | 运行时快照，仅说明需要 bootstrap，不作为设计前提 |
+| 事实                                                                                        | 位置                                             |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `users.role` 是可空 `text`；admin 插件要求的 `banned` / `banReason` / `banExpires` 已在表里 | `packages/database/src/schemas/user.ts:38-43`    |
+| Better Auth `admin()` 已注册                                                                | `src/libs/better-auth/define-config.ts:320`      |
+| 开工前核查（2026-11-20）：实例用户 `role` 均为 `user` / `NULL`，尚无管理员                  | 运行时快照，仅说明需要 bootstrap，不作为设计前提 |
 
 ```ts
 export const isAdminRole = (role: string | null | undefined) => role === 'admin';
@@ -434,10 +434,10 @@ export const isAdminRole = (role: string | null | undefined) => role === 'admin'
 
 ### 12.2 首次提权：`ADMIN_CONSOLE_BOOTSTRAP_*`
 
-| 方案 | 结论 |
-| ---- | ---- |
-| 手工 SQL | 兜底 |
-| 固定初始密码 | 不做 |
+| 方案              | 结论 |
+| ----------------- | ---- |
+| 手工 SQL          | 兜底 |
+| 固定初始密码      | 不做 |
 | 邮箱 / 用户名名单 | 采用 |
 
 ```bash
@@ -471,11 +471,11 @@ ADMIN_CONSOLE_BOOTSTRAP_USER_IDS=""
 
 ### 12.4 权限矩阵
 
-| 接口 / 页面 | 未登录 | 普通用户 | 管理员 |
-| ----------- | ------ | -------- | ------ |
-| `adminConsole.whoami` | 401 | `{ isAdmin: false }` | `{ isAdmin: true }` |
-| 其余 `adminConsole.*` | 401 | `ADMIN_REQUIRED` | 放行 |
-| `/admin` 前端路由 | 跳登录 | 跳 `/` | 渲染 |
+| 接口 / 页面           | 未登录 | 普通用户             | 管理员              |
+| --------------------- | ------ | -------------------- | ------------------- |
+| `adminConsole.whoami` | 401    | `{ isAdmin: false }` | `{ isAdmin: true }` |
+| 其余 `adminConsole.*` | 401    | `ADMIN_REQUIRED`     | 放行                |
+| `/admin` 前端路由     | 跳登录 | 跳 `/`               | 渲染                |
 
 ### 12.5 入口与路由
 
@@ -536,13 +536,13 @@ ADMIN_CONSOLE_BOOTSTRAP_USER_IDS=""
  │                          └ 请求 Tellhow 网关
 ```
 
-| 失败态 | 语义 |
-| ------ | ---- |
-| 未配置 | `PROVIDER_NOT_CONFIGURED` |
-| 密钥无效 | `PROVIDER_AUTH_FAILED` |
-| 网关不可达 | `PROVIDER_UNREACHABLE` |
-| 模型已关闭 | `MODEL_NOT_IN_CATALOG` |
-| 并发保存 | `CONFLICT` |
+| 失败态     | 语义                      |
+| ---------- | ------------------------- |
+| 未配置     | `PROVIDER_NOT_CONFIGURED` |
+| 密钥无效   | `PROVIDER_AUTH_FAILED`    |
+| 网关不可达 | `PROVIDER_UNREACHABLE`    |
+| 模型已关闭 | `MODEL_NOT_IN_CATALOG`    |
+| 并发保存   | `CONFLICT`                |
 
 ## 14. 开工前确认
 
@@ -552,3 +552,55 @@ ADMIN_CONSOLE_BOOTSTRAP_USER_IDS=""
 4. 记忆向量等系统能力是否有对应模型。
 
 前 4 项不影响 P1；P2 开工前需要产品方拍板。
+
+## 15. P1 实施记录与偏差（2026-11-23）
+
+### 15.1 交付范围
+
+P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / 解禁、设 / 撤管理员、撤会话；审计日志未做（无表、无占位接口）。P2 代码未开始。验收口径为 §11 P1 四条 + 工程四项；本轮记录见本节 15.5。
+
+### 15.2 与 §8.2 共享文件预算的偏差
+
+§8.2 的 8 个文件是按 P1+P2 合并列出的，其中 4 个（model-bank 两个 index、`ModelProvider` 枚举、`ModelRuntime`、`globalConfig`）属于 P2，P1 未改。P1 实际还改了下列共享文件，均为**注册 / 接线 / 枚举追加**，没有改既有分支行为：
+
+| 文件                                              | 行数     | 理由                                                                                                        |
+| ------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `src/features/NavPanel/routeKey.ts`               | +5       | `NavPanelPortal navKey="admin"` 生效的前置条件；控制台使用自有侧栏，不能继承首页高亮                        |
+| `src/app/(backend)/api/auth/[...all]/route.ts`    | +7       | 实现 §12.6 的 `POST /api/auth/admin/* → 404`；拦截规则放在新增 `src/libs/better-auth/adminEndpointGuard.ts` |
+| `packages/database/src/index.ts`                  | +1       | 从 `@lobechat/database` 导出新 model，业务层只依赖包入口                                                    |
+| `packages/database/src/schemas/index.ts`          | +1       | 导出新 schema（drizzle 聚合入口）                                                                           |
+| `packages/types/src/index.ts`                     | +1       | 导出 `adminConsole` 共享类型                                                                                |
+| `packages/database/migrations/meta/_journal.json` | +7       | 注册 fork 迁移 9001（迁移文件与 snapshot 为新增文件）                                                       |
+| `scripts/fork/reconcileMigrations.ts`             | 1 项     | `FORK_TABLES` 增加 `public.admin_console_settings`；同文件另有 prettier 格式化，未改逻辑                    |
+| `packages/locales/src/default/common.ts`          | +2       | 用户菜单入口文案（源文案）                                                                                  |
+| `packages/locales/src/default/setting.ts`         | +60      | 控制台全部界面文案（源文案）                                                                                |
+| `locales/{en-US,zh-CN}/{common,setting}.json`     | +2 / +58 | 交付英文与中文；其他语言交给自动翻译流程                                                                    |
+
+没有修改上游表结构、`src/features/Settings/**`、`settingsRouter.updateSettings`、`featureFlags`，也没有启用 Better Auth 原生 admin 端点。
+
+### 15.3 实现层面的偏差与取舍
+
+- **`LAST_ADMIN` 不经自助接口触达**：`setUserRole` / `banUser` 对「操作自己」先返回 `SELF_LOCKOUT`（409 `CONFLICT`），因此最后管理员保护只可能在并发或直连数据层时触发。实现仍保留 `pg_advisory_xact_lock(hashtext('admin_console:last_admin'))` 与事务内重算，`packages/database/src/models/adminConsole.test.ts` 覆盖该分支。对外可观察的拒绝语义是 409 + `SELF_LOCKOUT`。
+- **禁用返回撤销会话数**：`banUser` 先禁用 API Key、再写账号状态，最后尽力撤 session（失败不回滚禁用），返回 `revokedSessions`。这与 §12.3 的级联顺序一致；解禁不恢复 API Key。
+- **`whoami` 是最小暴露面**：普通用户只拿到 `{ isAdmin, role, bootstrapConfigured, canBootstrap }`，不返回他人账号信息；其余接口统一由 `adminProcedure` 抛 `ADMIN_REQUIRED`。
+- **前端守卫**：非管理员 `redirect('/')`，未登录跳 `/signin`；菜单入口只对 `isAdmin` 渲染。移动端不注册 `/admin`。
+- **原生 admin 端点拦截**：任何 `POST /api/auth/admin/*` 在进入 Better Auth 前返回 404（包含未登录请求），避免绕过控制台的账号状态保护。
+- **i18n**：源文案写在 `packages/locales/src/default/`，en-US /zh-CN 同步交付；其他语言等待 `auto-i18n` 工作流。
+
+### 15.4 工程验证
+
+- `npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4`：退出码 0（合并上游 `6d1b24e2de` 后复跑）。
+- `npx oxlint` 覆盖 P1 改动文件：0 error / 0 warning。
+- P1 新增单测：`packages/database/src/models/adminConsole.test.ts`（5）、`apps/server/src/routers/lambda/adminConsole/permissions.test.ts`（23）、`src/libs/better-auth/adminEndpointGuard.test.ts`（10）、`src/app/(backend)/api/auth/[...all]/adminEndpoint.test.ts`（5）全部通过。
+- §11「单测覆盖密钥加解密 / 目录 diff / 运行时凭据优先级」属于 P2，本轮不适用。
+
+### 15.5 产品验收
+
+按 §11 P1 四条在本地真实运行环境验证（独立测试库 + Redis + Next + Vite SPA，`ADMIN_CONSOLE_BOOTSTRAP_EMAILS=agent-testing@lobehub.com`）：
+
+1. 管理员在 `/admin` 搜索 `target` 并能禁用（原因 + 7 天）；禁用后同一 API Key 立即 401，同一密码重新登录返回 403 `BANNED_USER`；`revokedSessions=2`。
+2. 设 / 撤管理员在详情抽屉即时生效（`Make admin` ↔ `Revoke admin`）；对自身改角色 / 禁用返回 409 `SELF_LOCKOUT`。
+3. 普通用户 `adminConsole.listUsers` 返回 403 `ADMIN_REQUIRED`，未登录返回 401；直达 `/admin` 被重定向到 `/`，页面无管理界面。
+4. 配置 `ADMIN_CONSOLE_BOOTSTRAP_EMAILS` 后，首次 `whoami` 把 `role=NULL` 的账号提升为 `admin`，并在 `admin_console_settings.config.bootstrap` 记录时间与用户；再次访问不重复写入。
+
+验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8 项检查全部 passed，证据含截图与原始请求输出）。共享文件清单与遗留项见本节与 `CUSTOMIZATIONS.md`。本轮为单人执行，未安排独立 acceptance-checker 复核。
