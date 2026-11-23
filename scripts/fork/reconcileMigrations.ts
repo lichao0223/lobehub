@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 /**
@@ -25,7 +25,7 @@ const JOURNAL_PATH = path.join(META_DIR, '_journal.json');
 const FORK_IDX_START = 9000;
 
 /** Fork 自己拥有的表：快照里必须有，其余表必须与上游最新快照保持一致。新增 fork 表时在这里补一行。 */
-const FORK_TABLES = ['public.deploy_resume_queue'];
+const FORK_TABLES = ['public.deploy_resume_queue', 'public.admin_console_settings'];
 
 const SNAPSHOT_FILE = /^(\d+)_snapshot\.json$/;
 
@@ -87,7 +87,10 @@ const readSnapshots = (): SnapshotFile[] => {
 
 const padded = (idx: number) => String(idx).padStart(4, '0');
 
-const pick = (source: Record<string, unknown> | undefined, keys: string[]): Record<string, unknown> => {
+const pick = (
+  source: Record<string, unknown> | undefined,
+  keys: string[],
+): Record<string, unknown> => {
   const picked: Record<string, unknown> = {};
   if (!source) return picked;
 
@@ -112,10 +115,12 @@ const canonical = (value: unknown): unknown => {
   return value;
 };
 
-const sameJson = (a: unknown, b: unknown) => JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+const sameJson = (a: unknown, b: unknown) =>
+  JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
 /** drizzle-kit 写出的 JSON 文件都以换行结尾，保持一致避免无意义 diff。 */
-const writeJson = (filePath: string, value: unknown) => writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+const writeJson = (filePath: string, value: unknown) =>
+  writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
 
 const stripIds = (snapshot: Snapshot) => {
   const copy: Record<string, unknown> = { ...snapshot };
@@ -156,8 +161,12 @@ const main = () => {
     }
   }
 
-  const upstream = journal.entries.filter((entry) => entry.idx < FORK_IDX_START).sort((a, b) => a.idx - b.idx);
-  const fork = journal.entries.filter((entry) => entry.idx >= FORK_IDX_START).sort((a, b) => a.idx - b.idx);
+  const upstream = journal.entries
+    .filter((entry) => entry.idx < FORK_IDX_START)
+    .sort((a, b) => a.idx - b.idx);
+  const fork = journal.entries
+    .filter((entry) => entry.idx >= FORK_IDX_START)
+    .sort((a, b) => a.idx - b.idx);
 
   // 2. 上游条目必须从 0 开始连续；fork 条目 idx 必须唯一。上游碰到保留区说明约定失效。
   upstream.forEach((entry, index) => {
@@ -166,7 +175,8 @@ const main = () => {
     }
   });
 
-  const duplicated = new Set(journal.entries.map((entry) => entry.idx)).size !== journal.entries.length;
+  const duplicated =
+    new Set(journal.entries.map((entry) => entry.idx)).size !== journal.entries.length;
   if (duplicated) problems.push('journal idx 存在重复');
 
   // 3. 顺序：上游在前，fork 在尾；fork 条目按 idx 升序。
@@ -191,7 +201,7 @@ const main = () => {
   // 5. 快照基准：drizzle-kit 只拿「文件名排序最后一个」快照做 diff，
   //    即最新的 fork 快照。它必须等于「上游最新快照 + fork 表」，否则下次 generate 会重复上游变更。
   if (fork.length > 0) {
-    const latestForkIdx = fork[fork.length - 1].idx;
+    const latestForkIdx = fork.at(-1).idx;
     const upstreamSnapshot = [...snapshots].reverse().find((item) => item.idx < FORK_IDX_START);
     const forkSnapshot = [...snapshots].reverse().find((item) => item.idx >= FORK_IDX_START);
 
@@ -247,13 +257,13 @@ const main = () => {
     for (const fix of fixes) console.log(`  - ${fix}`);
   }
 
-  const upstreamRange = upstream.length > 0 ? `0–${upstream[upstream.length - 1].idx}` : '空';
+  const upstreamRange = upstream.length > 0 ? `0–${upstream.at(-1).idx}` : '空';
   const forkRange = fork.length > 0 ? fork.map((entry) => entry.idx).join(', ') : '空';
 
   console.log('✅ Fork 迁移车道一致');
   console.log(`  upstream: ${upstreamRange}（${upstream.length} 条）`);
   console.log(`  fork: ${forkRange}（${fork.length} 条）`);
-  console.log(`  快照基准: ${snapshots.length > 0 ? path.basename(snapshots[snapshots.length - 1].path) : '无'}`);
+  console.log(`  快照基准: ${snapshots.length > 0 ? path.basename(snapshots.at(-1).path) : '无'}`);
 };
 
 main();

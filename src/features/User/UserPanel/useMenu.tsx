@@ -11,6 +11,7 @@ import { useHasActiveWorkspace } from '@/business/client/hooks/useHasActiveWorks
 import { type MenuProps } from '@/components/Menu';
 import { DEFAULT_DESKTOP_HOTKEY_CONFIG } from '@/const/desktop';
 import { OFFICIAL_URL } from '@/const/url';
+import { useAdminMenuEntry } from '@/features/AdminConsole/useAdminMenuEntry';
 import DataImporter from '@/features/DataImporter';
 import { useWorkspaceAwareNavigate } from '@/features/Workspace/useWorkspaceAwareNavigate';
 import { useNavLayout } from '@/hooks/useNavLayout';
@@ -56,6 +57,7 @@ export const useMenu = () => {
   const businessMenuItems = useBusinessMenuItems(isLogin);
   const hasActiveWorkspace = useHasActiveWorkspace();
   const navigate = useWorkspaceAwareNavigate();
+  const adminConsole = useAdminMenuEntry(isLogin);
 
   // Navigation items navigate from the row's `onClick` instead of wrapping the
   // label in a link: a link only covers the label text, so clicks on the icon
@@ -118,6 +120,7 @@ export const useMenu = () => {
       type: 'divider' as const,
     },
 
+    ...adminConsole,
     ...(isLogin ? settings : []),
     ...businessMenuItems,
     ...(userPanel.showDataImporter && isLogin

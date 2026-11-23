@@ -2,6 +2,7 @@ import { toNextJsHandler } from 'better-auth/next-js';
 import type { NextRequest } from 'next/server';
 
 import { auth } from '@/auth';
+import { isBlockedAdminEndpoint } from '@/libs/better-auth/adminEndpointGuard';
 import { stripEmptyUntypedBody } from '@/libs/better-auth/request-body';
 
 const jsonContentTypeRegex = /^application\/(?:[a-z0-9.+-]*\+)?json/i;
@@ -30,6 +31,12 @@ const validateJsonBody = async (request: Request) => {
 export const GET = handler.GET;
 
 export const POST = async (request: NextRequest) => {
+  // CUST-008 §12.6: native admin endpoints bypass the console's guards.
+  const pathname = request.nextUrl?.pathname ?? new URL(request.url).pathname;
+  if (isBlockedAdminEndpoint(pathname)) {
+    return Response.json({ code: 'NOT_FOUND', message: 'Not Found' }, { status: 404 });
+  }
+
   const invalidJsonResponse = await validateJsonBody(request);
   if (invalidJsonResponse) return invalidJsonResponse;
 

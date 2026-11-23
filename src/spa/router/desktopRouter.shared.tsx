@@ -18,6 +18,7 @@ import ProviderSettingsSkeleton, {
   ProviderDetailSkeleton,
 } from '@/components/Skeleton/Settings/Provider';
 import { createSurfaceSkeleton } from '@/components/Skeleton/Surface';
+import { adminConsoleRoute } from '@/features/AdminConsole/route';
 import { VAULT_TAB_SEARCH } from '@/features/EnvironmentsAndCreds/const';
 import { pageRouteMeta } from '@/features/Pages/routeMeta';
 import ResourceCategorySkeleton from '@/features/ResourceHome/Skeleton';
@@ -343,6 +344,9 @@ const createMainAreaChildrenDefinition = (options: MainAreaRouteOptions = {}): R
     },
     path: 'apps',
   },
+
+  // Admin console (personal-only; the layout guards on whoami)
+  adminConsoleRoute,
 
   // Settings routes (personal-only — never mirrored under /:workspaceSlug)
   {

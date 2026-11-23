@@ -707,4 +707,6 @@ export default {
   'visibilityFilter.private': 'Private',
   'visibilityFilter.workspace': 'Workspace',
   'zoom': 'Zoom',
+  'userPanel.adminConsole': 'Admin Console',
+  'userPanel.adminRole': 'Admin',
 };

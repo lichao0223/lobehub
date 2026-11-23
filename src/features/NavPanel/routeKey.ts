@@ -13,6 +13,11 @@ export const resolveNavPanelKey = (
   }
 
   switch (rootSegment) {
+    // Fork: the admin console owns its own sidebar instead of inheriting home.
+    case 'admin': {
+      return 'admin';
+    }
+
     case 'agent': {
       return grandchildSegment === 'docs' ? 'agent-docs' : 'agent';
     }
