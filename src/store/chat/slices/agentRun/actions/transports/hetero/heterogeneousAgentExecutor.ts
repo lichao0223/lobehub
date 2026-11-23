@@ -79,7 +79,6 @@ import { drainQueuedTurn, sendQueuedTurn } from '../../lifecycle/queuedFollowUp'
 import type { RunScope } from '../../lifecycle/types';
 import { createGatewayEventHandler } from '../gateway/gatewayEventHandler';
 import { isCompletedRuntimeEnd } from '../gateway/runtimeEndReason';
-import { withHeteroContext } from '../viewedTaskPrompt';
 import { registerLocalBackgroundTaskStopper, writeBackgroundTaskSnapshot } from './backgroundTasks';
 import { markUnfinishedToolsCancelled } from './cancelledTools';
 import {
