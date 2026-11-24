@@ -233,6 +233,15 @@ const getParamsFromPayload = (provider: string, payload: ClientSecretPayload) =>
   const llmConfig = (useServerConfig ? getLLMConfig() : {}) as Record<string, any>;
   const runtimeProvider = payload.runtimeProvider ?? provider;
 
+  // CUST-008: tellhow is identified by the provider, not the SDK type. The
+  // provider card declares `sdkType: 'openai'`, so a payload can carry
+  // `runtimeProvider: 'openai'`; keying the branch off the SDK type would fall
+  // through to the generic path and surface `InvalidProviderAPIKey` instead of
+  // the readable "service is not available" message.
+  if (provider === ModelProvider.Tellhow) {
+    return companyProvider.resolveCompanyProviderParamsOrThrow(payload);
+  }
+
   switch (runtimeProvider) {
     case ModelProvider.LobeHub: {
       return { apikey: payload.apiKey, baseURL: payload.baseURL, ...payload };

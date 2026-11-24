@@ -68,6 +68,19 @@ describe('initModelRuntimeWithUserPayload: tellhow', () => {
     );
   });
 
+  it('keeps the readable error when the payload carries the provider SDK type', () => {
+    // The provider card declares `sdkType: 'openai'`, so the client payload can
+    // name the SDK runtime. The closed-service message must not depend on it.
+    expect(() =>
+      initModelRuntimeWithUserPayload(ModelProvider.Tellhow, { runtimeProvider: 'openai' }),
+    ).toThrow(
+      expect.objectContaining({
+        error: { message: COMPANY_PROVIDER_NOT_CONFIGURED_MESSAGE },
+        errorType: 'NoAvailableProvider',
+      }),
+    );
+  });
+
   it('keeps that message when the route normalizes the error for the client', () => {
     const normalized = normalizeChatMessageError(createCompanyProviderNotConfiguredError());
 

@@ -9,14 +9,17 @@ vi.mock('@/libs/next/proxy/define-config', () => ({
 }));
 
 describe('SPA proxy route matching', () => {
-  it.each(['/a/shared-agent', '/a/e2e-missing-share', '/a/shared-agent?hl=en-US'])(
-    'routes %s through the SPA proxy',
-    (pathname) => {
-      expect(
-        unstable_doesMiddlewareMatch({ config, url: `http://localhost:3010${pathname}` }),
-      ).toBe(true);
-    },
-  );
+  it.each([
+    '/a/shared-agent',
+    '/a/e2e-missing-share',
+    '/a/shared-agent?hl=en-US',
+    '/admin',
+    '/admin/model-service',
+  ])('routes %s through the SPA proxy', (pathname) => {
+    expect(unstable_doesMiddlewareMatch({ config, url: `http://localhost:3010${pathname}` })).toBe(
+      true,
+    );
+  });
 
   it.each(['/api/chat', '/trpc/lambda/share.getSharedAgent', '/webapi/chat'])(
     'keeps backend authentication in the handler for %s',

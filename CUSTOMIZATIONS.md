@@ -6,16 +6,16 @@
 
 ## 功能总表
 
-| 编号     | 二开功能                            | 用户入口 / 行为                                                                                        | 维护位置                                                                                          | 状态                                                                      |
-| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                             | `.github/workflows/publish-custom-image.yml`                                                      | 历史已有；本轮增加 TFS curl 构建参数                                      |
-| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈            | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                      | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话             |
-| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                             | 同上；`scripts/deploy-custom-image.test.py`                                                       | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增             |
-| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                        | 下方列出的五个 `.github/workflows/` 文件                                                          | 历史已有                                                                  |
-| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md) | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                |
-| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                      | 本次新增；需要 Fork 自己的 npm Token                                      |
-| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                           | 开发中；单测已交付，待与真实认证中心联调                                  |
-| CUST-008 | 管理员控制台（P1 已交付）           | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                      | P1 已落地（2026-11-23）；P2 进行中（2026-11-24，`feat/admin-console-p2`） |
+| 编号     | 二开功能                            | 用户入口 / 行为                                                                                        | 维护位置                                                                                          | 状态                                                          |
+| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                             | `.github/workflows/publish-custom-image.yml`                                                      | 历史已有；本轮增加 TFS curl 构建参数                          |
+| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈            | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                      | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话 |
+| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                             | 同上；`scripts/deploy-custom-image.test.py`                                                       | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增 |
+| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                        | 下方列出的五个 `.github/workflows/` 文件                                                          | 历史已有                                                      |
+| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md) | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成    |
+| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                      | 本次新增；需要 Fork 自己的 npm Token                          |
+| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                           | 开发中；单测已交付，待与真实认证中心联调                      |
+| CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                      | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
 
 ## CUST-001：自定义镜像
 
@@ -148,6 +148,7 @@
 4. 禁用级联顺序：① `api_keys.enabled=false` → ② 写 `banned` / `banReason` / `banExpires` → ③ 尽力撤 session。**解禁不恢复 API Key**。
 5. 最后管理员保护（`pg_advisory_xact_lock(hashtext('admin_console:last_admin'))`）与自助操作 `SELF_LOCKOUT` 的 `CONFLICT` 语义。
 6. en-US /zh-CN 文案与 en-US 源文案同步；上游改 `users` 表、`api_keys` 或 Better Auth admin 插件时会话字段时逐项复查。
+7. `src/proxy.ts` 的 matcher 保留 `/admin` 与 `/admin/(.*)`：否则 `/admin` 深链会被 Next 的 not-found 重定向回首页，控制台只在 SPA 内部跳转时可用。
 
 ### P2（进行中）
 
@@ -173,9 +174,21 @@
 
 - 单测（P2-4）：`apps/server/src/routers/lambda/adminConsole/modelCatalog.test.ts` 51 项（类型推断、新增 / 消失 / 未变化 / 恢复 / 幂等 diff、管理员编辑不被覆盖、错误码映射、超时、apply 幂等）；`modelCatalog.router.test.ts` 9 项（PGlite + tRPC：两接口 admin 可用、非管理员 `ADMIN_REQUIRED`、`lastTest` 落库、dry-run 不写、apply 后新增关闭待确认、二次 apply 不写、非法存量类型拒绝）。
 
-### P2（剩余）
+- **P2-5 `/admin` 模型服务页（已实现，2026-11-24）**：新增 `src/features/AdminConsole/ModelService/*`（Service connection / Model catalog / Defaults 三张卡片）与 `src/routes/(main)/admin/model-service`，挂在既有 `adminConsoleRoute` 下（未改共享路由文件）。页面覆盖保存、测试连接、目录搜索 / 类型筛选 / 开放开关、手工增删改与同步 diff 预览；错误码统一走 `handleError`，乐观锁冲突弹「刷新」确认框。
 
-测试连接与目录同步已完成（P2-4）；剩余 `/admin` 模型服务页、用户侧联调与真实验收。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
+- **P2-6 用户侧联调与真实验收（2026-11-24）**：在本地真实运行环境（真实 Next + Vite SPA + Postgres/Redis + 本地 OpenAI 兼容网关 + 本地 QStash）完成 §11 P2 八条验收：
+  - 新注册普通用户在「设置 → 服务商」看到 **Tellhow AI** 位于 **Enabled** 分组，页面上没有任何密码输入框；管理员开放的 `tellhow-chat-pro` / `tellhow-chat-lite` 出现在聊天模型列表，未开放的 embedding /vision 不出现。
+  - 用 `tellhow-chat-pro` 完成一次真实对话：上游收到带 `Authorization: Bearer` 的 `/v1/chat/completions`，回复落库并在界面渲染。
+  - 管理员关闭某个模型后用户模型列表即少一项（恢复后回来）；`enabled: false` 后 Tellhow 从用户侧消失，已有会话的下一次请求返回可读错误而不是 500。
+  - 目录同步：新增 4 个模型全部 `pending`（Needs review）且 `open: false`；上游移除的 `tellhow-vision` 只写 `removedAt`，目录行仍保留，重新出现后 `removedAt` 被清除。
+  - 管理端「Test connection」返回 `Connected · 148ms · 4 models`；改成错误密钥后返回 `PROVIDER_AUTH_FAILED`；改回后 `ok: true / 570ms / 3 models`，证明地址与密钥改动对下一次请求生效。
+  - 设置页、对话与 `adminConsole.getModelServiceConfig` 的响应都不含明文或密文密钥（`config.ai.apiKey` 只剩 `last4` / `updatedAt`，请求体里只有掩码占位）；`user_settings` 的 `key_vaults` / `general` / `language_model` 三列 md5 在保存配置前后完全一致。
+  - **联调发现并修复**：`/admin` 与 `/admin/model-service` 深链在 Web 根路径返回 307 回首页（`src/proxy.ts` matcher 未包含 `/admin`），菜单内跳转之外无法直达 / 刷新。已补 `/admin`、`/admin/(.*)` 并加 `src/proxy.test.ts` 回归用例。
+  - **交付方式**：本机没有 `gh` 与可用的 GitHub token，无法创建 PR；分支以本地 merge 后直接推送 `origin/canary` 完成合入，合并提交与 `git log origin/canary` 见验收报告。合并后仍需人工补一个 GitHub PR 记录（或在有凭证的环境补开）。
+
+### P2（状态）
+
+§11 P2 八条已在真实环境逐条验收，证据见 `ADMIN_CONSOLE_DESIGN.md` §15.7 与验收报告；剩余仅为有 GitHub 凭证时补开 PR。范围与失败态见设计文档 §3–§7、§13.3；§14 的四项产品假设结论已回写。
 
 ## 上游合并统一流程
 

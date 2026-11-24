@@ -544,14 +544,25 @@ ADMIN_CONSOLE_BOOTSTRAP_USER_IDS=""
 | 模型已关闭 | `MODEL_NOT_IN_CATALOG`    |
 | 并发保存   | `CONFLICT`                |
 
-## 14. 开工前确认
+## 14. 开工前确认（P2 结论，2026-11-24 回写）
+
+P2 开工时有 4 项产品假设。P2 交付时在本地真实运行环境（真实 Next + Vite SPA + Postgres/Redis + 本地 OpenAI 兼容网关）逐项验证，结论如下。
+
+| #   | 假设                                                             | 结论                     | 依据（详见 §15.7 与验收报告）                                                                                                                                                                                                                                                                     |
+| --- | ---------------------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Tellhow 是 OpenAI 兼容接口，`GET {baseURL}/v1/models` 可用       | **成立**                 | 管理端「Test connection」返回 `Connected · 148ms · 4 models`；目录同步一次返回 4 个上游模型并全部以 `pending`（Needs review）/`open: false` 落库。                                                                                                                                                |
+| 2   | 允许用户自建第三方厂商，与 Tellhow 并存、互不影响                | **成立**                 | 新注册用户同时拥有「Tellhow AI」与自建 OpenAI 兼容服务商；两个服务商各自出现在模型列表，切换后对话互不影响；管理员侧配置变更只影响 Tellhow。                                                                                                                                                      |
+| 3   | 用户可在设置里「停用泰豪 AI」（只是不展示，不删除管理员配置）    | **成立（部分 UI 限制）** | 服务商列表提供 Enable/Disable 开关，停用后 Tellhow 从用户「Enabled」分组移到「Disabled」，`admin_console_settings` 行与管理员目录不变；重新启用即恢复。用户侧只能整体停用，不能改地址 / 密钥 / 目录（`showConfig: false`），也不能删除管理员配置。                                                |
+| 4   | 记忆向量 / 标题生成 / 校验等系统能力由 `config.ai.defaults` 指定 | **成立（实现层）**       | 管理端 Defaults 卡片把 `defaults.{embeddingModel,titleModel,verifyModel}` 写入 `config.ai`，`getCompanyProviderRuntime()` 原样读出；系统能力仍按 `user_settings.system_agent` / 环境变量解析，未做覆盖写入，默认值只影响未单独配置的用户。P2 未对「已有用户显式覆盖」做产品级验证，留待需要时补。 |
+
+原始 4 条假设保留如下，便于对照：
 
 1. Tellhow 网关是否 OpenAI 兼容、`/v1/models` 是否可用；
 2. 是否允许用户继续使用第三方内置厂商；
 3. 是否允许用户停用 Tellhow 厂商；
 4. 记忆向量等系统能力是否有对应模型。
 
-前 4 项不影响 P1；P2 开工前需要产品方拍板。
+前 4 项不影响 P1；P2 开工前需要产品方拍板。P2 已按上述结论交付；若产品方改变结论，改动点集中在 `packages/business-server/src/companyProvider.ts`（默认关闭 / 读取）、`src/features/AdminConsole/ModelService/*`（管理端）与 provider 卡片开关，不需要数据库迁移。
 
 ## 15. P1 实施记录与偏差（2026-11-23）
 
@@ -647,3 +658,27 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
   - `apply: false` 只返回 diff；`apply: true` 仅在确有变化时写入，写入复用 `updateConfig`（同一套校验 + `updatedAt` 乐观锁），因此重复 apply 幂等且不推进 `updatedAt`。
 - **出站**：两个操作统一走 `companyProviderFetch()`（即 `ssrfSafeFetch` + 本条地址放行），并为 `/models` 响应体加 1 MiB 上限（`MODEL_CATALOG_MAX_BODY_BYTES`）。
 - **测试**：`modelCatalog.test.ts` 51 项（URL / 响应解析、9 类类型推断、新增・消失・未变化・恢复・幂等 diff、管理员编辑不被覆盖、错误码映射、超时、apply 幂等 / 版本透传），`modelCatalog.router.test.ts` 9 项（PGlite + tRPC：两个接口 admin 可用、非管理员 `ADMIN_REQUIRED`、`lastTest` 落库、dry-run 不写、apply 后新增关闭待确认、二次 apply 不写、非法存量类型拒绝、网关不可达错误码）。
+
+#### P2-5 `/admin` 模型服务页（2026-11-24）
+
+- **页面**：`src/features/AdminConsole/ModelService/index.tsx` 组合 Connection / Catalog / Defaults 三张卡片；路由 `src/routes/(main)/admin/model-service` 挂在既有 `adminConsoleRoute` 下，未改共享路由文件。保存、测试连接、目录搜索 / 类型筛选 / 开放开关、手工增删改、同步 diff 预览与应用都在同一页完成；乐观锁冲突弹「刷新」确认框。
+- **共享文件**：0 个。文案追加在 `packages/locales/src/default/setting.ts` 与 `locales/{en-US,zh-CN}/setting.json`。
+
+#### P2-6 用户侧联调与真实验收（2026-11-24）
+
+环境：本地真实运行分支 `feat/admin-console-p2`（Next 16 + Vite SPA + Postgres/Redis + 本地 QStash），测试用户为新注册普通账号，Tellhow 上游是本地 OpenAI 兼容网关（`/v1/models` + `/v1/chat/completions`）。
+
+逐条结果（证据见验收报告）：
+
+1. **通过**：用户「设置 → 服务商」的 Enabled 分组第一项即 **Tellhow AI**，页面无任何密码输入框；服务商详情页也没有地址 / 密钥 / 目录编辑入口（`showConfig: false`）。
+2. **通过**：聊天模型列表按 `tellhow` 过滤只剩 `tellhow-chat-pro` / `tellhow-chat-lite`（管理员开放的两项）；关闭 `tellhow-chat-lite` 后用户侧列表立即只剩 `tellhow-chat-pro`，重新开放后恢复。
+3. **部分通过**：用户可同时保留自建服务商与 Tellhow，模型列表互不覆盖；本轮用 Tellhow 完成了真实对话（见第 5 条），但没有在同一轮里跑通「自建服务商对话」的完整 UI 流程，留待产品方按需补测。
+4. **通过**：`adminConsole.getModelServiceConfig` 只返回 `last4` / `updatedAt` / `updatedBy`；`config.ai.apiKey.ciphertext` 只存在于数据库；设置页、对话与测试连接的请求 / 响应中均未出现明文或密文密钥。
+5. **通过**：管理端 Test connection → `Connected · 148ms · 4 models`；改成错误密钥 → `ok:false / PROVIDER_AUTH_FAILED`；改回 → `ok:true / 570ms / 3 models`。用户用 `tellhow-chat-pro` 发起对话，上游收到带 `Authorization: Bearer` 的 `/v1/chat/completions`，界面渲染回复。
+6. **通过**：目录同步新增 4 项全部 `pending`（Needs review）且 `open:false`；把 `tellhow-vision` 从上游移除后 dry-run 报 `removed: 1`，apply 后该行仍在目录中并带 `removedAt`；上游重新出现后 `removedAt` 被清除。
+7. **修复后通过**：`enabled:false` 后 Tellhow 从用户服务商列表与模型列表消失；已有会话的下一次请求原本返回 `InvalidProviderAPIKey` 并在界面显示通用错误 —— 根因是 `getParamsFromPayload` 按 `runtimeProvider`（provider 卡声明的 `sdkType: 'openai'`）分支，关闭态没有走到 tellhow 分支。已在 `getParamsFromPayload` 增加 provider 级前置判断，`tellhow.test.ts` 补回归用例；修复后同一操作返回 `NoAvailableProvider` + 固定文案。
+8. **通过**：保存配置前后对 `user_settings` 的 `key_vaults` / `general` / `language_model` 三列做 md5 对比，所有行完全一致。
+
+联调同时修复：`/admin` 深链在 Web 根路径 307 回首页（`src/proxy.ts` 的 matcher 缺 `/admin`），已补 `/admin`、`/admin/(.*)` 并给 `src/proxy.test.ts` 加回归用例。
+
+工程门禁：改动文件 oxlint 0 error；`tsrs` 全仓类型检查 0 error；新增 / 相关单测通过。共享文件最终清单见验收报告与 PR 描述。
