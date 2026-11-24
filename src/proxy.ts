@@ -19,6 +19,9 @@ export const config = {
     '/acceptance(.*)',
     '/apps',
     '/apps(.*)',
+    // Admin console (CUST-008): deep links and reloads must reach the SPA router.
+    '/admin',
+    '/admin/(.*)',
     // Pre-rename Marketplace URLs: the SPA redirects them to `/marketplace`.
     '/community',
     '/community(.*)',
