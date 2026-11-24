@@ -20,6 +20,7 @@ export default {
   'tfs.loading': 'Loading…',
   'tfs.loadMoreBranches': 'Load more branches',
   'tfs.loadMoreProjects': 'Load more TFS projects',
+  'tfs.maxRepositories': 'At most {{count}} repositories can be picked.',
   'tfs.nextPage': 'Next page',
   'tfs.notConfigured':
     'Ask an administrator to configure TFS_COLLECTION_URL and the encryption key on this deployment.',
@@ -27,11 +28,13 @@ export default {
   'tfs.pat': 'Personal access token (PAT)',
   'tfs.personalHint':
     'One personal TFS account per user. Credentials are encrypted and never shared with workspace members. Other members must connect their own account. Use a personal working directory or temporary sandbox for checkout.',
+  'tfs.pickedRepositories': 'Picked repositories',
   'tfs.project': 'TFS project',
   'tfs.provider': 'Code provider',
   'tfs.prs': 'Pull requests',
   'tfs.releases': 'Releases',
   'tfs.refresh': 'Refresh',
+  'tfs.removeRepository': 'Remove repository',
   'tfs.repository': 'Git repository',
   'tfs.resolveFailed': 'Could not read this repository. Check the URL and your TFS permissions.',
   'tfs.resource': 'Resource',

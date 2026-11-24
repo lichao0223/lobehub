@@ -1,18 +1,7 @@
 'use client';
 
-import type { ScmRepositoryListItem, TfsRepository } from '@lobechat/types';
 import { parseTfsRepository } from '@lobechat/utils/tfs';
-import {
-  ActionIcon,
-  Button,
-  cssVar,
-  Flexbox,
-  Input,
-  ModalFooter,
-  Text,
-  useModalContext,
-} from '@lobehub/ui';
-import { GitBranchIcon, XIcon } from 'lucide-react';
+import { Button, cssVar, Flexbox, Input, ModalFooter, Text, useModalContext } from '@lobehub/ui';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -35,39 +24,34 @@ import {
   reserveProjectIds,
 } from '../createProjectForm';
 import MainAgentSection from '../MainAgentSection';
+import { useDefaultMainAgent } from '../useDefaultMainAgent';
 import { parseGithubRepository } from './githubRepository';
-import { MAX_REPOSITORIES } from './RepositoryField';
-import RepositoryList from './RepositoryList';
-
-interface SelectedTfsRepository {
-  defaultBranch?: string;
-  fullName: string;
-  name: string;
-  url: string;
-}
+import RepositoryField, { AdvancedRepositories, type PickedRepository } from './RepositoryField';
 
 interface FormState {
-  /** Default branch of the picked repository; unknown for a pasted URL. */
-  defaultBranch?: string;
   /** The field another project already holds, as the last create reported it. */
   duplicate?: 'identifier' | 'name';
   identifier: string;
   loading: boolean;
+  /** Explicit pick in this dialog; otherwise the workspace inbox agent, LobeAI. */
   mainAgentId?: string;
   mainAgentMode: MainAgentMode;
   name: string;
   nameEdited: boolean;
-  url: string;
 }
 
 /**
- * New project from a GitHub repository: pick one the connected GitHub App can
- * read, or paste a URL, and the project is named after it, led by an agent of
- * its own, and created with the repository attached as its environment —
+ * New project from a GitHub or TFS repository: pick one or more the connected
+ * account can read, and the project is named after the first, led by an
+ * existing agent (LobeAI unless another is picked) or by one created for it,
+ * and created with the repositories attached as its environment —
  * no fields to fill unless the defaults are wrong.
+ *
+ * The GitHub path is upstream's structure (`RepositoryField` plus
+ * `AdvancedRepositories`); TFS plugs into the same repository list, so both
+ * providers end up in one `repositories` state instead of a parallel form.
  */
 const CreateFromGithubContent = ({ provider = 'github' }: { provider?: 'github' | 'tfs' }) => {
-  const parseRepository = provider === 'tfs' ? parseTfsRepository : parseGithubRepository;
   const { t } = useTranslation(['project', 'common']);
   const { close } = useModalContext();
   const navigate = useWorkspaceAwareNavigate();
@@ -78,9 +62,12 @@ const CreateFromGithubContent = ({ provider = 'github' }: { provider?: 'github' 
     mainAgentMode: DEFAULT_MAIN_AGENT_MODE,
     name: '',
     nameEdited: false,
-    url: '',
   });
-  const [tfsRepositories, setTfsRepositories] = useState<SelectedTfsRepository[]>([]);
+
+  // The project's environment checks these out; the first one names the project.
+  const [repositories, setRepositories] = useState<PickedRepository[]>([]);
+  const [main, ...extras] = repositories;
+  const parseRepository = provider === 'tfs' ? parseTfsRepository : parseGithubRepository;
 
   // Taken once per open dialog: the dedicated agent's previewed character is seeded by it.
   const [reservedIds] = useState(reserveProjectIds);
@@ -88,10 +75,9 @@ const CreateFromGithubContent = ({ provider = 'github' }: { provider?: 'github' 
   /** Create failure that no field explains, shown above the footer buttons: the dialog stays open with the user's input. */
   const [error, setError] = useState<InlineErrorState | null>(null);
 
-  const repository = parseRepository(
-    provider === 'tfs' ? (tfsRepositories[0]?.url ?? '') : form.url,
-  );
-  const urlInvalid = Boolean(form.url.trim()) && !repository;
+  const repository = main && parseRepository(main.url);
+  const defaultMainAgentId = useDefaultMainAgent();
+  const mainAgentId = form.mainAgentId ?? defaultMainAgentId;
   const identifierInvalid =
     (Boolean(form.identifier.trim()) && !isProjectIdentifierValid(form.identifier)) ||
     form.duplicate === 'identifier';
@@ -103,46 +89,15 @@ const CreateFromGithubContent = ({ provider = 'github' }: { provider?: 'github' 
       })
     : null;
 
-  /** A new repository renames the project unless the person already named it. */
-  const applyUrl = (url: string, defaultBranch?: string) => {
-    const parsed = parseRepository(url);
-    setForm((current) => {
-      const name = current.nameEdited ? current.name : (parsed?.name ?? '');
-      return { ...current, defaultBranch, duplicate: undefined, name, url };
-    });
-  };
-
-  const selectRepository = (repo: ScmRepositoryListItem) => {
-    applyUrl(repo.htmlUrl, repo.defaultBranch);
-  };
-
-  const selectTfsRepository = (repo: TfsRepository) => {
-    const selected = {
-      defaultBranch: repo.defaultBranch,
-      fullName: `${repo.project.name}/${repo.name}`,
-      name: repo.name,
-      url: repo.remoteUrl,
-    };
-    setTfsRepositories((current) => {
-      const index = current.findIndex(
-        (item) => item.url.toLowerCase() === repo.remoteUrl.toLowerCase(),
-      );
-      if (index < 0) return current.length >= MAX_REPOSITORIES ? current : [...current, selected];
-      const next = [...current];
-      next[index] = selected;
-      return next;
-    });
+  /** A new first repository renames the project unless the person already named it. */
+  const changeRepositories = (next: PickedRepository[]) => {
+    setRepositories(next);
+    const first = next[0] && parseRepository(next[0].url);
     setForm((current) => ({
       ...current,
       duplicate: undefined,
-      name: current.nameEdited || tfsRepositories.length > 0 ? current.name : selected.name,
+      name: current.nameEdited ? current.name : (first?.name ?? ''),
     }));
-  };
-
-  const removeTfsRepository = (url: string) => {
-    const next = tfsRepositories.filter((item) => item.url !== url);
-    setTfsRepositories(next);
-    if (!form.nameEdited && next[0]) setForm((current) => ({ ...current, name: next[0].name }));
   };
 
   const updateName = (name: string) => {
@@ -163,23 +118,23 @@ const CreateFromGithubContent = ({ provider = 'github' }: { provider?: 'github' 
       const project = await createProject({
         ...buildCreateProjectRequest(createInput, {
           ids: reservedIds,
-          mainAgentId: form.mainAgentId,
+          mainAgentId,
           mainAgentMode: form.mainAgentMode,
         }),
         repository: {
-          defaultBranch:
-            provider === 'tfs' ? tfsRepositories[0]?.defaultBranch : form.defaultBranch,
+          defaultBranch: main?.defaultBranch,
           name: repository.fullName,
           url: repository.url,
         },
-        ...(provider === 'tfs' && {
-          additionalRepositories: tfsRepositories.slice(1).map(({ defaultBranch, url }) => ({
-            defaultBranch,
+        ...(extras.length > 0 && {
+          additionalRepositories: extras.map(({ defaultBranch, url }) => ({
             url,
+            ...(defaultBranch && { defaultBranch }),
           })),
         }),
       });
       if (form.mainAgentMode === 'dedicated') {
+        // The project created an agent and maybe the Project label; show both.
         const { refreshAgentLabels, refreshAgentList } = useHomeStore.getState();
         void Promise.all([refreshAgentList(), refreshAgentLabels()]);
       }
@@ -204,70 +159,22 @@ const CreateFromGithubContent = ({ provider = 'github' }: { provider?: 'github' 
   return (
     <>
       <Flexbox gap={16} padding={16}>
-        {/* Picking a connected repository is the primary path; the URL field is the fallback. */}
         {provider === 'tfs' ? (
+          // TFS keeps its own project → repository → branch drill-down, but
+          // adds every pick to the same list the GitHub field fills.
           <TfsRepositoryPicker
+            multiple
+            value={repositories}
+            onChange={changeRepositories}
             onClear={() => undefined}
             onLeave={close}
-            onSelect={selectTfsRepository}
           />
         ) : (
-          <RepositoryList
-            selected={repository?.fullName}
+          <RepositoryField
+            value={repositories}
+            onChange={changeRepositories}
             onConnect={connectGithub}
-            onSelect={selectRepository}
           />
-        )}
-
-        {provider === 'tfs' && tfsRepositories.length > 0 && (
-          <Flexbox gap={8}>
-            <Text fontSize={13} weight={500}>
-              {t('createFromGithub.repositoryTitle')}
-            </Text>
-            {tfsRepositories.map((item) => (
-              <Flexbox horizontal align="center" gap={8} key={item.url}>
-                <GitBranchIcon size={14} />
-                <Text ellipsis style={{ flex: 1 }} weight={500}>
-                  {item.fullName}
-                </Text>
-                {item.defaultBranch && (
-                  <Text fontSize={12} type="secondary">
-                    {item.defaultBranch}
-                  </Text>
-                )}
-                <ActionIcon
-                  icon={XIcon}
-                  size="small"
-                  title={t('createFromGithub.removeRepository')}
-                  onClick={() => removeTfsRepository(item.url)}
-                />
-              </Flexbox>
-            ))}
-            <Text fontSize={12} type="secondary">
-              {t('createFromGithub.layoutHint')}
-            </Text>
-          </Flexbox>
-        )}
-
-        {provider === 'github' && (
-          <Flexbox gap={6}>
-            <Text fontSize={13} weight={500}>
-              {t('createFromGithub.urlLabel')}
-            </Text>
-            <Input
-              aria-invalid={urlInvalid}
-              placeholder={t('createFromGithub.urlPlaceholder')}
-              style={urlInvalid ? { borderColor: cssVar.colorError } : undefined}
-              value={form.url}
-              onChange={(event) => applyUrl(event.target.value)}
-              onPressEnter={handleCreate}
-            />
-            {urlInvalid && (
-              <Text fontSize={12} type="danger">
-                {t('createFromGithub.urlInvalid')}
-              </Text>
-            )}
-          </Flexbox>
         )}
 
         {repository && (
@@ -308,28 +215,37 @@ const CreateFromGithubContent = ({ provider = 'github' }: { provider?: 'github' 
             </Flexbox>
           </Flexbox>
         )}
-        {repository && (
-          <Text fontSize={12} type={identifierInvalid || form.duplicate ? 'danger' : 'secondary'}>
+        {repository && (identifierInvalid || form.duplicate) && (
+          <Text fontSize={12} type={'danger'}>
             {form.duplicate === 'name'
               ? t('createFromGithub.duplicateName')
               : form.duplicate === 'identifier'
                 ? t('createFromGithub.duplicateIdentifier')
-                : identifierInvalid
-                  ? t('create.identifierInvalid')
-                  : t('createFromGithub.environmentHint')}
+                : t('create.identifierInvalid')}
+          </Text>
+        )}
+        {provider === 'tfs' && extras.length > 0 && (
+          <Text fontSize={12} type={'secondary'}>
+            {t('createFromGithub.layoutHint')}
           </Text>
         )}
         {repository && (
           <MainAgentSection
-            agentId={form.mainAgentId}
+            agentId={mainAgentId}
             dedicatedAgentId={reservedIds.agentId}
             disabled={form.loading}
             mode={form.mainAgentMode}
             projectName={form.name}
             onAgentChange={(id) => setForm((current) => ({ ...current, mainAgentId: id }))}
-            onModeChange={(mainAgentMode) =>
-              setForm((current) => ({ ...current, mainAgentMode }))
-            }
+            onModeChange={(mainAgentMode) => setForm((current) => ({ ...current, mainAgentMode }))}
+          />
+        )}
+        {provider === 'github' && (
+          <AdvancedRepositories
+            layoutHint={t('createFromGithub.layoutHint')}
+            value={repositories}
+            onChange={changeRepositories}
+            onConnect={connectGithub}
           />
         )}
         {error && <InlineErrorText detail={error.detail}>{error.summary}</InlineErrorText>}
