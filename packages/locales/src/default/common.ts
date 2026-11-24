@@ -88,7 +88,7 @@ export default {
   'cmdk.communitySupport': 'Community Support',
   'cmdk.contactUs': 'Contact Us',
   'cmdk.context.agent': 'Agent',
-  'cmdk.context.community': 'Plugins',
+  'cmdk.context.community': 'Marketplace',
   'cmdk.context.general': 'General',
   'cmdk.context.group': 'Group',
   'cmdk.context.memory': 'Memory',
@@ -214,7 +214,7 @@ export default {
 
   'cmdk.search.loading': 'Searching...',
 
-  'cmdk.search.market': 'Plugins',
+  'cmdk.search.market': 'Marketplace',
 
   'cmdk.search.mcp': 'MCP Server',
 
@@ -453,7 +453,6 @@ export default {
   'navPanel.agent': 'Agents',
   'navPanel.createPrivateFolder': 'New private category',
   'navPanel.managePrivateFolders': 'Manage private categories',
-  'navPanel.newChat': 'New chat',
   'navPanel.privateTooltip': 'Private · only you can see this',
   'navPanel.customizeSidebar': 'Customize Sidebar',
   'navPanel.openMenu': 'Open menu',
@@ -632,7 +631,7 @@ export default {
   'tab.goals': 'Goals',
   'tab.home': 'Home',
   'tab.knowledgeBase': 'Library',
-  'tab.marketplace': 'Plugins',
+  'tab.marketplace': 'Marketplace',
   'tab.me': 'Me',
   'tab.memory': 'Memory',
   'tab.music': 'Music',
