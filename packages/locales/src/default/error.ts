@@ -12,6 +12,10 @@ export default {
   'chatRequestBlocked.description':
     'This request was blocked by our security checks. If you think this is a mistake, contact support to restore access.',
   'chatRequestBlocked.title': 'Request blocked',
+  'chatOnboardingRequired.action': 'Finish onboarding',
+  'chatOnboardingRequired.description':
+    'Finish the short onboarding to keep chatting. You will come back to this conversation afterwards.',
+  'chatOnboardingRequired.title': 'Finish onboarding to continue',
   'saveState.retry': 'Retry',
   'saveState.saveFailed': 'Failed to save your changes. Please try again.',
   'error.backHome': 'Back to Home',
@@ -135,7 +139,7 @@ export default {
   'response.FreePlanLimit':
     'Your free allowance is used up. Top up or upgrade your plan to continue, or use a model on your own API key.',
   'response.InsufficientBudgetForAgentRunFee':
-    'Not enough credits to pay the agent run fee. Each agent run carries a fee, even on your own CLI account. Top up or upgrade your plan, then try again.',
+    'Not enough credits to pay the agent run fee. Each agent run carries a small fee, including runs on your own CLI account. Top up or upgrade your plan, then try again.',
   'response.InsufficientBudgetForModel':
     'Your remaining balance is insufficient for this model. Please top up, upgrade your plan, or try a less expensive model.',
   'response.GoogleAIBlockReason.BLOCKLIST':

@@ -1479,11 +1479,10 @@ export default {
   'settingAgent.tools.type.plugin': 'Plugin or skill',
   'settingAgent.tools.type.skill': 'Skill',
   'settingAgent.driver.groupCli': 'Heterogeneous agent · local CLI',
-  'settingAgent.driver.groupHarness': 'Built by LobeHub',
+  'settingAgent.driver.groupHarness': 'Built-in',
   'settingAgent.driver.groupRemote': 'Heterogeneous agent · remote platform',
   'settingAgent.driver.harness': 'LobeHub',
-  'settingAgent.driver.brings.harness':
-    "LobeHub's own harness: you choose the model, tools and instruction.",
+  'settingAgent.driver.brings.harness': 'You choose the model, tools, and instruction.',
   'settingAgent.driver.brings.hetero':
     'Brings its own model, tools and instruction; you set where it runs.',
   'settingAgent.driver.switchBackHarness': 'The core instruction and tools take effect again.',
@@ -1704,6 +1703,9 @@ export default {
   'settingChatAppearance.showImageReadPreview.desc':
     'When off, tool calls that read an image fold in with the other calls and stay collapsed until clicked.',
   'settingChatAppearance.showImageReadPreview.title': 'Show Image Reads on Their Own',
+  'settingChatAppearance.showMessageUsage.desc':
+    'Show the model that wrote each reply and the tokens it used, below the reply.',
+  'settingChatAppearance.showMessageUsage.title': 'Show model and token usage',
   'settingChatAppearance.title': 'Chat Appearance',
   'settingChatAppearance.transitionMode.desc': 'Choose how chat messages appear',
   'settingChatAppearance.transitionMode.options.fadeIn': 'Fade In',
@@ -1712,9 +1714,6 @@ export default {
   'settingChatAppearance.transitionMode.options.none.value': 'None',
   'settingChatAppearance.transitionMode.options.smooth': 'Smooth',
   'settingChatAppearance.transitionMode.title': 'Transition Animation',
-  'settingCommon.devMode.desc':
-    'Show technical details and manual controls for chats, models, and local tools. This does not change model responses.',
-  'settingCommon.devMode.title': 'Advanced tools',
   'settingCommon.lang.autoMode': 'Follow System',
   'settingCommon.lang.title': 'Language',
   'settingCommon.liteMode.desc': 'Simplify the interface and hide advanced features',
@@ -2302,7 +2301,6 @@ When I am ___, I need ___
   'systemAgent.verify.title': 'Task Acceptance',
   'tab.about': 'About',
   'tab.advanced': 'Advanced',
-  'tab.advanced.appUpdates.title': 'App updates',
   'tab.advanced.gatewayMode.desc':
     'Run supported agent tasks through the cloud Gateway by default. Individual agents can override this from the chat menu.',
   'tab.advanced.gatewayMode.title': 'Gateway Mode',
@@ -4272,11 +4270,11 @@ When I am ___, I need ___
   'workspace.onboarding.step4.subtitleWithAgents':
     '{{count}} agent(s) ready to help. Jump in and start collaborating with your team.',
   'workspace.onboarding.step4.marketProfileNudge':
-    "We've set up a Community profile for <strong>{{name}}</strong> so workspace agents can be installed. <cta>Customize it in the Marketplace</cta>.",
+    "We've set up a Community profile for <strong>{{name}}</strong> so workspace agents can be installed. <cta>Customize it in Plugins</cta>.",
   'workspace.onboarding.step4.marketProfileAdjust':
-    "We've automatically created a Community profile for your workspace. <cta>Adjust it in the Marketplace</cta>.",
+    "We've automatically created a Community profile for your workspace. <cta>Adjust it in Plugins</cta>.",
   'workspace.onboarding.step4.marketProfileCreate':
-    "We couldn't set up your Community profile automatically. <cta>Create one in the Marketplace</cta> so workspace agents can be shared.",
+    "We couldn't set up your Community profile automatically. <cta>Create one in Plugins</cta> so workspace agents can be shared.",
   'workspace.onboarding.step4.cta': 'Enter workspace',
   'workspaceSetting.breadcrumb.settings': 'Settings',
   'workspaceSetting.devices.connectTitlePrivate': 'Add private device',
@@ -5669,4 +5667,6 @@ When I am ___, I need ___
     "Couldn't delete the label. Check your network and try again.",
   'workspaceSetting.labels.form.saveFailedRetry':
     "Couldn't save the label. Check your network and try again.",
+  'workspace.auditLog.actions.budget.model_policy_removed': 'Model tier rule removed',
+  'workspace.auditLog.actions.budget.model_policy_updated': 'Model tier rule updated',
 };

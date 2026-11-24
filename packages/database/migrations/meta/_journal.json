@@ -1591,16 +1591,23 @@
       "breakpoints": true
     },
     {
+      "idx": 227,
+      "version": "7",
+      "when": 1795445232107,
+      "tag": "0227_channel_agent_grants",
+      "breakpoints": true
+    },
+    {
       "idx": 9000,
       "version": "7",
-      "when": 1795232920078,
+      "when": 1795445232108,
       "tag": "9000_nosy_tag",
       "breakpoints": true
     },
     {
       "idx": 9001,
       "version": "7",
-      "when": 1795410491358,
+      "when": 1795445232109,
       "tag": "9001_admin_console_settings",
       "breakpoints": true
     }

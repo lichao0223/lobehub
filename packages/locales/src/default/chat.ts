@@ -1024,15 +1024,8 @@ export default {
   'heteroAgent.executionTarget.personalGroup': 'Private Devices',
   'heteroAgent.executionTarget.sandbox': 'Cloud Sandbox',
   'heteroAgent.executionTarget.sandboxDesc': 'Runs in the cloud, no machine needed',
-  'heteroAgent.executionTarget.persistentSandbox': 'Persistent Sandbox',
-  'heteroAgent.executionTarget.persistentSandboxDesc':
-    'Keeps results and work on your drive, for everyday tasks',
-  'heteroAgent.executionTarget.temporarySandbox': 'Temporary Sandbox',
-  'heteroAgent.executionTarget.temporarySandboxDesc':
-    'Discarded after use, for coding and one-off data processing',
   'heteroAgent.executionTarget.workspaceGroup': 'Workspace Devices',
   'heteroAgent.executionTarget.myDevicesGroup': 'My devices',
-  'heteroAgent.executionTarget.sandboxGroup': 'Sandboxes',
   'heteroAgent.executionTarget.downloadDesktop': 'Get Desktop App',
   'heteroAgent.executionTarget.downloadDesktopDesc': 'Run agents with access to your computer',
   'heteroAgent.executionTarget.downloadDesktopTitle': 'Get the desktop app',
@@ -1058,14 +1051,21 @@ export default {
   'inbox.title': 'Lobe AI',
   'input.agentModeUnsupportedModel':
     'The current model doesn’t support agentic tool calling. Switch to a model with agent capability for the best experience.',
-  'input.agentRunFeeUnfunded.desc':
-    'Each agent run carries a fee, even on your own API key. Top up or upgrade your plan, then send again.',
+  'input.agentRunFeeUnfunded.desc': 'Top up or upgrade your plan, then send again.',
   'input.agentRunFeeUnfunded.descOverflow':
-    'Each agent run carries a fee, even on your own API key. Your balance covers it: use your balance, then send again.',
-  'input.agentRunFeeUnfunded.descSubscribe':
-    'Each agent run carries a fee, even on your own API key. Subscribe to a plan, then send again.',
-  'input.agentRunFeeUnfunded.descTopUp':
-    'Each agent run carries a fee, even on your own API key. Top up, then send again.',
+    'Your balance covers this run. Use your balance, then send again.',
+  'input.agentRunFeeUnfunded.descSubscribe': 'Subscribe to a plan, then send again.',
+  'input.agentRunFeeUnfunded.descTopUp': 'Top up, then send again.',
+  'input.agentRunFeeUnfunded.free.desc':
+    'Resets on {{date}}. Upgrade to {{plan}} for model usage and more agent runs.',
+  'input.agentRunFeeUnfunded.free.descNoReset':
+    'Upgrade to {{plan}} for model usage and more agent runs.',
+  'input.agentRunFeeUnfunded.free.descOwnKey':
+    'Resets on {{date}}. Upgrade to {{plan}} for model usage and more agent runs, or choose {{basic}} ({{price}}/month) if you only use your own API key.',
+  'input.agentRunFeeUnfunded.free.descOwnKeyNoReset':
+    'Upgrade to {{plan}} for model usage and more agent runs, or choose {{basic}} ({{price}}/month) if you only use your own API key.',
+  'input.agentRunFeeUnfunded.free.title': 'You’ve used this month’s free credits',
+  'input.agentRunFeeUnfunded.free.upgrade': 'Upgrade plan',
   'input.agentRunFeeUnfunded.title': 'Not enough credits to pay the agent run fee',
   'input.agentSlugMoved':
     'This link now opens a different agent. Switching to it — try again once it opens. Your draft is kept.',
@@ -1128,9 +1128,7 @@ export default {
   'inputQueue.edit': 'Edit',
   'inputQueue.enqueueRejected': 'Queue is full. Try again after the current run finishes.',
   'inputQueue.queuedHint': 'Sends when the current step finishes',
-  'inputQueue.queuedMergeHint': 'Merged and sent when the current step finishes',
   'inputQueue.queuedRunEndHint': 'Sends when the current run finishes',
-  'inputQueue.queuedRunEndMergeHint': 'Merged and sent when the current run finishes',
   'inputQueue.queuedOneByOneHint': 'Sent one at a time after the current run finishes',
   'inputQueue.steerDeliveryUnknownHint':
     'Couldn’t confirm the agent got this. Send it again or delete it',
@@ -1829,7 +1827,6 @@ export default {
   'gatewayMode.cardTitle': 'Agent Gateway Mode',
   'gatewayMode.desc':
     "Run agents in the cloud through LobeHub's Agent Gateway. Tasks keep running even after you close the page.",
-  'sandboxStorage.ephemeral': 'Temporary working directory',
   'sandboxStorage.persistentUpsell': 'Persistent working directory',
   'sandboxStorage.setUpEnvironmentDesc': 'A persistent directory lives in an environment',
   'sandboxStorage.setUpEnvironment': 'Set up an environment',
@@ -4085,17 +4082,19 @@ export default {
   'workingPanel.browser.tool.scroll': 'Scrolled page',
   'workingPanel.browser.tool.setViewport': 'Set viewport',
   'workingPanel.browser.tool.snapshot': 'Read page elements',
+  'workingPanel.claudeMemory.copyPath': 'Copy path',
+  'workingPanel.claudeMemory.copyPathSuccess': 'Path copied',
   'workingPanel.claudeMemory.empty.description':
     'Claude Code saves what is worth remembering here as it works in this project.',
   'workingPanel.claudeMemory.empty.title': "Claude hasn't saved anything for this project yet",
-  'workingPanel.claudeMemory.group.feedback': 'Feedback',
-  'workingPanel.claudeMemory.group.index': 'Index',
+  'workingPanel.claudeMemory.group.feedback': 'Your guidance',
   'workingPanel.claudeMemory.group.other': 'Other',
   'workingPanel.claudeMemory.group.project': 'Project',
-  'workingPanel.claudeMemory.group.reference': 'References',
+  'workingPanel.claudeMemory.group.reference': 'External resources',
   'workingPanel.claudeMemory.group.user': 'About you',
-  'workingPanel.claudeMemory.indexHint': 'Loaded at the start of every session',
   'workingPanel.claudeMemory.location': 'Saved in {{path}}',
+  'workingPanel.claudeMemory.more': 'More',
+  'workingPanel.claudeMemory.openIndex': 'Open the MEMORY.md index, loaded into every session',
   'workingPanel.claudeMemory.refresh': 'Refresh',
   'workingPanel.claudeMemory.title': 'Claude Memory',
   'workingPanel.openMenu.configuration': 'Configuration',
@@ -4743,22 +4742,22 @@ export default {
   'worktreeRestore.waiting': 'Waiting for the worktree cleanup to finish before restoring it…',
   'you': 'You',
   'sandboxDrive.manageEnvironments': 'Settings',
-  'sandboxDrive.openStorage': 'Sandbox Storage',
   'sandboxEnvironment.none': 'No environment',
   'sandboxEnvironment.missing': 'Environment unavailable',
   'sandboxEnvironment.loading': 'Loading environment…',
-  'sandboxDrive.pickerTitle': 'Work location',
-  'sandboxDrive.pickerInfoTooltip':
-    'A temporary directory is cleaned up with the sandbox. A folder on your cloud drive is kept across conversations. An environment is set up before the first command.',
   'sandboxEnvironment.title': 'Environment',
-  'sandboxEnvironment.hint':
-    'Its repositories are cloned, setup runs and its variables are set before the first command.',
   'sandboxEnvironment.empty': 'No environments yet. Create one to get started.',
   'sandboxEnvironment.add': 'New environment',
   'sandboxEnvironment.loadFailed': "Couldn't load environments",
   'sandboxEnvironment.retry': 'Retry',
   'sandboxEnvironment.saveFailed': 'Could not change the environment. Try again.',
   'sandboxDrive.root': 'Root',
+  'sandboxOptions.storage': 'Storage',
+  'sandboxOptions.temporary': 'Temporary',
+  'sandboxOptions.folder': 'Folder',
+  'sandboxOptions.environment': 'Environment',
+  'sandboxDrive.setupSkipped':
+    "This folder already has files, so the environment won't be set up in it.",
   'sandboxDrive.building': '{{name}} · building',
   'sandboxDrive.title': 'Cloud drive',
   'sandboxDrive.browseOther': 'Choose another folder…',

@@ -46,7 +46,6 @@ import {
 import { useUserStore } from '@/store/user';
 import { labPreferSelectors } from '@/store/user/selectors';
 import { userProfileSelectors } from '@/store/user/slices/auth/selectors';
-import { userGeneralSettingsSelectors } from '@/store/user/slices/settings/selectors';
 
 export enum SettingsGroupKey {
   Account = 'account',
@@ -83,9 +82,12 @@ export const useCategory = () => {
     userProfileSelectors.nickName(s),
   ]);
   const remoteServerUrl = useElectronStore(electronSyncSelectors.remoteServerUrl);
-  const isDevMode = useUserStore((s) => userGeneralSettingsSelectors.config(s).isDevMode);
   const enableOAuthApps = useUserStore(labPreferSelectors.enableOAuthApps);
   const enableWebhook = useServerConfigStore(serverConfigSelectors.enableWebhook);
+  // Advanced holds gateway mode and desktop diagnostics; on the web without
+  // gateway mode it would be an empty page.
+  const enableGatewayMode = useServerConfigStore(serverConfigSelectors.enableGatewayMode);
+  const showAdvanced = isDesktop || enableGatewayMode;
 
   const avatarUrl = useMemo(() => {
     if (!avatar) return undefined;
@@ -286,12 +288,12 @@ export const useCategory = () => {
         key: SettingsTabs.Trash,
         label: t('tab.trash'),
       },
-      {
+      showAdvanced && {
         icon: EllipsisIcon,
         key: SettingsTabs.Advanced,
         label: t('tab.advanced'),
       },
-      (showApiKeyManage || isDevMode) && {
+      showApiKeyManage && {
         icon: KeyIcon,
         key: SettingsTabs.APIKey,
         label: tAuth('tab.apikey'),
@@ -330,9 +332,9 @@ export const useCategory = () => {
     mobile,
     showApiKeyManage,
     showProvider,
-    isDevMode,
     enableOAuthApps,
     enableWebhook,
+    showAdvanced,
     avatarUrl,
     username,
   ]);
