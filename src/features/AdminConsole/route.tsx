@@ -7,6 +7,11 @@ const userManagementElement = dynamicElement(
   'Desktop > Admin > Users',
 );
 
+const modelServiceElement = dynamicElement(
+  () => import('@/routes/(main)/admin/model-service'),
+  'Desktop > Admin > Model service',
+);
+
 /**
  * `/admin` route definition (personal-only, desktop shell).
  *
@@ -19,6 +24,7 @@ export const adminConsoleRoute: RouteObject = {
   children: [
     { element: userManagementElement, index: true },
     { element: userManagementElement, path: 'users' },
+    { element: modelServiceElement, path: 'model-service' },
   ],
   element: dynamicLayout(() => import('@/routes/(main)/admin'), 'Desktop > Admin', {
     preloadId: 'adminConsole',
