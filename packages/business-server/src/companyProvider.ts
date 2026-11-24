@@ -238,6 +238,32 @@ export const createCompanyProviderNotConfiguredError = () =>
     message: COMPANY_PROVIDER_NOT_CONFIGURED_MESSAGE,
   });
 
+/** Payload builder entry point: params, or the readable error — never a raw throw. */
+export const resolveCompanyProviderParamsOrThrow = (
+  payload: { apiKey?: string; baseURL?: string },
+  env: NodeJS.ProcessEnv = process.env,
+): { apiKey?: string; baseURL?: string } => {
+  const params = resolveCompanyProviderParams(payload, env);
+  if (!params) throw createCompanyProviderNotConfiguredError();
+
+  return params;
+};
+
+/**
+ * Warm the snapshot for providers whose credentials live outside the user row
+ * (only tellhow does). Called from the async runtime initializer, before the
+ * synchronous payload builder reads the cache.
+ */
+export const ensureCompanyProviderReady = async (
+  provider: string,
+  db: LobeChatDatabase,
+  options: CompanyProviderOptions = {},
+): Promise<void> => {
+  if (provider !== COMPANY_PROVIDER_ID) return;
+
+  await getCompanyProviderRuntime(db, options);
+};
+
 /** Catalog row → server model card. `enabled` is what makes it selectable. */
 export const toCompanyModelCard = (
   model: CompanyModel,

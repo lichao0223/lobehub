@@ -8,10 +8,12 @@ import {
   companyProviderFetch,
   companyProviderSsrfOptions,
   createCompanyProviderNotConfiguredError,
+  ensureCompanyProviderReady,
   getCompanyProviderRuntime,
   getCompanyProviderRuntimeSnapshot,
   invalidateCompanyProviderCache,
   resolveCompanyProviderParams,
+  resolveCompanyProviderParamsOrThrow,
   withCompanyProviderCatalog,
 } from '@/business/server/companyProvider';
 
@@ -197,6 +199,42 @@ describe('resolveCompanyProviderParams', () => {
 
     expect(resolveCompanyProviderParams({}, { TELLHOW_API_KEY: 'env-key' })).toBeNull();
     expect(resolveCompanyProviderParams({}, {})).toBeNull();
+  });
+});
+
+describe('resolveCompanyProviderParamsOrThrow', () => {
+  it('returns the params when the service is configured', async () => {
+    await getCompanyProviderRuntime(db, {
+      gatekeeper: { decrypt: decryptor() },
+      reader: readerOf(enabledConfig),
+    });
+
+    expect(resolveCompanyProviderParamsOrThrow({})).toEqual({
+      apiKey: 'sk-company-secret',
+      baseURL: 'http://10.20.30.40:8080/v1',
+    });
+  });
+
+  it('throws the readable payload when nothing is configured', () => {
+    expect(() => resolveCompanyProviderParamsOrThrow({}, {})).toThrow(
+      expect.objectContaining({ errorType: 'NoAvailableProvider' }),
+    );
+  });
+});
+
+describe('ensureCompanyProviderReady', () => {
+  it('warms the snapshot for tellhow only', async () => {
+    const reader = readerOf(enabledConfig);
+    const options = { gatekeeper: { decrypt: decryptor() }, reader };
+
+    await ensureCompanyProviderReady('openai', db, options);
+    expect(reader).not.toHaveBeenCalled();
+
+    await ensureCompanyProviderReady('tellhow', db, options);
+    expect(reader).toHaveBeenCalledTimes(1);
+    expect(getCompanyProviderRuntimeSnapshot()).toMatchObject({
+      baseURL: 'http://10.20.30.40:8080/v1',
+    });
   });
 });
 

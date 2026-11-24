@@ -32,11 +32,7 @@ import { isAiModelVisible, ModelProvider } from 'model-bank';
 import { AiProviderBaseURLSchema } from 'model-bank/aiProvider';
 import { DEFAULT_MODEL_PROVIDER_LIST } from 'model-bank/modelProviders';
 
-import {
-  createCompanyProviderNotConfiguredError,
-  resolveCompanyProviderParams,
-  warmCompanyProviderRuntime,
-} from '@/business/server/companyProvider';
+import * as companyProvider from '@/business/server/companyProvider';
 import { getBusinessModelRuntimeHooks } from '@/business/server/model-runtime';
 import { AiProviderModel } from '@/database/models/aiProvider';
 import { type LobeChatDatabase } from '@/database/type';
@@ -216,9 +212,8 @@ export const buildPayloadFromKeyVaults = (
   }
 };
 
-// The enterprise provider's endpoint/credentials belong to the administrator, not
-// the user, so it is always deployment-owned (§5.3); `!payload.baseURL` still means
-// the server never sends its key to a user-supplied endpoint.
+// Deployment credentials are only valid for the deployment-owned provider and endpoint.
+// A custom provider's SDK type does not grant access to that SDK provider's secrets.
 const canUseServerProviderConfig = (provider: string, payload: ClientSecretPayload) =>
   (provider === ModelProvider.Tellhow ||
     Object.values(ModelProvider).includes(provider as ModelProvider)) &&
@@ -248,13 +243,9 @@ const getParamsFromPayload = (provider: string, payload: ClientSecretPayload) =>
       return {};
     }
 
-    // CUST-008: endpoint + key come from the admin console, and a disabled
-    // service returns a readable error instead of sending a broken request.
+    // CUST-008: the admin console owns endpoint + key; closed → readable error.
     case ModelProvider.Tellhow: {
-      const company = resolveCompanyProviderParams(payload);
-      if (!company) throw createCompanyProviderNotConfiguredError();
-
-      return company;
+      return companyProvider.resolveCompanyProviderParamsOrThrow(payload);
     }
 
     default: {
@@ -570,9 +561,7 @@ export const initModelRuntimeFromDB = async (
   workspaceId?: string,
 ): Promise<ModelRuntime> => {
   // 1. Get user's provider configuration from database
-  // CUST-008: tellhow's credentials live in the admin console config, outside the
-  // user's provider row; warm the cache before the synchronous payload builder.
-  if (provider === ModelProvider.Tellhow) await warmCompanyProviderRuntime(db);
+  await companyProvider.ensureCompanyProviderReady(provider, db);
 
   const aiProviderModel = new AiProviderModel(db, userId, workspaceId);
 
