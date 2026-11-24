@@ -74,6 +74,7 @@ import StraicoProvider from './straico';
 import StreamLakeProvider from './streamlake';
 import SuperGrokProvider from './superGrok';
 import TaichuProvider from './taichu';
+import TellhowProvider from './tellhow';
 import TencentcloudProvider from './tencentcloud';
 import TogetherAIProvider from './togetherai';
 import { TypeSafeProvider } from './typesafe';
@@ -151,6 +152,7 @@ export const LOBE_DEFAULT_MODEL_LIST: ChatModelCard[] = [
 
 export const DEFAULT_MODEL_PROVIDER_LIST = [
   ...(ENABLE_BUSINESS_FEATURES ? [LobeHubProvider] : []),
+  TellhowProvider,
   AnthropicProvider,
   GoogleProvider,
   GLMCodingPlanProvider,
@@ -384,6 +386,7 @@ export { default as StraicoProviderCard } from './straico';
 export { default as StreamLakeProviderCard } from './streamlake';
 export { default as SuperGrokProviderCard } from './superGrok';
 export { default as TaichuProviderCard } from './taichu';
+export { default as TellhowProviderCard } from './tellhow';
 export { default as TencentCloudProviderCard } from './tencentcloud';
 export { default as TogetherAIProviderCard } from './togetherai';
 export { default as UnslothProviderCard } from './unsloth';
