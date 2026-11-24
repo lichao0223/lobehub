@@ -215,8 +215,7 @@ export const buildPayloadFromKeyVaults = (
 // Deployment credentials are only valid for the deployment-owned provider and endpoint.
 // A custom provider's SDK type does not grant access to that SDK provider's secrets.
 const canUseServerProviderConfig = (provider: string, payload: ClientSecretPayload) =>
-  (provider === ModelProvider.Tellhow ||
-    Object.values(ModelProvider).includes(provider as ModelProvider)) &&
+  Object.values(ModelProvider).includes(provider as ModelProvider) &&
   (!payload.runtimeProvider || payload.runtimeProvider === provider) &&
   !payload.baseURL &&
   !payload.cloudflareBaseURLOrAccountID;
