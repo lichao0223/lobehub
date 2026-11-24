@@ -120,6 +120,7 @@ export const adminProcedure = authedProcedure.use(serverDatabase).use(async ({ c
     ctx: {
       adminModel: new AdminConsoleModel(ctx.serverDB, ctx.userId),
       adminRole: 'admin' as const,
+      adminUserId: ctx.userId,
     },
   });
 });

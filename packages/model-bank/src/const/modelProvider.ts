@@ -72,6 +72,7 @@ export enum ModelProvider {
   StreamLake = 'streamlake',
   SuperGrok = 'supergrok',
   Taichu = 'taichu',
+  Tellhow = 'tellhow',
   TencentCloud = 'tencentcloud',
   TogetherAI = 'togetherai',
   TypeSafe = 'typesafe',

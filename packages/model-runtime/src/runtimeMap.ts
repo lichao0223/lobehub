@@ -164,6 +164,7 @@ export const providerRuntimeMap = {
   streamlake: LobeStreamLakeAI,
   supergrok: LobeSuperGrokAI,
   taichu: LobeTaichuAI,
+  tellhow: LobeOpenAI,
   tencentcloud: LobeTencentCloudAI,
   togetherai: LobeTogetherAI,
   typesafe: LobeTypeSafeAI,

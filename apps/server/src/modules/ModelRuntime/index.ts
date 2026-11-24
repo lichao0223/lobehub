@@ -32,6 +32,7 @@ import { isAiModelVisible, ModelProvider } from 'model-bank';
 import { AiProviderBaseURLSchema } from 'model-bank/aiProvider';
 import { DEFAULT_MODEL_PROVIDER_LIST } from 'model-bank/modelProviders';
 
+import * as companyProvider from '@/business/server/companyProvider';
 import { getBusinessModelRuntimeHooks } from '@/business/server/model-runtime';
 import { AiProviderModel } from '@/database/models/aiProvider';
 import { type LobeChatDatabase } from '@/database/type';
@@ -239,6 +240,11 @@ const getParamsFromPayload = (provider: string, payload: ClientSecretPayload) =>
 
     case ModelProvider.VertexAI: {
       return {};
+    }
+
+    // CUST-008: the admin console owns endpoint + key; closed → readable error.
+    case ModelProvider.Tellhow: {
+      return companyProvider.resolveCompanyProviderParamsOrThrow(payload);
     }
 
     default: {
@@ -554,6 +560,8 @@ export const initModelRuntimeFromDB = async (
   workspaceId?: string,
 ): Promise<ModelRuntime> => {
   // 1. Get user's provider configuration from database
+  await companyProvider.ensureCompanyProviderReady(provider, db);
+
   const aiProviderModel = new AiProviderModel(db, userId, workspaceId);
 
   // Use getAiProviderById with KeyVaultsGateKeeper.getUserKeyVaults as decryptor
