@@ -60,6 +60,13 @@ export interface CompanyProviderKeyDecryptor {
   decrypt: (ciphertext: string) => Promise<{ plaintext: string; wasAuthentic?: boolean }>;
 }
 
+/** Stored config plus the decrypted key, for admin-only console operations. */
+export interface CompanyProviderCredentials {
+  ai: AdminConsoleAiConfig;
+  apiKey: string | null;
+  baseURL: string;
+}
+
 export interface CompanyProviderOptions {
   /** Test seam for the KeyVaults gatekeeper. */
   gatekeeper?: CompanyProviderKeyDecryptor;
@@ -137,6 +144,25 @@ const loadCompanyProviderRuntime = async (
   if (!ai?.enabled || !ai.baseURL) return null;
 
   return toCompanyProviderRuntime(ai, await decryptApiKey(ai, options.gatekeeper));
+};
+
+/**
+ * Credentials for admin-only console operations (connection test, catalog
+ * sync). Unlike the runtime loader this ignores `enabled`: an administrator
+ * must be able to test the service before switching it on for users.
+ *
+ * Returns `null` only when no address is stored. A missing key is returned as
+ * `null` so the caller can report `PROVIDER_NOT_CONFIGURED` instead of probing
+ * with an empty bearer token.
+ */
+export const readCompanyProviderCredentials = async (
+  db: LobeChatDatabase,
+  options: CompanyProviderOptions = {},
+): Promise<CompanyProviderCredentials | null> => {
+  const ai = await (options.reader ?? readAiConfig)(db);
+  if (!ai?.baseURL) return null;
+
+  return { ai, apiKey: await decryptApiKey(ai, options.gatekeeper), baseURL: ai.baseURL };
 };
 
 interface CompanyProviderCacheEntry {
@@ -359,10 +385,20 @@ export const companyProviderSsrfOptions = (baseURL: string): SSRFOptions => {
 /**
  * Single outbound entry point for the console side (connection test, catalog
  * sync): everything goes through `ssrfSafeFetch` with the allowance above.
+ *
+ * `extraOptions` lets one call tighten the policy (e.g. cap the body of a
+ * `/models` probe) without weakening the endpoint allowance.
  */
 export const companyProviderFetch = (
   url: string,
   init?: RequestInit,
   runtime?: Pick<CompanyProviderRuntime, 'baseURL'>,
+  extraOptions?: SSRFOptions,
 ): Promise<Response> =>
-  ssrfSafeFetch(url, init, companyProviderSsrfOptions(runtime?.baseURL ?? url));
+  ssrfSafeFetch(
+    url,
+    init,
+    extraOptions
+      ? { ...companyProviderSsrfOptions(runtime?.baseURL ?? url), ...extraOptions }
+      : companyProviderSsrfOptions(runtime?.baseURL ?? url),
+  );

@@ -2,6 +2,7 @@ import { type AdminConsoleAiConfigUpdate, COMPANY_MODEL_CAPABILITIES } from '@lo
 import { AiModelTypeSchema } from 'model-bank';
 import { z } from 'zod';
 
+import { createAdminConsoleModelCatalogService } from '@/business/server/adminConsole/modelCatalog';
 import { createAdminConsoleModelService } from '@/business/server/adminConsole/modelService';
 import { adminProcedure } from '@/business/server/adminConsole/permissions';
 
@@ -51,5 +52,23 @@ export const adminModelServiceProcedures = {
       createAdminConsoleModelService(ctx.serverDB, ctx.adminUserId).updateConfig(
         input as AdminConsoleAiConfigUpdate,
       ),
+    ),
+
+  /** Probe the saved endpoint + key once; records the outcome in `lastTest`. */
+  testModelServiceConnection: adminProcedure.mutation(({ ctx }) =>
+    createAdminConsoleModelCatalogService(ctx.serverDB, ctx.adminUserId).testConnection(),
+  ),
+
+  /** Diff upstream against the stored catalog; only `apply: true` writes. */
+  refreshModelCatalog: adminProcedure
+    .input(
+      z.object({
+        apply: z.boolean().default(false),
+        /** Row version the admin read; omit to lock on the version read here. */
+        expectedUpdatedAt: z.string().datetime({ offset: true }).optional(),
+      }),
+    )
+    .mutation(({ ctx, input }) =>
+      createAdminConsoleModelCatalogService(ctx.serverDB, ctx.adminUserId).refreshCatalog(input),
     ),
 };

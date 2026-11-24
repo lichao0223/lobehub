@@ -102,6 +102,49 @@ export interface AdminConsoleAiConfig {
   models: CompanyModel[];
 }
 
+/**
+ * Outcome of one `GET {baseURL}/models` probe (§5.2 / §5.6).
+ *
+ * `latencyMs` is measured to the response headers (or to the failure), and the
+ * error code is a stable `ADMIN_CONSOLE_ERROR` value so the page can localize
+ * it instead of rendering an upstream body.
+ */
+export interface AdminConsoleConnectionTestResult {
+  errorCode?: string;
+  latencyMs?: number;
+  modelCount?: number;
+  ok: boolean;
+}
+
+/**
+ * Diff between the stored catalog and the upstream `/models` list (§5.4).
+ *
+ * Additions are closed by default (`open: false`, `pending: true`); removals
+ * are stamped with `removedAt` and never deleted; `needsReview` lists the ids
+ * whose type fell back to the default and need an administrator decision.
+ */
+export interface AdminConsoleCatalogDiff {
+  added: CompanyModel[];
+  needsReview: string[];
+  /** Rows upstream no longer lists: kept, stamped with `removedAt`. */
+  removed: CompanyModel[];
+  /** Previously removed rows that upstream lists again. */
+  restored: CompanyModel[];
+  /** Ids identical on both sides. */
+  unchanged: string[];
+  /** Rows whose missing metadata was filled from the built-in catalog. */
+  updated: CompanyModel[];
+}
+
+/** `refreshModelCatalog` result: the diff, plus whether it was written. */
+export interface AdminConsoleCatalogSyncResult {
+  applied: boolean;
+  diff: AdminConsoleCatalogDiff;
+  /** Row version after a write; `null` when the settings row is missing. */
+  updatedAt: string | null;
+  upstreamModelCount: number;
+}
+
 /** `config.ai` as returned by the admin endpoints: the key is reduced to last4. */
 export interface AdminConsoleAiConfigView {
   apiKey: AdminConsoleAiKeySummary | null;
@@ -198,6 +241,11 @@ export const ADMIN_CONSOLE_ERROR = {
   invalidModel: 'INVALID_MODEL',
   invalidModelType: 'INVALID_MODEL_TYPE',
   lastAdmin: 'LAST_ADMIN',
+  providerAuthFailed: 'PROVIDER_AUTH_FAILED',
+  providerHttpError: 'PROVIDER_HTTP_ERROR',
+  providerInvalidResponse: 'PROVIDER_INVALID_RESPONSE',
   providerNotConfigured: 'PROVIDER_NOT_CONFIGURED',
+  providerTimeout: 'PROVIDER_TIMEOUT',
+  providerUnreachable: 'PROVIDER_UNREACHABLE',
   selfLockout: 'SELF_LOCKOUT',
 } as const;

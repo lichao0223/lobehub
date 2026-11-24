@@ -167,9 +167,15 @@
 
 - 单测（P2-3）：`apps/server/src/modules/ModelRuntime/companyProvider.test.ts` 15 项、`tellhow.test.ts` 4 项、`companyProvider.integration.test.ts` 3 项（PGlite + 真实 `AiInfraRepos`：启用即列出、关闭即消失、用户视图无明文 / 密文）。
 
+- **P2-4 测试连接与目录同步（已实现，2026-11-24）**：新增 `packages/business-server/src/adminConsole/modelCatalog.ts`，提供 `testModelServiceConnection`（`GET {baseURL}/models`，返回 `{ ok, latencyMs, modelCount, errorCode? }` 并写入 `config.ai.lastTest`；未启用也可测试）与 `refreshModelCatalog({ apply, expectedUpdatedAt? })`（新增 `source: 'sync'` / `pending: true` / `open: false`，上游消失只写 `removedAt` 不删除，已存在行的 `name` / `open` / `type` 不被覆盖，`apply: false` 只返回 diff，`apply: true` 仅在确有变化时经 `updateConfig` 写入并走乐观锁，重复 apply 幂等）。错误码沿用 `ADMIN_CONSOLE_ERROR`：`PROVIDER_NOT_CONFIGURED` / `PROVIDER_AUTH_FAILED` / `PROVIDER_HTTP_ERROR` / `PROVIDER_INVALID_RESPONSE` / `PROVIDER_UNREACHABLE` / `PROVIDER_TIMEOUT`（超时默认 10 s，可覆盖）。出站统一 `companyProviderFetch()`（`ssrfSafeFetch` + 本条地址放行，响应体上限 1 MiB）。`packages/business-server/src/companyProvider.ts` 追加 `readCompanyProviderCredentials()`（管理员操作可忽略 `enabled`）与 `companyProviderFetch` 的额外 SSRF 选项参数。
+
+- 接口（P2-4）：`testModelServiceConnection`（mutation）/ `refreshModelCatalog`（mutation，`{ apply, expectedUpdatedAt? }`）追加在 fork 自有 `apps/server/src/routers/lambda/adminConsole/modelService.ts`，均走 `adminProcedure`；**未改任何 §8.2 共享文件**。
+
+- 单测（P2-4）：`apps/server/src/routers/lambda/adminConsole/modelCatalog.test.ts` 51 项（类型推断、新增 / 消失 / 未变化 / 恢复 / 幂等 diff、管理员编辑不被覆盖、错误码映射、超时、apply 幂等）；`modelCatalog.router.test.ts` 9 项（PGlite + tRPC：两接口 admin 可用、非管理员 `ADMIN_REQUIRED`、`lastTest` 落库、dry-run 不写、apply 后新增关闭待确认、二次 apply 不写、非法存量类型拒绝）。
+
 ### P2（剩余）
 
-测试连接与目录同步、`/admin` 模型服务页、用户侧联调与真实验收。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
+测试连接与目录同步已完成（P2-4）；剩余 `/admin` 模型服务页、用户侧联调与真实验收。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
 
 ## 上游合并统一流程
 
