@@ -10,6 +10,7 @@
     "@lobechat/const": "workspace:*",
     "@lobechat/database": "workspace:*",
     "@lobechat/model-runtime": "workspace:*",
+    "@lobechat/ssrf-safe-fetch": "workspace:*",
     "@lobechat/trpc": "workspace:*",
     "@lobechat/types": "workspace:*",
     "model-bank": "workspace:*"

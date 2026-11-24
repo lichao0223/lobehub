@@ -17,6 +17,8 @@ import { AiModelTypeSchema } from 'model-bank';
 
 import { KeyVaultsGateKeeper } from '@/server/modules/KeyVaultsEncrypt';
 
+import { invalidateCompanyProviderCache } from '../companyProvider';
+
 /**
  * Admin console model service (CUST-008 §4.1 / §5.2 / §7).
  *
@@ -262,6 +264,10 @@ export class AdminConsoleModelService {
       this.actingUserId,
       expectedUpdatedAt,
     );
+
+    // A saved config takes effect on the next request: the runtime reads through
+    // a 5 s process cache, so the write has to clear it (§5.3 / §5.6).
+    invalidateCompanyProviderCache();
 
     return {
       config: toConfigView(row.config.ai),

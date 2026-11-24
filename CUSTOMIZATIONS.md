@@ -152,15 +152,24 @@
 ### P2（进行中）
 
 - 2026-11-24（T-55，P2-1）：`packages/model-bank/src/modelProviders/tellhow.ts`（`id: 'tellhow'`、名称经 `modelProvider:tellhow.title` 本地化、`showConfig: false` / `proxyUrl: false` / `showApiKey: false` / `disableBrowserRequest: true`，用户侧无密钥与地址入口）与 `src/aiModels/tellhow.ts`（空目录，运行时由管理员目录注入）已落地；`ModelProvider.Tellhow` 追加；共享文件 +1（`aiModels/index.ts` 导出）、+1（`const/modelProvider.ts`）、+3（`modelProviders/index.ts` 的 import / 列表注册 / 公开导出）；`packages/model-runtime/src/runtimeMap.ts` 将 tellhow 映射到 `LobeOpenAI`（OpenAI 兼容）。
-- 文案：`packages/locales/src/default/modelProvider.ts` 与 `locales/{en-US,zh-CN}/modelProvider.json` 增加 `tellhow.title`；provider card 的 `name` / `description` 使用 `modelProvider:tellhow.title` / `providers:tellhow.description` 键（不写字面量），默认说明文本由 `packages/locales/src/default/providers.ts` 提供，en-US / zh-CN 在 `providers.json` 手写 `tellhow.description`。
 
-- **P2-2 `config.ai`（已实现，2026-11-24）**：`packages/types/src/adminConsole.ts` 增加 `AdminConsoleAiConfig` / `AdminConsoleAiConfigView` / `AdminConsoleAiKey` / `AdminConsoleAiDefaults` / `AdminConsoleAiLastTest` / `CompanyModel`（`type` 复用 `model-bank` 的 `AiModelType`）。`packages/business-server/src/adminConsole/modelService.ts` 负责校验（http(s) baseURL、模型 id 唯一、类型属于 `AiModelType`）与写入；API Key 复用 `apps/server/src/modules/KeyVaultsEncrypt` 加密，只把 `last4` 返回给管理端。设置行仍写 P1 的 `admin_console_settings` 单例；P2 将 settings 方法提取为 `AdminConsoleSettingsModel`（`AdminConsoleModel` 继承它），`updateSettingsConfig` 用 `updatedAt` 做乐观锁，过期返回 `CONFLICT` / `CONFIG_CONFLICT`。接口 `getModelServiceConfig` / `updateModelServiceConfig` 挂在 `adminConsole` router 的 `adminProcedure` 下；**不新增迁移，不写 `user_settings`**。
+- 文案：`packages/locales/src/default/modelProvider.ts` 与 `locales/{en-US,zh-CN}/modelProvider.json` 增加 `tellhow.title`；provider card 的 `name` / `description` 使用 `modelProvider:tellhow.title` / `providers:tellhow.description` 键（不写字面量），默认说明文本由 `packages/locales/src/default/providers.ts` 提供，en-US /zh-CN 在 `providers.json` 手写 `tellhow.description`。
+
+- **P2-2 `config.ai`（已实现，2026-11-24）**：`packages/types/src/adminConsole.ts` 增加 `AdminConsoleAiConfig` / `AdminConsoleAiConfigView` / `AdminConsoleAiKey` / `AdminConsoleAiDefaults` / `AdminConsoleAiLastTest` / `CompanyModel`（`type` 复用 `model-bank` 的 `AiModelType`）。`packages/business-server/src/adminConsole/modelService.ts` 负责校验（http (s) baseURL、模型 id 唯一、类型属于 `AiModelType`）与写入；API Key 复用 `apps/server/src/modules/KeyVaultsEncrypt` 加密，只把 `last4` 返回给管理端。设置行仍写 P1 的 `admin_console_settings` 单例；P2 将 settings 方法提取为 `AdminConsoleSettingsModel`（`AdminConsoleModel` 继承它），`updateSettingsConfig` 用 `updatedAt` 做乐观锁，过期返回 `CONFLICT` / `CONFIG_CONFLICT`。接口 `getModelServiceConfig` / `updateModelServiceConfig` 挂在 `adminConsole` router 的 `adminProcedure` 下；**不新增迁移，不写 `user_settings`**。
+
 - 新增文件：`packages/business-server/src/adminConsole/modelService.ts`、`apps/server/src/routers/lambda/adminConsole/modelService.ts` 及其单测。`packages/business-server/package.json` 增加 `model-bank` 依赖（校验枚举用）。
+
 - 单测覆盖：KeyVault 密文落库与 `last4` 脱敏、类型 / 地址 / 重复 id / 默认模型校验、乐观锁冲突、tRPC 响应不含明文或密文、非管理员 `ADMIN_REQUIRED`、`user_settings` 三列不变。
+
+- **P2-3 `companyProvider` 与运行时注入（已实现，2026-11-24）**：新增 `packages/business-server/src/companyProvider.ts`，作为 `config.ai` 的唯一读取层 —— 单例行 + `KeyVaultsGateKeeper` 解密，5 s 进程内缓存（并发共享一次读，读失败保留上次成功配置），只输出 `open && !removedAt` 的模型；`enabled: false` / 缺地址 / 缺密钥一律为 `null`（默认关闭）。同步快照 `getCompanyProviderRuntimeSnapshot()` 供 `getParamsFromPayload`（保持同步、签名不变）使用；`initModelRuntimeFromDB` 在 tellhow 时预热缓存。凭据优先级：payload 自带 > 控制台 > `TELLHOW_API_KEY` / `TELLHOW_PROXY_URL` > `NoAvailableProvider` 可读错误（400 + 固定文案，提示切换模型）；用户自带 baseURL 时绝不附带公司 Key。`withCompanyProviderCatalog()` 合并 `aiProvider.tellhow.enabled` / `enabledModels` / `serverModelLists`（`fetchOnClient: false`），`globalConfig` 只加一处调用；保存配置后 `invalidateCompanyProviderCache()` 立即生效。新增 `companyProviderFetch()`（`ssrfSafeFetch` + 本条地址放行，IP 进 `allowIPAddressList`、域名仅该次调用允许内网），供 P2-4 的测试连接与目录同步复用。
+
+- 共享文件（P2-3）：`apps/server/src/globalConfig/index.ts` +4/−1、`apps/server/src/modules/ModelRuntime/index.ts` +23/−3（import 5、`canUseServerProviderConfig` 5/−3、tellhow 分支 9、预热 4，均 ≤10 行 / 处）。新增依赖：`packages/business-server` 增加 `@lobechat/ssrf-safe-fetch`。
+
+- 单测（P2-3）：`apps/server/src/modules/ModelRuntime/companyProvider.test.ts` 15 项、`tellhow.test.ts` 4 项、`companyProvider.integration.test.ts` 3 项（PGlite + 真实 `AiInfraRepos`：启用即列出、关闭即消失、用户视图无明文 / 密文）。
 
 ### P2（剩余）
 
-`companyProvider` 读取与缓存、运行时凭据注入、测试连接与目录同步、`/admin` 模型服务页、用户侧联调。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
+测试连接与目录同步、`/admin` 模型服务页、用户侧联调与真实验收。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
 
 ## 上游合并统一流程
 

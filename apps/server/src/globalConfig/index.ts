@@ -4,6 +4,7 @@ import { ModelProvider } from 'model-bank';
 import urlJoin from 'url-join';
 
 import { loadModels } from '@/business/client/model-bank/loadModels';
+import { withCompanyProviderCatalog } from '@/business/server/companyProvider';
 import { composioEnv } from '@/config/composio';
 import { isDesktop } from '@/const/version';
 import { agentIdentityEnv } from '@/envs/agentIdentity';
@@ -181,7 +182,9 @@ export const getServerGlobalConfig = async () => {
       !!(agentIdentityEnv.AGENT_MAIL_WEBHOOK_URL || agentIdentityEnv.AGENT_MAIL_WEBHOOK_SECRET)
         ? ['agent-mail']
         : [],
-    aiProvider: await genServerAiProvidersConfig(getAiProviderSpecificConfig()),
+    aiProvider: await withCompanyProviderCatalog(
+      await genServerAiProvidersConfig(getAiProviderSpecificConfig()),
+    ),
     defaultAgent: {
       config: parseAgentConfig(DEFAULT_AGENT_CONFIG),
     },

@@ -621,3 +621,15 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 - **约束**：不新增迁移，不写 `user_settings`；`AdminConsoleModel` 的 P1 行为通过继承保持。
 - **测试**：`apps/server/src/routers/lambda/adminConsole/modelService.test.ts` 15 项（加密脱敏、非法 type /baseURL/ 重复 id / 默认模型、乐观锁、权限、`user_settings` 不变）；P1 的 permissions 23 项与 database `adminConsole.test.ts` 5 项同时通过。
 - **遗留**：`companyProvider`、运行时注入、测试连接 / 目录同步、`/admin` 模型服务页由 P2-3 \~ P2-6 完成。
+
+#### P2-3 `companyProvider` 与运行时注入（2026-11-24）
+
+- **读取层**：`packages/business-server/src/companyProvider.ts` 是 `config.ai` 的唯一读取入口。`getCompanyProviderRuntime()` 读单例行、用 `KeyVaultsGateKeeper` 解密、只保留 `open && !removedAt` 的模型，5 s 进程内缓存且并发仅一次读；读失败保留上一次成功配置（§5.6）。`getCompanyProviderRuntimeSnapshot()` 是给同步调用方用的快照视图。
+- **关闭态**：无行、`enabled: false`、缺 baseURL、缺密钥一律解析为 `null`，用户侧不出现 Tellhow。默认关闭，回滚只需回代码。
+- **凭据优先级**：payload 自带值 > 控制台配置 > `TELLHOW_API_KEY` / `TELLHOW_PROXY_URL` > 可读错误。用户自带 `baseURL` 时绝不附带公司 Key，避免把管理员凭据发送到用户端点。
+- **运行时**：`initModelRuntimeFromDB` 在 provider 为 tellhow 时先 `warmCompanyProviderRuntime(db)`，随后 `getParamsFromPayload`（保持同步、签名不变）的 tellhow 分支注入 baseURL 与解密后的 Key；`canUseServerProviderConfig` 显式允许 tellhow 使用部署凭据，并保留「payload 不带 baseURL」等既有判定。关闭态抛 `NoAvailableProvider` + 固定文案（`createErrorResponse` → 400），前端回落到该文案，提示切换模型，不是 500。
+- **目录合并**：`withCompanyProviderCatalog()` 把控制台目录写入 `aiProvider.tellhow` 的 `enabled` / `enabledModels` / `serverModelLists`（每项 `enabled: true`、`fetchOnClient: false`），`globalConfig` 只加一处调用。关闭时清空 `serverModelLists`，用户侧列表立即隐藏。
+- **缓存失效**：`updateModelServiceConfig` 保存成功后调用 `invalidateCompanyProviderCache()`，保存即生效；多副本一致性仍按 §5.3 留到需要时再做。
+- **出站**：新增 `companyProviderFetch()` / `companyProviderSsrfOptions()`，统一走 `ssrfSafeFetch`，并按「本条地址」显式放行 ——IP 字面量进 `allowIPAddressList`，域名给该次调用 `allowPrivateIPAddress`，不使用 `SSRF_ALLOW_PRIVATE_IP_ADDRESS=1`。运行时模型请求仍由 provider SDK 直连（管理员配置的端点等同 `*_PROXY_URL` 的操作方信任端点），控制台侧的测试连接 / 目录同步由 P2-4 复用该函数。
+- **测试**：`companyProvider.test.ts` 15 项（关闭态、解密与目录过滤、TTL / 失效、读失败保底、凭据优先级、无密钥泄漏、目录合并、SSRF 放行），`tellhow.test.ts` 4 项（注入、关闭态可读错误、payload 优先、不混用凭据），`companyProvider.integration.test.ts` 3 项基于 PGlite + 真实 `AiInfraRepos`（启用即列出 Tellhow 与开放模型、关闭即消失、用户视图不含明文 / 密文）。
+- **共享文件**：`apps/server/src/globalConfig/index.ts` +4/−1（import + 一处调用），`apps/server/src/modules/ModelRuntime/index.ts` +23/−3，分四处：import +5、`canUseServerProviderConfig` +5/−3、tellhow 分支 +9、预热 +4，均未超过 §8.2 的每处 10 行。
