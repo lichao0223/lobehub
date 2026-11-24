@@ -1,4 +1,8 @@
 import type {
+  AdminConsoleAiConfigUpdate,
+  AdminConsoleCatalogSyncResult,
+  AdminConsoleConnectionTestResult,
+  AdminConsoleModelServiceConfig,
   AdminRole,
   AdminUserDetail,
   AdminUserListParams,
@@ -27,6 +31,27 @@ class AdminConsoleService {
 
   revokeUserSessions = async (userId: string) =>
     lambdaClient.adminConsole.revokeUserSessions.mutate({ userId });
+
+  // ── Model service (CUST-008 §7) ───────────────────────────────────────────
+
+  /** Never contains the key: the server reduces it to `last4`. */
+  getModelServiceConfig = async (): Promise<AdminConsoleModelServiceConfig> =>
+    lambdaClient.adminConsole.getModelServiceConfig.query();
+
+  /** `apiKey` is plaintext on the wire and is never echoed back. */
+  updateModelServiceConfig = async (
+    input: AdminConsoleAiConfigUpdate,
+  ): Promise<AdminConsoleModelServiceConfig> =>
+    lambdaClient.adminConsole.updateModelServiceConfig.mutate(input);
+
+  testModelServiceConnection = async (): Promise<AdminConsoleConnectionTestResult> =>
+    lambdaClient.adminConsole.testModelServiceConnection.mutate();
+
+  refreshModelCatalog = async (input: {
+    apply: boolean;
+    expectedUpdatedAt?: string;
+  }): Promise<AdminConsoleCatalogSyncResult> =>
+    lambdaClient.adminConsole.refreshModelCatalog.mutate(input);
 }
 
 export const adminConsoleService = new AdminConsoleService();

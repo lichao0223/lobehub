@@ -633,3 +633,17 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 - **出站**：新增 `companyProviderFetch()` / `companyProviderSsrfOptions()`，统一走 `ssrfSafeFetch`，并按「本条地址」显式放行 ——IP 字面量进 `allowIPAddressList`，域名给该次调用 `allowPrivateIPAddress`，不使用 `SSRF_ALLOW_PRIVATE_IP_ADDRESS=1`。运行时模型请求仍由 provider SDK 直连（管理员配置的端点等同 `*_PROXY_URL` 的操作方信任端点），控制台侧的测试连接 / 目录同步由 P2-4 复用该函数。
 - **测试**：`companyProvider.test.ts` 15 项（关闭态、解密与目录过滤、TTL / 失效、读失败保底、凭据优先级、无密钥泄漏、目录合并、SSRF 放行），`tellhow.test.ts` 4 项（注入、关闭态可读错误、payload 优先、不混用凭据），`companyProvider.integration.test.ts` 3 项基于 PGlite + 真实 `AiInfraRepos`（启用即列出 Tellhow 与开放模型、关闭即消失、用户视图不含明文 / 密文）。
 - **共享文件**：`apps/server/src/globalConfig/index.ts` +4/−1（import + 一处调用），`apps/server/src/modules/ModelRuntime/index.ts` +10/−1，分四处：import +1、`canUseServerProviderConfig` +2/−1、tellhow 分支 +4、预热 +2，均在 §8.2 的每处 10 行以内（整文件亦为 10 行）。
+
+#### P2-4 测试连接与目录同步（2026-11-24）
+
+- **新增文件**：`packages/business-server/src/adminConsole/modelCatalog.ts` 承担两个管理端操作；接口 `testModelServiceConnection` / `refreshModelCatalog` 追加在既有的 fork 自有 router `apps/server/src/routers/lambda/adminConsole/modelService.ts`（两个接口均走 `adminProcedure`）。未改任何 §8.2 共享文件。
+- **测试连接**：`testConnection()` 用已保存的地址 + 解密后的 Key 请求 `GET {baseURL}/models`（`buildModelsUrl` 容忍末尾斜杠与已带 `/models`），返回 `{ ok, latencyMs, modelCount, errorCode? }` 并把结果写入 `config.ai.lastTest`；服务处于 `enabled: false` 时也可测试（启用前先验证）。`latencyMs` 量到响应头。
+- **错误码**：`PROVIDER_NOT_CONFIGURED`（未保存地址 / 密钥）、`PROVIDER_AUTH_FAILED`（401 / 403）、`PROVIDER_HTTP_ERROR`（其他非 2xx）、`PROVIDER_INVALID_RESPONSE`（非 JSON 或无模型数组）、`PROVIDER_UNREACHABLE`（DNS / 连接 / TLS / SSRF 拦截）、`PROVIDER_TIMEOUT`（`timeoutMs` 默认 10 s，可按调用覆盖）。错误码是 `ADMIN_CONSOLE_ERROR` 的稳定值，响应不含上游 body。
+- **目录同步**：`refreshCatalog({ apply, expectedUpdatedAt? })` 拉取上游后与 `config.ai.models` 做 diff：
+  - 新增：`source: 'sync'`、`pending: true`、`open: false`；`name` / 上下文 / 能力从仓库已有目录带出，未命中时 `name = id`；
+  - 上游消失：仅对 `source: 'sync'` 行写 `removedAt`，**不删除**；手工行（可能是别名）不动；上游重新出现则清除 `removedAt`；
+  - 已存在行：`name` / `open` / `type` 一律不改（管理员决定），只补缺失的 `contextWindowTokens` / `capabilities`；
+  - 类型：§5.4 命名规则优先，规则不中时用仓库目录里的 `type`，仍未定则回落 `chat` 并在 `diff.needsReview` 列出，写库前仍经 `AiModelType` 校验；
+  - `apply: false` 只返回 diff；`apply: true` 仅在确有变化时写入，写入复用 `updateConfig`（同一套校验 + `updatedAt` 乐观锁），因此重复 apply 幂等且不推进 `updatedAt`。
+- **出站**：两个操作统一走 `companyProviderFetch()`（即 `ssrfSafeFetch` + 本条地址放行），并为 `/models` 响应体加 1 MiB 上限（`MODEL_CATALOG_MAX_BODY_BYTES`）。
+- **测试**：`modelCatalog.test.ts` 51 项（URL / 响应解析、9 类类型推断、新增・消失・未变化・恢复・幂等 diff、管理员编辑不被覆盖、错误码映射、超时、apply 幂等 / 版本透传），`modelCatalog.router.test.ts` 9 项（PGlite + tRPC：两个接口 admin 可用、非管理员 `ADMIN_REQUIRED`、`lastTest` 落库、dry-run 不写、apply 后新增关闭待确认、二次 apply 不写、非法存量类型拒绝、网关不可达错误码）。
