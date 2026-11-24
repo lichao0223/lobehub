@@ -6,9 +6,9 @@
   },
   "dialect": "postgresql",
   "enums": {},
-  "id": "e9233a24-056c-4399-9394-6ae321442f48",
+  "id": "5c63339c-d360-418f-af31-bd4c803f5863",
   "policies": {},
-  "prevId": "315a7566-001a-43ff-a05a-5187c926f646",
+  "prevId": "38a32be4-f43d-4774-91c3-745834c6b6fc",
   "roles": {},
   "schemas": {},
   "sequences": {
@@ -15650,6 +15650,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "ask": {
+          "name": "ask",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "publication_revoked": {
           "name": "publication_revoked",
           "type": "boolean",
@@ -16571,6 +16577,13 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'text'"
         },
         "content": {
           "name": "content",
