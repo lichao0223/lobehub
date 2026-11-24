@@ -63,20 +63,18 @@ const conflict = (message: string, cause?: unknown) =>
 const forbidden = (message: string) => new TRPCError({ code: 'FORBIDDEN', message });
 
 /**
- * Data access for the admin console (CUST-008 P1).
+ * Settings-singleton data access (CUST-008 P1/P2).
  *
- * The console is the only writer of account state: it reuses Better Auth's
- * `role` / `banned` / `banReason` / `banExpires` columns and never adds an
- * upstream column. Every destructive path serializes on one advisory lock and
- * re-checks that at least one enabled admin remains.
+ * The console owns exactly one row (`id = 'singleton'`). P1 kept these methods
+ * on `AdminConsoleModel`; P2 extracts them so the model service depends on the
+ * settings surface alone. Every write merges only the caller's slice, so the
+ * model-service config and the bootstrap record never overwrite each other.
  */
-export class AdminConsoleModel {
-  private db: LobeChatDatabase;
-  private actingUserId: string;
+export class AdminConsoleSettingsModel {
+  protected db: LobeChatDatabase;
 
-  constructor(db: LobeChatDatabase, actingUserId: string) {
+  constructor(db: LobeChatDatabase) {
     this.db = db;
-    this.actingUserId = actingUserId;
   }
 
   // ── settings ──────────────────────────────────────────────────────────
@@ -100,7 +98,46 @@ export class AdminConsoleModel {
     patch: Partial<AdminConsoleSettingsConfig>,
     updatedBy: string,
   ): Promise<AdminConsoleSettingsItem> => {
-    const [row] = await this.db
+    return this.writeSettings(patch, updatedBy);
+  };
+
+  /**
+   * Settings write with an optional optimistic lock.
+   *
+   * `expectedUpdatedAt` is the row version the admin read. The advisory lock
+   * serializes writers (PGlite included), so a stale version means another
+   * admin saved first and the caller must reload instead of overwriting it.
+   */
+  updateSettingsConfig = async (
+    patch: Partial<AdminConsoleSettingsConfig>,
+    updatedBy: string,
+    expectedUpdatedAt?: Date,
+  ): Promise<AdminConsoleSettingsItem> => {
+    return this.db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('admin_console:settings'))`);
+
+      if (expectedUpdatedAt) {
+        const [current] = await tx
+          .select({ updatedAt: adminConsoleSettings.updatedAt })
+          .from(adminConsoleSettings)
+          .where(eq(adminConsoleSettings.id, ADMIN_CONSOLE_SETTINGS_ID))
+          .limit(1);
+
+        if (!current || current.updatedAt.getTime() !== expectedUpdatedAt.getTime()) {
+          throw conflict('CONFIG_CONFLICT');
+        }
+      }
+
+      return this.writeSettings(patch, updatedBy, tx);
+    });
+  };
+
+  private writeSettings = async (
+    patch: Partial<AdminConsoleSettingsConfig>,
+    updatedBy: string,
+    executor: LobeChatDatabase | Transaction = this.db,
+  ): Promise<AdminConsoleSettingsItem> => {
+    const [row] = await executor
       .insert(adminConsoleSettings)
       .values({ config: patch, id: ADMIN_CONSOLE_SETTINGS_ID, updatedBy })
       .onConflictDoUpdate({
@@ -115,6 +152,23 @@ export class AdminConsoleModel {
 
     return row;
   };
+}
+
+/**
+ * Data access for the admin console (CUST-008 P1).
+ *
+ * The console is the only writer of account state: it reuses Better Auth's
+ * `role` / `banned` / `banReason` / `banExpires` columns and never adds an
+ * upstream column. Every destructive path serializes on one advisory lock and
+ * re-checks that at least one enabled admin remains.
+ */
+export class AdminConsoleModel extends AdminConsoleSettingsModel {
+  private actingUserId: string;
+
+  constructor(db: LobeChatDatabase, actingUserId: string) {
+    super(db);
+    this.actingUserId = actingUserId;
+  }
 
   // ── bootstrap ─────────────────────────────────────────────────────────
 

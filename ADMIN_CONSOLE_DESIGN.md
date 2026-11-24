@@ -1,6 +1,6 @@
 # 管理员控制台（CUST-008）设计方案
 
-> 状态：P1（用户管理）已实现并通过本地验收（2026-11-23，分支 `feat/admin-console-p1`，实施偏差见 §15）；P2（模型服务）仍为设计，未开工。审计日志不做。原型见 `prototypes/admin-console/`。
+> 状态：P1（用户管理）已实现并通过本地验收（2026-11-23，分支 `feat/admin-console-p1`，实施偏差见 §15）；P2（模型服务）在 `feat/admin-console-p2` 上分步落地，P2-1 / P2-2 已完成，其余见 §15.6。审计日志不做。原型见 `prototypes/admin-console/`。
 
 ## 1. 范围
 
@@ -557,7 +557,7 @@ ADMIN_CONSOLE_BOOTSTRAP_USER_IDS=""
 
 ### 15.1 交付范围
 
-P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / 解禁、设 / 撤管理员、撤会话；审计日志未做（无表、无占位接口）。P2 代码未开始。验收口径为 §11 P1 四条 + 工程四项；本轮记录见本节 15.5。
+P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / 解禁、设 / 撤管理员、撤会话；审计日志未做（无表、无占位接口）。P2 在后续分支分步实现，已完成部分见 §15.6。验收口径为 §11 P1 四条 + 工程四项；本轮记录见本节 15.5。
 
 ### 15.2 与 §8.2 共享文件预算的偏差
 
@@ -604,3 +604,20 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 4. 配置 `ADMIN_CONSOLE_BOOTSTRAP_EMAILS` 后，首次 `whoami` 把 `role=NULL` 的账号提升为 `admin`，并在 `admin_console_settings.config.bootstrap` 记录时间与用户；再次访问不重复写入。
 
 验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8 项检查全部 passed，证据含截图与原始请求输出）。共享文件清单与遗留项见本节与 `CUSTOMIZATIONS.md`。本轮为单人执行，未安排独立 acceptance-checker 复核。
+
+### 15.6 P2 实施记录
+
+#### P2-1 Tellhow provider（2026-11-24）
+
+- `packages/model-bank/src/modelProviders/tellhow.ts`、`packages/model-bank/src/aiModels/tellhow.ts`、`ModelProvider` 枚举与两个 index 导出；provider 走 i18n 文案。
+- 未改 `aiProvider` / `aiModel` mutation、`settingsRouter.updateSettings`、`featureFlags`。
+
+#### P2-2 `config.ai`（2026-11-24）
+
+- **类型**：`packages/types/src/adminConsole.ts` 增加 `AdminConsoleAiConfig` / `AdminConsoleAiConfigView` / `AdminConsoleAiKey` / `AdminConsoleAiKeySummary` / `AdminConsoleAiDefaults` / `AdminConsoleAiLastTest` / `CompanyModel`（`type: AiModelType`）/ `CompanyModelCapability`；`AdminConsoleSettingsConfig.ai?` 可选。时间全部为 ISO 字符串。
+- **数据访问**：`AdminConsoleSettingsModel` 承担 `admin_console_settings` 单例读写（P1 的 `AdminConsoleModel` 继承它）；`updateSettingsConfig` 在事务内用 `pg_advisory_xact_lock(hashtext('admin_console:settings'))` 串行化，并按 `updatedAt` 做乐观锁，过期返回 `CONFLICT` / `CONFIG_CONFLICT`。
+- **业务**：`packages/business-server/src/adminConsole/modelService.ts` 校验 http (s) baseURL、`AiModelType`、模型 id 唯一、默认模型必须在目录中；API Key 复用 `KeyVaultsGateKeeper` 加密，持久化只存 ciphertext + last4 + updatedAt + updatedBy；读取经 `toConfigView` 显式挑字段，任何响应不含明文或密文。
+- **接口**：`getModelServiceConfig` / `updateModelServiceConfig` 挂在 `adminConsole` router 的 `adminProcedure` 下；`updateModelServiceConfig` 接受 `expectedUpdatedAt`。
+- **约束**：不新增迁移，不写 `user_settings`；`AdminConsoleModel` 的 P1 行为通过继承保持。
+- **测试**：`apps/server/src/routers/lambda/adminConsole/modelService.test.ts` 15 项（加密脱敏、非法 type /baseURL/ 重复 id / 默认模型、乐观锁、权限、`user_settings` 不变）；P1 的 permissions 23 项与 database `adminConsole.test.ts` 5 项同时通过。
+- **遗留**：`companyProvider`、运行时注入、测试连接 / 目录同步、`/admin` 模型服务页由 P2-3 \~ P2-6 完成。

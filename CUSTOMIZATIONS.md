@@ -15,7 +15,7 @@
 | CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md) | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                |
 | CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                      | 本次新增；需要 Fork 自己的 npm Token                                      |
 | CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                           | 开发中；单测已交付，待与真实认证中心联调                                  |
-| CUST-008 | 管理员控制台（P1 已交付）           | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                      | P1 已落地（2026-11-23，`feat/admin-console-p1`），本地验收通过；P2 未开工 |
+| CUST-008 | 管理员控制台（P1 已交付）           | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                      | P1 已落地（2026-11-23）；P2 进行中（2026-11-24，`feat/admin-console-p2`） |
 
 ## CUST-001：自定义镜像
 
@@ -106,7 +106,7 @@
 - 上下文区分 “项目已关联来源”“对话选中环境” 和 “实际已检出代码”；不宣称元数据等于克隆成功，不把密码 / PAT 或环境变量发给模型。调用者自己的网关管理设备只在空工作目录首次调用时用一次性凭据初始化，初始化成功后同一运行上下文的普通 Git 命令继承临时配置；共享设备、桌面直连和其他未完成个人初始化的命令继续使用设备自身凭据管理器。
 - 尚无实际部署的页面 /agent 对话验收；自动化验证及当前边界见 TFS 详细说明。合并时保留浏览器上下文、桌面本地 CLI、服务端运行和云端 / 设备分发的所有接点。
 
-## CUST-008：管理员控制台（P1 用户管理已交付）
+## CUST-008：管理员控制台（P1 已交付，P2 进行中）
 
 完整方案、数据模型、侵入清单与实施偏差见 [ADMIN\_CONSOLE\_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。P1 分支：`feat/admin-console-p1`（2026-11-23）。验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8/8 passed）。
 
@@ -149,9 +149,18 @@
 5. 最后管理员保护（`pg_advisory_xact_lock(hashtext('admin_console:last_admin'))`）与自助操作 `SELF_LOCKOUT` 的 `CONFLICT` 语义。
 6. en-US /zh-CN 文案与 en-US 源文案同步；上游改 `users` 表、`api_keys` 或 Better Auth admin 插件时会话字段时逐项复查。
 
-### P2（未开工）
+### P2（进行中）
 
-Tellhow 内置厂商、`config.ai` 加密、`companyProvider`、运行时凭据注入、测试连接 / 目录同步、`/admin` 模型服务页。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
+- 2026-11-24（T-55，P2-1）：`packages/model-bank/src/modelProviders/tellhow.ts`（`id: 'tellhow'`、名称经 `modelProvider:tellhow.title` 本地化、`showConfig: false` / `proxyUrl: false` / `showApiKey: false` / `disableBrowserRequest: true`，用户侧无密钥与地址入口）与 `src/aiModels/tellhow.ts`（空目录，运行时由管理员目录注入）已落地；`ModelProvider.Tellhow` 追加；共享文件 +1（`aiModels/index.ts` 导出）、+1（`const/modelProvider.ts`）、+3（`modelProviders/index.ts` 的 import / 列表注册 / 公开导出）；`packages/model-runtime/src/runtimeMap.ts` 将 tellhow 映射到 `LobeOpenAI`（OpenAI 兼容）。
+- 文案：`packages/locales/src/default/modelProvider.ts` 与 `locales/{en-US,zh-CN}/modelProvider.json` 增加 `tellhow.title`；provider card 的 `name` / `description` 使用 `modelProvider:tellhow.title` / `providers:tellhow.description` 键（不写字面量），默认说明文本由 `packages/locales/src/default/providers.ts` 提供，en-US / zh-CN 在 `providers.json` 手写 `tellhow.description`。
+
+- **P2-2 `config.ai`（已实现，2026-11-24）**：`packages/types/src/adminConsole.ts` 增加 `AdminConsoleAiConfig` / `AdminConsoleAiConfigView` / `AdminConsoleAiKey` / `AdminConsoleAiDefaults` / `AdminConsoleAiLastTest` / `CompanyModel`（`type` 复用 `model-bank` 的 `AiModelType`）。`packages/business-server/src/adminConsole/modelService.ts` 负责校验（http(s) baseURL、模型 id 唯一、类型属于 `AiModelType`）与写入；API Key 复用 `apps/server/src/modules/KeyVaultsEncrypt` 加密，只把 `last4` 返回给管理端。设置行仍写 P1 的 `admin_console_settings` 单例；P2 将 settings 方法提取为 `AdminConsoleSettingsModel`（`AdminConsoleModel` 继承它），`updateSettingsConfig` 用 `updatedAt` 做乐观锁，过期返回 `CONFLICT` / `CONFIG_CONFLICT`。接口 `getModelServiceConfig` / `updateModelServiceConfig` 挂在 `adminConsole` router 的 `adminProcedure` 下；**不新增迁移，不写 `user_settings`**。
+- 新增文件：`packages/business-server/src/adminConsole/modelService.ts`、`apps/server/src/routers/lambda/adminConsole/modelService.ts` 及其单测。`packages/business-server/package.json` 增加 `model-bank` 依赖（校验枚举用）。
+- 单测覆盖：KeyVault 密文落库与 `last4` 脱敏、类型 / 地址 / 重复 id / 默认模型校验、乐观锁冲突、tRPC 响应不含明文或密文、非管理员 `ADMIN_REQUIRED`、`user_settings` 三列不变。
+
+### P2（剩余）
+
+`companyProvider` 读取与缓存、运行时凭据注入、测试连接与目录同步、`/admin` 模型服务页、用户侧联调。范围与失败态见设计文档 §3–§7、§13.3；开工前需产品方确认 §14。
 
 ## 上游合并统一流程
 
