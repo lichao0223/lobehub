@@ -681,4 +681,6 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 
 联调同时修复：`/admin` 深链在 Web 根路径 307 回首页（`src/proxy.ts` 的 matcher 缺 `/admin`），已补 `/admin`、`/admin/(.*)` 并给 `src/proxy.test.ts` 加回归用例。
 
-工程门禁：改动文件 oxlint 0 error；`tsrs` 全仓类型检查 0 error；新增 / 相关单测通过。共享文件最终清单见验收报告与 PR 描述。
+工程门禁：改动文件 oxlint 0 error；`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0；`tellhow.test.ts` 6/6 通过。共享文件最终清单见验收报告与 PR 描述。
+
+验收报告：<http://192.168.14.51:3210/acceptance/98d0b60e-0026-4e7f-ab48-23d4091cd271>（3 项检查；八条证据见报告）。合入：PR #8 已 merged 到 canary；P2-6 修复另以 `6dfaa3ec85` 直接推送到 canary（本机无 `gh` / GitHub token，无法新开 PR 或编辑 PR #8 描述）。

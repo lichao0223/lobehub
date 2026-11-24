@@ -184,7 +184,8 @@
   - 管理端「Test connection」返回 `Connected · 148ms · 4 models`；改成错误密钥后返回 `PROVIDER_AUTH_FAILED`；改回后 `ok: true / 570ms / 3 models`，证明地址与密钥改动对下一次请求生效。
   - 设置页、对话与 `adminConsole.getModelServiceConfig` 的响应都不含明文或密文密钥（`config.ai.apiKey` 只剩 `last4` / `updatedAt`，请求体里只有掩码占位）；`user_settings` 的 `key_vaults` / `general` / `language_model` 三列 md5 在保存配置前后完全一致。
   - **联调发现并修复**：`/admin` 与 `/admin/model-service` 深链在 Web 根路径返回 307 回首页（`src/proxy.ts` matcher 未包含 `/admin`），菜单内跳转之外无法直达 / 刷新。已补 `/admin`、`/admin/(.*)` 并加 `src/proxy.test.ts` 回归用例。
-  - **交付方式**：本机没有 `gh` 与可用的 GitHub token，无法创建 PR；分支以本地 merge 后直接推送 `origin/canary` 完成合入，合并提交与 `git log origin/canary` 见验收报告。合并后仍需人工补一个 GitHub PR 记录（或在有凭证的环境补开）。
+  - **交付方式**：PR #8 已 merged 到 canary（base `canary`，2026-11-24T05:59:35Z）；P2-6 修复另以合并提交 `6dfaa3ec85` 直接推送 `origin/canary`（本机没有 `gh` 与可用的 GitHub token，无法新开 PR 或编辑 PR #8 描述）。合并后仍需人工给 PR #8 补验收链接与共享文件清单。
+- 验收报告：<http://192.168.14.51:3210/acceptance/98d0b60e-0026-4e7f-ab48-23d4091cd271>。
 
 ### P2（状态）
 
