@@ -16,7 +16,7 @@
 | CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                  | 本次新增；需要 Fork 自己的 npm Token                          |
 | CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                       | 开发中；单测已交付，待与真实认证中心联调                      |
 | CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                  | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
-| CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关) | 已验收（2026-11-25），待合入 canary                           |
+| CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关) | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）               |
 
 ## CUST-001：自定义镜像
 
@@ -282,7 +282,7 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 ### 当前发布状态
 
-分支 `feat/admin-labs`（基于 `canary`）；真实验收已通过并发布；合入状态见本节更新与任务 T-69 评论。
+验收已通过并发布（<http://192.168.14.51:3210/acceptance/424bc1bf-5389-459b-a49c-7a22f1936aa7>），代码已合入 `canary`（2026-11-25，`2bcbbb2bfc`，父提交 `3ffc920630` + `0e603986ab`）；本机无 `gh` CLI 与 GitHub token，未开 PR，合入以直接推送的 merge 提交完成。`feat/admin-labs` 仍未删除，保留到下一次上游同步确认无回归后清理。
 
 ## 上游合并统一流程
 
