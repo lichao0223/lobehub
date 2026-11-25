@@ -2,6 +2,8 @@ import type {
   AdminConsoleAiConfigUpdate,
   AdminConsoleCatalogSyncResult,
   AdminConsoleConnectionTestResult,
+  AdminConsoleLabsConfigUpdate,
+  AdminConsoleLabsConfigView,
   AdminConsoleModelServiceConfig,
   AdminRole,
   AdminUserDetail,
@@ -52,6 +54,16 @@ class AdminConsoleService {
     expectedUpdatedAt?: string;
   }): Promise<AdminConsoleCatalogSyncResult> =>
     lambdaClient.adminConsole.refreshModelCatalog.mutate(input);
+
+  // ── Unified Labs switch (CUST-009) ────────────────────────────────────────
+
+  getLabsConfig = async (): Promise<AdminConsoleLabsConfigView> =>
+    lambdaClient.adminConsole.getLabsConfig.query();
+
+  updateLabsConfig = async (
+    input: AdminConsoleLabsConfigUpdate,
+  ): Promise<AdminConsoleLabsConfigView> =>
+    lambdaClient.adminConsole.updateLabsConfig.mutate(input);
 }
 
 export const adminConsoleService = new AdminConsoleService();

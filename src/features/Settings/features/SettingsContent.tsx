@@ -3,6 +3,7 @@
 import { Text } from '@lobehub/ui';
 import { Fragment, useEffect, useState } from 'react';
 
+import { useLabsSettingsVisible } from '@/features/AdminConsole/Labs/visibility';
 import NavHeader from '@/features/NavHeader';
 import SettingContainer from '@/features/Setting/SettingContainer';
 import { useSettingsAnchorScroll } from '@/features/SettingsSearch/anchor';
@@ -30,6 +31,7 @@ interface SettingsContentProps {
 
 const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
   const enableBusinessFeatures = useServerConfigStore(serverConfigSelectors.enableBusinessFeatures);
+  const showLabs = useLabsSettingsVisible();
   const navigate = useWorkspaceAwareNavigate();
   const title = useSettingsTabTitle(activeTab);
   const [pageActions, setPageActions] = useState<HTMLElement | null>(null);
@@ -44,6 +46,12 @@ const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
       navigate(`/settings/${REDIRECT_MAP[activeTab]}`, { escape: true, replace: true });
     }
   }, [activeTab, navigate]);
+
+  // CUST-009: direct /settings/labs falls back to the first account tab.
+  useEffect(() => {
+    if (activeTab === SettingsTabs.Labs && !showLabs)
+      navigate(`/settings/${SettingsTabs.Appearance}`, { escape: true, replace: true });
+  }, [activeTab, navigate, showLabs]);
 
   const renderComponent = (tab: string) => {
     const Component = componentMap[tab as keyof typeof componentMap] || componentMap.appearance;
@@ -77,6 +85,7 @@ const SettingsContent = ({ mobile, activeTab }: SettingsContentProps) => {
   };
 
   if (activeTab && REDIRECT_MAP[activeTab]) return null;
+  if (activeTab === SettingsTabs.Labs && !showLabs) return null;
 
   if (mobile) {
     return activeTab ? renderComponent(activeTab) : renderComponent(SettingsTabs.Profile);

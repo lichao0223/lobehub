@@ -1,4 +1,5 @@
 import type {
+  AdminConsoleLabsConfig,
   AdminConsoleSettingsConfig,
   AdminRole,
   AdminUserDetail,
@@ -61,6 +62,28 @@ const conflict = (message: string, cause?: unknown) =>
   new TRPCError({ code: 'CONFLICT', message, cause });
 
 const forbidden = (message: string) => new TRPCError({ code: 'FORBIDDEN', message });
+
+/**
+ * Read-side shape normalization for `config.labs` (CUST-009).
+ *
+ * Only the stored shape is repaired here; whether a flag key is a real lab is
+ * the caller's business, so upstream additions survive a read. A missing or
+ * malformed config answers the upstream default (`user` mode, no flags), which
+ * keeps a fresh install behaving exactly as before.
+ */
+const normalizeStoredLabsConfig = (
+  stored: AdminConsoleLabsConfig | undefined,
+): AdminConsoleLabsConfig => {
+  const flags: Record<string, boolean> = {};
+
+  if (stored?.flags && typeof stored.flags === 'object') {
+    for (const [key, enabled] of Object.entries(stored.flags)) {
+      if (typeof enabled === 'boolean') flags[key] = enabled;
+    }
+  }
+
+  return { flags, mode: stored?.mode === 'admin' ? 'admin' : 'user' };
+};
 
 /**
  * Settings-singleton data access (CUST-008 P1/P2).
@@ -130,6 +153,42 @@ export class AdminConsoleSettingsModel {
 
       return this.writeSettings(patch, updatedBy, tx);
     });
+  };
+
+  // ── Labs (CUST-009) ───────────────────────────────────────────────────
+
+  /**
+   * The deployment's Unified Labs switch (`config.labs`), zero-migration.
+   *
+   * `config` is shape-normalized (see `normalizeStoredLabsConfig`); the row
+   * version is returned so a caller can hand it back for optimistic locking.
+   */
+  getLabsConfig = async (): Promise<{
+    config: AdminConsoleLabsConfig;
+    updatedAt: Date | null;
+    updatedBy: string | null;
+  }> => {
+    const row = await this.getSettings();
+
+    return {
+      config: normalizeStoredLabsConfig(row?.config?.labs),
+      updatedAt: row?.updatedAt ?? null,
+      updatedBy: row?.updatedBy ?? null,
+    };
+  };
+
+  /**
+   * Replace the Labs slice only.
+   *
+   * `config.ai` and `config.bootstrap` belong to other callers and must survive
+   * a Labs save, so this reuses the settings advisory lock and the
+   * `expectedUpdatedAt` optimistic lock instead of writing the row wholesale.
+   */
+  updateLabsConfig = async (
+    next: AdminConsoleLabsConfig,
+    options: { expectedUpdatedAt?: Date; updatedBy: string },
+  ): Promise<AdminConsoleSettingsItem> => {
+    return this.updateSettingsConfig({ labs: next }, options.updatedBy, options.expectedUpdatedAt);
   };
 
   private writeSettings = async (

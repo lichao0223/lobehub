@@ -1,20 +1,8 @@
 import type { UserPreference } from '@lobechat/types';
 
+import { resolveEffectiveLabForPreference } from '@/business/server/adminConsole/labs';
 import { UserModel } from '@/database/models/user';
 import type { LobeChatDatabase } from '@/database/type';
-
-/**
- * Reads the Labs → Self-evolving switch out of a loaded user preference.
- *
- * Use when:
- * - The caller already holds `users.preference` and must not read it again
- *
- * Returns:
- * - `true` only when `preference.lab.enableSelfLearning` is explicitly `true`
- */
-export const isSelfLearningEnabledInPreference = (
-  preference: Pick<UserPreference, 'lab'> | null | undefined,
-) => preference?.lab?.enableSelfLearning === true;
 
 /**
  * How long one user's resolved switch is reused inside this process.
@@ -35,8 +23,11 @@ export const resetAgentSignalUserGateCache = () => userGateCache.clear();
 const readSelfLearningSwitch = async (db: LobeChatDatabase, userId: string) => {
   try {
     const preference = await new UserModel(db, userId).getUserPreference();
+    // CUST-009: in admin-managed Labs mode the deployment flag replaces the
+    // user's own switch, so background work follows the console too.
+    const lab = await resolveEffectiveLabForPreference(db, preference);
 
-    return isSelfLearningEnabledInPreference(preference);
+    return lab?.enableSelfLearning === true;
   } catch (error) {
     console.error('[AgentSignal] Failed to read the Self-evolving Labs switch:', error);
     return false;
@@ -65,7 +56,10 @@ export const isAgentSignalEnabledForUser = async (
   userId: string,
   options: { preference?: Pick<UserPreference, 'lab'> | null } = {},
 ): Promise<boolean> => {
-  if ('preference' in options) return isSelfLearningEnabledInPreference(options.preference);
+  if ('preference' in options) {
+    const lab = await resolveEffectiveLabForPreference(db, options.preference);
+    return lab?.enableSelfLearning === true;
+  }
 
   const now = Date.now();
   const cached = userGateCache.get(userId);

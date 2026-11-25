@@ -6,6 +6,7 @@ import {
 import { legacyBuiltinSkillIds } from '@lobechat/mecha/builtinSkillGate';
 import debug from 'debug';
 
+import { resolveEffectiveLabForPreference } from '@/business/server/adminConsole/labs';
 import type { AgentConfigWithId } from '@/server/services/agent';
 
 import type { RunFacts } from '../runFacts';
@@ -70,7 +71,8 @@ export const resolveRunSettings = async ({
   }
   try {
     const preference = await runFacts.userPreference();
-    enableExpertise = preference?.lab?.enableSelfLearning === true;
+    const lab = await resolveEffectiveLabForPreference(runFacts.db, preference);
+    enableExpertise = lab?.enableSelfLearning === true;
   } catch (error) {
     console.error('Failed to resolve expertise injection Lab preference:', error);
   }

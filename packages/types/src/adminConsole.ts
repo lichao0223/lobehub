@@ -145,6 +145,41 @@ export interface AdminConsoleCatalogSyncResult {
   upstreamModelCount: number;
 }
 
+// ── CUST-009 unified Labs switch ─────────────────────────────────────────
+
+/**
+ * Who owns the lab flags of this deployment.
+ *
+ * `user` (default) keeps the upstream per-user Labs settings page; `admin`
+ * replaces every user's `preference.lab` with this console's flags at read
+ * time, so the upstream flag chain (`labPreferSelectors` and the server gates)
+ * keeps working without a second feature-flag list.
+ */
+export type AdminConsoleLabsMode = 'user' | 'admin';
+
+/**
+ * Stored `config.labs`. `flags` is sparse: it only carries values that differ
+ * from `DEFAULT_PREFERENCE.lab`, so an unset flag means "off" in `admin` mode
+ * and never falls back to the user's own preference.
+ */
+export interface AdminConsoleLabsConfig {
+  flags: Record<string, boolean>;
+  mode: AdminConsoleLabsMode;
+}
+
+/** `config.labs` as returned by the admin endpoints, with the row version. */
+export interface AdminConsoleLabsConfigView extends AdminConsoleLabsConfig {
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+
+/** Write shape; omitted `flags` keeps the stored map. */
+export interface AdminConsoleLabsConfigUpdate {
+  expectedUpdatedAt?: string;
+  flags?: Record<string, boolean>;
+  mode: AdminConsoleLabsMode;
+}
+
 /** `config.ai` as returned by the admin endpoints: the key is reduced to last4. */
 export interface AdminConsoleAiConfigView {
   apiKey: AdminConsoleAiKeySummary | null;
@@ -182,6 +217,8 @@ export interface AdminConsoleSettingsConfig {
   ai?: AdminConsoleAiConfig;
   /** Set once `ADMIN_CONSOLE_BOOTSTRAP_*` promoted an account. */
   bootstrap?: AdminConsoleBootstrapRecord;
+  /** CUST-009: deployment-wide Labs switch. */
+  labs?: AdminConsoleLabsConfig;
 }
 
 export type AdminConsoleUserStatus = 'active' | 'banned';
@@ -238,6 +275,7 @@ export const ADMIN_CONSOLE_ERROR = {
   invalidApiKey: 'INVALID_API_KEY',
   invalidBaseUrl: 'INVALID_BASE_URL',
   invalidDefaultModel: 'INVALID_DEFAULT_MODEL',
+  invalidLabsConfig: 'INVALID_LABS_CONFIG',
   invalidModel: 'INVALID_MODEL',
   invalidModelType: 'INVALID_MODEL_TYPE',
   lastAdmin: 'LAST_ADMIN',

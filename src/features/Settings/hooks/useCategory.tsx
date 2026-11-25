@@ -35,6 +35,7 @@ import {
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useLabsSettingsVisible } from '@/features/AdminConsole/Labs/visibility';
 import { type SettingsScope } from '@/features/SettingsSwitch/settingsScope';
 import { useElectronStore } from '@/store/electron';
 import { electronSyncSelectors } from '@/store/electron/selectors';
@@ -101,6 +102,8 @@ export const useCategory = () => {
     return avatar;
   }, [avatar, remoteServerUrl]);
   const enableBusinessFeatures = useServerConfigStore(serverConfigSelectors.enableBusinessFeatures);
+  // CUST-009: admin-managed Labs hides the per-user page from normal users.
+  const showLabs = useLabsSettingsVisible();
   const categoryGroups: CategoryGroup[] = useMemo(() => {
     const groups: CategoryGroup[] = [];
 
@@ -174,7 +177,7 @@ export const useCategory = () => {
         key: SettingsTabs.OAuthApps,
         label: tAuth('tab.oauthApps'),
       },
-      {
+      showLabs && {
         icon: FlaskConical,
         key: SettingsTabs.Labs,
         label: tLabs('title'),
@@ -359,6 +362,7 @@ export const useCategory = () => {
     enableOAuthApps,
     enableWebhook,
     showAdvanced,
+    showLabs,
     avatarUrl,
     username,
   ]);

@@ -89,6 +89,8 @@ export interface ListAgentSignalNightlyReviewUsersOptions {
    * can neither fail the page nor be decided here.
    */
   localHourWindow?: ListAgentSignalNightlyReviewUsersLocalHourWindow;
+  /** CUST-009: undefined keeps the per-user SQL filter; true selects all, false selects none. */
+  selfLearningEnabled?: boolean;
   /** Optional user allowlist for backfills, tests, and targeted runs. */
   whitelist?: string[];
 }
@@ -230,6 +232,15 @@ export class AgentSignalNightlyReviewModel {
       ? buildLocalHourCondition(options.localHourWindow)
       : undefined;
 
+    // CUST-009: admin mode owns the switch globally; only user mode keeps the
+    // per-row SQL predicate (and its index-friendly plan).
+    const selfLearningCondition =
+      options.selfLearningEnabled === undefined
+        ? sql`${users.preference}->'lab'->>'enableSelfLearning' = 'true'`
+        : options.selfLearningEnabled
+          ? undefined
+          : sql`false`;
+
     let query = this.db
       .select({
         createdAt: users.createdAt,
@@ -249,7 +260,7 @@ export class AgentSignalNightlyReviewModel {
         and(
           // Labs → Self-evolving is the user-level gate for all background self-iteration.
           // Filtering here keeps users who never turned it on out of the fan-out entirely.
-          sql`${users.preference}->'lab'->>'enableSelfLearning' = 'true'`,
+          selfLearningCondition,
           cursorCondition,
           whitelistCondition,
           localHourCondition,

@@ -141,6 +141,9 @@ export const useSettingsSearch = (
   const disableEmailPassword = useServerConfigStore(serverConfigSelectors.disableEmailPassword);
   const isLogin = useUserStore(authSelectors.isLogin);
   const hasEmail = useUserStore((s) => !!userProfileSelectors.userProfile(s)?.email);
+  // CUST-009: admin-managed Labs has no per-user toggles to search.
+  const labsMode = useUserStore((s) => s.userState?.labsMode);
+  const isAdmin = useUserStore((s) => s.userState?.isAdmin);
   const [pinyin, setPinyin] = useState<{ settled: boolean; texts: PinyinTexts | null }>({
     settled: false,
     texts: null,
@@ -161,6 +164,7 @@ export const useSettingsSearch = (
       isLogin: !!isLogin,
       isMobile: isMobileSurface(),
       isWindows: getPlatform() === 'Windows',
+      labsVisibility: { labsMode, isAdmin },
       showAiImage: !!showAiImage,
     };
 
@@ -312,6 +316,8 @@ export const useSettingsSearch = (
     hasEmail,
     hideDocs,
     isLogin,
+    labsMode,
+    isAdmin,
     showAiImage,
   ]);
 

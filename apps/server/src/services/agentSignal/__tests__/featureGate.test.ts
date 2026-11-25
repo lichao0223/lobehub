@@ -4,11 +4,16 @@ import { isAgentSignalEnabledForUser, resetAgentSignalUserGateCache } from '../f
 const mocks = vi.hoisted(() => ({
   getServerFeatureFlagsStateFromRuntimeConfig: vi.fn(),
   getUserPreference: vi.fn(),
+  resolveEffectiveLabForPreference: vi.fn(),
   userModelConstructor: vi.fn(),
 }));
 
 vi.mock('@/server/featureFlags', () => ({
   getServerFeatureFlagsStateFromRuntimeConfig: mocks.getServerFeatureFlagsStateFromRuntimeConfig,
+}));
+
+vi.mock('@/business/server/adminConsole/labs', () => ({
+  resolveEffectiveLabForPreference: mocks.resolveEffectiveLabForPreference,
 }));
 
 vi.mock('@/database/models/user', () => ({
@@ -31,6 +36,11 @@ describe('isAgentSignalEnabledForUser', () => {
     mocks.getServerFeatureFlagsStateFromRuntimeConfig.mockResolvedValue({
       enableAgentSelfIteration: true,
     });
+    // `user` mode (the upstream default) returns the stored lab unchanged.
+    mocks.resolveEffectiveLabForPreference.mockImplementation(
+      async (_db: unknown, preference: { lab?: Record<string, boolean> } | null | undefined) =>
+        preference?.lab,
+    );
   });
 
   /**
@@ -87,5 +97,28 @@ describe('isAgentSignalEnabledForUser', () => {
 
     await expect(isAgentSignalEnabledForUser(db, 'user-1')).resolves.toBe(false);
     consoleError.mockRestore();
+  });
+
+  // CUST-009: in admin-managed Labs mode the deployment owns the switch.
+  it('admin mode: enables the switch even when the user never turned it on', async () => {
+    mocks.getUserPreference.mockResolvedValue({ lab: { enableSelfLearning: false } });
+    mocks.resolveEffectiveLabForPreference.mockResolvedValue({ enableSelfLearning: true });
+
+    await expect(isAgentSignalEnabledForUser(db, 'user-1')).resolves.toBe(true);
+  });
+
+  it('admin mode: disables the switch even when the user turned it on', async () => {
+    mocks.getUserPreference.mockResolvedValue({ lab: { enableSelfLearning: true } });
+    mocks.resolveEffectiveLabForPreference.mockResolvedValue({ enableSelfLearning: false });
+
+    await expect(isAgentSignalEnabledForUser(db, 'user-1')).resolves.toBe(false);
+  });
+
+  it('user mode: passes the personal switch through', async () => {
+    const preference = { lab: { enableSelfLearning: true } };
+    mocks.getUserPreference.mockResolvedValue(preference);
+
+    await expect(isAgentSignalEnabledForUser(db, 'user-1')).resolves.toBe(true);
+    expect(mocks.resolveEffectiveLabForPreference).toHaveBeenCalledWith(db, preference);
   });
 });

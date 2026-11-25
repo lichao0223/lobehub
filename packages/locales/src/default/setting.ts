@@ -5738,6 +5738,66 @@ When I am ___, I need ___
     'A default must point at a model in the current catalog.',
   'adminConsole.modelService.error.duplicateModelId': 'Duplicate model ID.',
   'adminConsole.modelService.error.invalidModel': 'The model metadata is incomplete or malformed.',
+  // CUST-009 unified Labs switch
+  'adminConsole.labs.title': 'Labs',
+  'adminConsole.nav.labs': 'Labs',
+  'adminConsole.labs.desc':
+    'One switch for the whole deployment. In administrator mode every user sees only the experiments turned on here; the list follows the upstream Labs page, so new experiments appear automatically.',
+  'adminConsole.labs.mode.title': 'Control mode',
+  'adminConsole.labs.mode.desc': 'Who decides which experiments run on this deployment.',
+  'adminConsole.labs.mode.user': 'Each user',
+  'adminConsole.labs.mode.userDesc':
+    'Keep the upstream behaviour: everyone picks Labs experiments in their own settings.',
+  'adminConsole.labs.mode.admin': 'Administrators',
+  'adminConsole.labs.mode.adminDesc':
+    "Replace every user's Labs preferences with the flags below. An experiment that is not turned on here stays off; user preferences are ignored, and the per-user Labs page is hidden from non-administrators.",
+  'adminConsole.labs.flags.title': 'Experiments',
+  'adminConsole.labs.flags.desc':
+    'Read-only entries are also gated by a deployment setting, so this switch alone does not enable them.',
+  'adminConsole.labs.extra.title': 'Internal switches',
+  'adminConsole.labs.extra.desc':
+    'These switches have no entry on the upstream Labs page, so they are listed apart from the experiment matrix. In administrator mode they still apply deployment-wide.',
+  'adminConsole.labs.column.flag': 'Experiment',
+  'adminConsole.labs.column.availability': 'Availability',
+  'adminConsole.labs.column.switch': 'On',
+  'adminConsole.labs.badge.noSettingsEntry': 'No settings entry',
+  'adminConsole.labs.badge.desktopOnly': 'Desktop only',
+  'adminConsole.labs.badge.workspaceOnly': 'Workspaces',
+  'adminConsole.labs.badge.businessOnly': 'Business features',
+  'adminConsole.labs.badge.readOnly': 'Read only',
+  'adminConsole.labs.note.pageCollabDeployment':
+    'Live collaboration also needs a deployment gateway (ENABLE_PAGE_COLLAB) and workspace access; this switch alone does not turn it on.',
+  'adminConsole.labs.note.noSettingsEntry':
+    'This experiment has no entry on the Labs settings page upstream; it can only be set here.',
+  'adminConsole.labs.note.userMode': 'Switch to administrator mode to edit the experiments.',
+  'adminConsole.labs.action.save': 'Save',
+  'adminConsole.labs.action.saved': 'Labs settings saved.',
+  'adminConsole.labs.updatedAt': 'Last saved {{time}}',
+  'adminConsole.labs.error.generic': 'The operation failed. Try again.',
+  'adminConsole.labs.error.loadFailed': 'Could not load the Labs settings',
+  'adminConsole.labs.error.invalidLabsConfig':
+    'One of the flags is not recognized. Refresh the page and try again.',
+  'adminConsole.labs.error.conflictTitle': 'Changed by another admin',
+  'adminConsole.labs.error.conflictContent':
+    'Another administrator saved the Labs settings first. Refresh to load the latest version.',
+  'adminConsole.labs.error.conflictRefresh': 'Refresh',
+  'adminConsole.labs.error.conflictDismiss': 'Cancel',
+  'adminConsole.labs.effectiveMode': 'Active mode: {{mode}}',
+  'adminConsole.labs.updatedBy': 'Last saved by {{name}}',
+  'adminConsole.labs.mode.confirmToAdminTitle': 'Switch to administrator control?',
+  'adminConsole.labs.mode.confirmToAdminContent':
+    'Each user currently decides for themselves. In administrator control the switches below decide for everyone: experiments that are not turned on stop working for every non-administrator after you save, and the per-user Labs settings page is hidden from them. Saving applies this immediately to everyone.',
+  'adminConsole.labs.mode.confirmToUserTitle': 'Hand Labs back to each user?',
+  'adminConsole.labs.mode.confirmToUserContent':
+    'The deployment-wide switches stop applying, every user goes back to their own Labs preferences, and the per-user Labs settings page becomes visible again after you save.',
+  'adminConsole.labs.mode.confirmOk': 'Switch mode',
+  'adminConsole.labs.mode.confirmCancel': 'Cancel',
+  'adminConsole.labs.badge.unavailable': 'Unavailable here',
+  'adminConsole.labs.note.businessUnavailable':
+    'Unavailable on this deployment: it needs the business feature service.',
+  'adminConsole.labs.note.modePending': 'The mode changes only after you save.',
+  'adminConsole.labs.note.unsetOff':
+    'In administrator control an experiment that is not turned on here is off for every non-administrator; it never falls back to a personal preference.',
   'market.apps.viewAll': 'View all',
   'market.back': 'Back',
   'market.detail.category': 'Category',

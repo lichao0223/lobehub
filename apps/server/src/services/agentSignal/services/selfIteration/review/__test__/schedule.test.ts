@@ -20,6 +20,11 @@ const mocks = vi.hoisted(() => ({
   listActiveAgentTargets: vi.fn(),
   listEligibleUsers: vi.fn(),
   modelConstructor: vi.fn(),
+  resolveSelfLearningGate: vi.fn(),
+}));
+
+vi.mock('@/business/server/adminConsole/labs', () => ({
+  resolveSelfLearningGate: mocks.resolveSelfLearningGate,
 }));
 
 vi.mock('@/database/models/agentSignal/nightlyReview', () => ({
@@ -57,6 +62,9 @@ const createDeps = () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // `user` mode (the upstream default) keeps the per-user SQL filter.
+  mocks.resolveSelfLearningGate.mockResolvedValue(undefined);
+  mocks.listEligibleUsers.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -416,6 +424,42 @@ describe('nightlyReviewScheduleService', () => {
           agentId: 'agent-1',
           userId: 'user-1',
         },
+      );
+    });
+
+    // CUST-009: in admin-managed Labs mode the switch is deployment-wide and
+    // leaves the per-user SQL predicate to the model's degraded branch.
+    it('passes the admin-enabled deployment switch to the user query', async () => {
+      mocks.resolveSelfLearningGate.mockResolvedValue(true);
+
+      await createServerNightlyReviewScheduleService({} as LobeChatDatabase).listEligibleUsersPage({
+        limit: 10,
+      });
+
+      expect(mocks.listEligibleUsers).toHaveBeenCalledWith(
+        expect.objectContaining({ selfLearningEnabled: true }),
+      );
+    });
+
+    it('passes the admin-disabled deployment switch to the user query', async () => {
+      mocks.resolveSelfLearningGate.mockResolvedValue(false);
+
+      await createServerNightlyReviewScheduleService({} as LobeChatDatabase).listEligibleUsersPage({
+        limit: 10,
+      });
+
+      expect(mocks.listEligibleUsers).toHaveBeenCalledWith(
+        expect.objectContaining({ selfLearningEnabled: false }),
+      );
+    });
+
+    it('keeps the per-user filter in user mode', async () => {
+      await createServerNightlyReviewScheduleService({} as LobeChatDatabase).listEligibleUsersPage({
+        limit: 10,
+      });
+
+      expect(mocks.listEligibleUsers).toHaveBeenCalledWith(
+        expect.objectContaining({ selfLearningEnabled: undefined }),
       );
     });
   });

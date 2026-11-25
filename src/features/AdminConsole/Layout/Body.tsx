@@ -1,7 +1,7 @@
 'use client';
 
 import { Flexbox } from '@lobehub/ui';
-import { Server, Users } from 'lucide-react';
+import { FlaskConical, Server, Users } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -12,6 +12,7 @@ import { useActiveLocation } from '@/hooks/useActiveLocation';
 
 const USERS_PATH = '/admin';
 const MODEL_SERVICE_PATH = '/admin/model-service';
+const LABS_PATH = '/admin/labs';
 
 const Body = memo(() => {
   const { t } = useTranslation('setting');
@@ -19,6 +20,7 @@ const Body = memo(() => {
 
   const usersActive = pathname === USERS_PATH || pathname.startsWith(`${USERS_PATH}/users`);
   const modelServiceActive = pathname.startsWith(MODEL_SERVICE_PATH);
+  const labsActive = pathname.startsWith(LABS_PATH);
 
   return (
     <Flexbox gap={4} paddingInline={4}>
@@ -33,6 +35,9 @@ const Body = memo(() => {
             icon={Server}
             title={t('adminConsole.nav.modelService')}
           />
+        </Link>
+        <Link to={LABS_PATH}>
+          <NavItem active={labsActive} icon={FlaskConical} title={t('adminConsole.nav.labs')} />
         </Link>
       </Flexbox>
     </Flexbox>

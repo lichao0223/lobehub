@@ -6,6 +6,7 @@ import { TRPCError } from '@trpc/server';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
+import { resolveLabsForUserState } from '@/business/server/adminConsole/labs';
 import {
   getReferralStatus,
   getSubscriptionPlan,
@@ -120,6 +121,12 @@ export const profileRouter = router({
 
     const hasMoreThan4Messages = messageCount > 4;
     const hasAnyMessages = messageCount > 0;
+
+    // CUST-009: admin mode replaces this user's `preference.lab` with the
+    // deployment flags before the client sees it, so selectors follow the console.
+    const preference = state.preference as UserPreference | undefined;
+    const labs = await resolveLabsForUserState(ctx.serverDB, ctx.userId, preference?.lab);
+
     return {
       avatar: state.avatar,
       canEnablePWAGuide: hasMoreThan4Messages,
@@ -138,7 +145,7 @@ export const profileRouter = router({
       isOnboard: state.isOnboarded ?? true,
       lastName: state.lastName,
       onboarding: state.onboarding,
-      preference: state.preference as UserPreference,
+      preference: { ...(preference as UserPreference), lab: labs.lab },
       // restricted API keys must not read decrypted provider/tool credentials
       // or Marketplace OAuth tokens
       settings:
@@ -152,6 +159,8 @@ export const profileRouter = router({
       referralStatus,
       subscriptionPlan,
       isFreePlan: !subscriptionPlan || subscriptionPlan === Plans.Free,
+      isAdmin: labs.isAdmin,
+      labsMode: labs.labsMode,
     } satisfies UserInitializationState;
   }),
   makeUserOnboarded: userProcedure.mutation(async ({ ctx }) => {
