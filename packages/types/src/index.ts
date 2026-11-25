@@ -1,5 +1,6 @@
 export * from './adminConsole';
 export * from './agent';
+export * from './agentAccess';
 export * from './agentAccount';
 export * from './agentAvailability';
 export * from './agentDelivery';
