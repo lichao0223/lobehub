@@ -58,7 +58,7 @@ afterEach(() => {
 });
 
 describe('settings useCategory', () => {
-  it('orders business groups with account, connection and resource contents', () => {
+  it('splits business groups into the account set and the personal space set', () => {
     const { result } = renderHook(() => useCategory(), {
       wrapper: createWrapper(true, true),
     });
@@ -66,28 +66,58 @@ describe('settings useCategory', () => {
     const groupKeys = (key: SettingsGroupKey) =>
       result.current.find((group) => group.key === key)?.items.map((item) => item.key);
 
-    expect(result.current.map((group) => group.key)).toEqual([
-      SettingsGroupKey.Account,
-      SettingsGroupKey.Subscription,
-      SettingsGroupKey.Agent,
-      // Fork-only: TFS keeps the group present even when the `webhook` flag is off.
-      SettingsGroupKey.Connection,
-      SettingsGroupKey.Resource,
-      SettingsGroupKey.System,
+    expect(result.current.map((group) => [group.key, group.scope])).toEqual([
+      [SettingsGroupKey.Account, 'account'],
+      [SettingsGroupKey.System, 'account'],
+      [SettingsGroupKey.Subscription, 'space'],
+      [SettingsGroupKey.Agent, 'space'],
+      // Fork-only: the TFS tab is unconditional, so the group always exists.
+      [SettingsGroupKey.Connection, 'space'],
+      [SettingsGroupKey.Resource, 'space'],
+      [SettingsGroupKey.Data, 'space'],
     ]);
 
+    // Account settings follow the user across spaces.
     expect(groupKeys(SettingsGroupKey.Account)).toEqual([
       SettingsTabs.Profile,
       SettingsTabs.Appearance,
       SettingsTabs.Conversation,
       SettingsTabs.Hotkey,
       SettingsTabs.Notification,
+      SettingsTabs.Memory,
+      SettingsTabs.Referral,
+    ]);
+    // Advanced needs gateway mode or the desktop app.
+    expect(groupKeys(SettingsGroupKey.System)).toEqual([SettingsTabs.Labs, SettingsTabs.About]);
+
+    // The personal subscription is the personal space's, like a workspace's.
+    expect(groupKeys(SettingsGroupKey.Subscription)).toEqual([
+      SettingsTabs.Plans,
+      SettingsTabs.Usage,
+      SettingsTabs.Billing,
+    ]);
+    // Upstream drops the Connection group once every entry hides behind the
+    // webhook flag; the fork's TFS tab is unconditional, so it stays — asserted
+    // below, where the group's contents are checked.
+    expect(groupKeys(SettingsGroupKey.Data)).toEqual([
       SettingsTabs.Stats,
+      SettingsTabs.Storage,
+      SettingsTabs.Trash,
     ]);
 
     // Upstream hides the group when no connection entry applies; the fork's TFS
     // tab is unconditional, so the group always holds exactly that entry here.
     expect(groupKeys(SettingsGroupKey.Connection)).toEqual([SettingsTabs.Tfs]);
+
+    // Every tab has exactly one home.
+    const allKeys = result.current.flatMap((group) => group.items.map((item) => item.key));
+    expect(new Set(allKeys).size).toBe(allKeys.length);
+
+    // Entries that moved out of settings must not come back: skills and
+    // connectors live in Plugins, Messenger left settings, and credentials
+    // share the Environments page.
+    for (const removed of ['messenger', 'integrations', SettingsTabs.Creds])
+      expect(allKeys).not.toContain(removed);
     expect(getItemKeys()).not.toContain(SettingsTabs.Skill);
     expect(getItemKeys()).not.toContain(SettingsTabs.Connector);
 

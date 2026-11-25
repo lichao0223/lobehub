@@ -14,7 +14,7 @@ vi.mock('../api/client', () => ({
     tfs: { git: { mutate: mocks.git }, gitOperation: { mutate: mocks.operation } },
   }),
 }));
-vi.mock('../api/operationTokenFallback', () => ({ isOperationToken: mocks.isOperation }));
+vi.mock('../api/operationToken', () => ({ isOperationToken: mocks.isOperation }));
 vi.mock('../utils/format', () => ({ outputJson: mocks.output }));
 
 const run = async (...args: string[]) => {

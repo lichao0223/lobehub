@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 
 import { getTrpcClient } from '../api/client';
-import { isOperationToken } from '../api/operationTokenFallback';
+import { isOperationToken } from '../api/operationToken';
 import { outputJson } from '../utils/format';
 
 /** Cloud Git operations use the requester's server binding, never the device owner's identity. */
