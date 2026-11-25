@@ -1,4 +1,4 @@
-# CUST-007：统一认证平台 SSO_TICKET 接入
+# CUST-007：统一认证平台 SSO\_TICKET 接入
 
 全仓二开总清单与通用合并流程见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md)。本文只维护 CUST-007 的实现位置、上游合并接点与联调清单。
 
@@ -6,7 +6,7 @@
 
 门户已登录用户点击 LobeHub 菜单 → 平台创建一次性 `sso_ticket` → 浏览器跳转
 `/api/auth/sso-ticket/callback?ticket=...` → LobeHub 服务端兑换 ticket → 按
-`providerId + userId` 查/建本地用户 → 建立 Better Auth 会话 → 重定向站内首页。
+`providerId + userId` 查 / 建本地用户 → 建立 Better Auth 会话 → 重定向站内首页。
 
 ### 1.1 兼容：门户直接传 token
 
@@ -32,14 +32,14 @@
 
 ## 2. 实现位置
 
-| 文件 | 职责 |
-| --- | --- |
-| `src/libs/better-auth/plugins/sso-ticket/types.ts` | 错误码、profile/config 类型，无外部依赖 |
-| `src/libs/better-auth/plugins/sso-ticket/config.ts` | 直读 `process.env` 的配置解析与缺失项提示 |
-| `src/libs/better-auth/plugins/sso-ticket/exchange.ts` | 服务端换票、错误码映射、日志脱敏 |
-| `src/libs/better-auth/plugins/sso-ticket/userMapping.ts` | 工号规范化、邮箱生成、用户/账号字段映射 |
-| `src/libs/better-auth/plugins/sso-ticket/redirect.ts` | 站内相对路径校验，防开放重定向 |
-| `src/libs/better-auth/plugins/sso-ticket/index.ts` | Better Auth 插件、callback 端点、建会话 |
+| 文件                                                     | 职责                                      |
+| -------------------------------------------------------- | ----------------------------------------- |
+| `src/libs/better-auth/plugins/sso-ticket/types.ts`       | 错误码、profile/config 类型，无外部依赖   |
+| `src/libs/better-auth/plugins/sso-ticket/config.ts`      | 直读 `process.env` 的配置解析与缺失项提示 |
+| `src/libs/better-auth/plugins/sso-ticket/exchange.ts`    | 服务端换票、错误码映射、日志脱敏          |
+| `src/libs/better-auth/plugins/sso-ticket/userMapping.ts` | 工号规范化、邮箱生成、用户 / 账号字段映射 |
+| `src/libs/better-auth/plugins/sso-ticket/redirect.ts`    | 站内相对路径校验，防开放重定向            |
+| `src/libs/better-auth/plugins/sso-ticket/index.ts`       | Better Auth 插件、callback 端点、建会话   |
 
 改动面（仅此 3 处既有文件）：
 
@@ -58,7 +58,7 @@
    是 better-auth 1.6.33 的签名。升级 better-auth 时必须复核这两个调用（类型检查会报错，但语义变化未必）。
 4. **新用户初始化**：依赖 `define-config.ts` 的 `databaseHooks.user.create.after` 调用
    `UserService.initUser`。若上游移除该钩子，SSO 创建的用户会缺少默认初始化。
-5. **`accounts` 无 `(providerId, accountId)` 唯一索引**：并发首登靠"创建失败后重查"兜底。
+5. **`accounts` 无 `(providerId, accountId)` 唯一索引**：并发首登靠 "创建失败后重查" 兜底。
    若上游补了唯一索引，可移除重查逻辑并简化。
 6. **限流接口**：插件使用 `rateLimit: [{ pathMatcher, window, max }]`，升级 better-auth 时复核形状。
 
@@ -90,7 +90,7 @@ AUTH_EMAIL_VERIFICATION=0
 pnpm vitest run src/libs/better-auth/plugins/sso-ticket
 ```
 
-覆盖：配置分支、换票成功/HTTP 错误/业务码/超时/非 JSON/clientId 与 loginDomain 不匹配/
+覆盖：配置分支、换票成功 / HTTP 错误 / 业务码 / 超时 / 非 JSON/clientId 与 loginDomain 不匹配 /
 字段缺失、脱敏、工号邮箱规则、开放重定向防护、首次登录建号、二次登录复用、
 工号变更复用同一用户、禁用用户拒绝、并发首登兜底。
 
@@ -114,6 +114,11 @@ pnpm vitest run src/libs/better-auth/plugins/sso-ticket
 
 ## 7. 已知风险
 
+- better-auth 升级会破坏本插件依赖的 `internalAdapter` 内部方法：1.7.16（上游 #22217）移除了
+  `findOAuthUser`，callback 在 exchange 成功后抛 `TypeError`，又被兜底映射成
+  `SSO_EXCHANGE_UNAVAILABLE`，日志里只剩错误码。现已在 `resolveSsoUser` 内做版本兼容
+  （方法缺失时用 `findUserByEmail` + `findAccounts` 等价实现），并让未预期异常带原始错误打日志。
+  每次升级 better-auth 都必须跑一次真实回调联调（§6），单测的 mock 发现不了这类问题。
 - exchange 的 `Authorization` 写法、ticket 一次性语义、`userId` 稳定性三项目前按设计文档
   假设实现，联调前必须向平台侧确认（设计文档 §15）。
 - `roleCodes` 未做权限映射，普通用户不会因此获得管理权限，但也意味着本阶段无法做基于平台的授权。
