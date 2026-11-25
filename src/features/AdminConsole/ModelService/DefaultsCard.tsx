@@ -55,7 +55,6 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
     else delete next[key];
     onChange(next);
   };
-
   const rows = [
     {
       descriptionKey: 'adminConsole.modelService.defaults.chatDesc',
@@ -106,7 +105,12 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
               options={optionsFor(row.key)}
               style={{ width: '100%' }}
               value={defaults[row.key] ?? ''}
-              onChange={(value) => update(row.key, String(value))}
+              onChange={(value) => {
+                // The "inherit" option carries an empty string, but a cleared
+                // select can hand back `undefined`; `String(undefined)` would
+                // persist the literal text "undefined" as a model id.
+                update(row.key, typeof value === 'string' ? value : '');
+              }}
             />
           </FieldRow>
         ))}

@@ -169,6 +169,22 @@ describe('config validation', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST', message: 'INVALID_DEFAULT_MODEL' });
   });
 
+  it('treats a cleared default serialized as "undefined" as inherit', async () => {
+    // Regression: an earlier build sent String(undefined) when the "inherit"
+    // option was picked, which persisted the literal text "undefined" and then
+    // blocked every later save with INVALID_DEFAULT_MODEL.
+    const saved = await serviceFor().updateConfig({
+      defaults: { chat: 'tellhow-chat-1', embedding: 'undefined' as never },
+      enabled: false,
+      models: [chatModel],
+    });
+
+    expect(saved.config.defaults).toEqual({ chat: 'tellhow-chat-1' });
+
+    const read = await serviceFor().getConfig();
+    expect(read.config.defaults).toEqual({ chat: 'tellhow-chat-1' });
+  });
+
   it('refuses to enable without an address and a key', async () => {
     await expect(
       serviceFor().updateConfig({ baseURL: 'https://ai.tellhowsoft.com', enabled: true }),

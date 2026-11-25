@@ -157,6 +157,16 @@ export const validateCompanyModels = (models: CompanyModel[]): CompanyModel[] =>
   });
 };
 
+/**
+ * A cleared select is "inherit", and older clients serialized that as the
+ * literal text `"undefined"` / `"null"`. Treat all of them as unset instead of
+ * persisting or rejecting them as a model id.
+ */
+const isInheritPlaceholder = (value: unknown): boolean =>
+  value === undefined ||
+  value === null ||
+  (typeof value === 'string' && ['', 'null', 'undefined'].includes(value.trim()));
+
 export const validateDefaults = (
   defaults: AdminConsoleAiDefaults,
   models: CompanyModel[],
@@ -166,15 +176,25 @@ export const validateDefaults = (
 
   for (const key of ['chat', 'embedding', 'title', 'verify'] as const) {
     const value = defaults[key];
-    if (value === undefined) continue;
-    const trimmed = typeof value === 'string' ? value.trim() : '';
-    if (!trimmed || !ids.has(trimmed)) {
+    if (isInheritPlaceholder(value)) continue;
+    const trimmed = (value as string).trim();
+    if (!ids.has(trimmed)) {
       throw invalidConfig(ADMIN_CONSOLE_ERROR.invalidDefaultModel);
     }
     result[key] = trimmed;
   }
 
   return result;
+};
+
+/** Drop stored inherit placeholders so the console reads "inherit", not "undefined". */
+const cleanStoredDefaults = (defaults: AdminConsoleAiDefaults): AdminConsoleAiDefaults => {
+  const next: AdminConsoleAiDefaults = {};
+  for (const key of ['chat', 'embedding', 'title', 'verify'] as const) {
+    const value = defaults[key];
+    if (!isInheritPlaceholder(value)) next[key] = value as string;
+  }
+  return next;
 };
 
 /** The only shape that leaves the server: ciphertext is dropped, key becomes last4. */
@@ -185,10 +205,12 @@ export const toConfigView = (ai: AdminConsoleAiConfig | undefined): AdminConsole
     ? { last4: ai.apiKey.last4, updatedAt: ai.apiKey.updatedAt, updatedBy: ai.apiKey.updatedBy }
     : null;
 
+  const defaults = ai.defaults ? cleanStoredDefaults(ai.defaults) : undefined;
+
   return {
     apiKey,
     baseURL: ai.baseURL ?? '',
-    ...(ai.defaults ? { defaults: { ...ai.defaults } } : {}),
+    ...(defaults && Object.keys(defaults).length > 0 ? { defaults } : {}),
     enabled: ai.enabled === true,
     ...(ai.lastTest ? { lastTest: { ...ai.lastTest } } : {}),
     models: (ai.models ?? []).map((model) => ({ ...model })),
