@@ -2,6 +2,7 @@ import { resolveAdminState } from '@/business/server/adminConsole/permissions';
 import { authedProcedure, router } from '@/libs/trpc/lambda';
 import { serverDatabase } from '@/libs/trpc/lambda/middleware';
 
+import { adminLabsProcedures } from './labs';
 import { adminModelServiceProcedures } from './modelService';
 import { adminUserProcedures } from './users';
 
@@ -15,6 +16,7 @@ import { adminUserProcedures } from './users';
 export const adminConsoleRouter = router({
   ...adminUserProcedures,
   ...adminModelServiceProcedures,
+  ...adminLabsProcedures,
 
   whoami: authedProcedure
     .use(serverDatabase)

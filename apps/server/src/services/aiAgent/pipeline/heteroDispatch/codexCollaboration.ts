@@ -2,6 +2,7 @@ import type { ChatTopicMetadata, CodexCollaborationMode } from '@lobechat/types'
 import { codexCollaborationModeOf } from '@lobechat/types';
 import debug from 'debug';
 
+import { resolveEffectiveLabForPreference } from '@/business/server/adminConsole/labs';
 import { UserModel } from '@/database/models/user';
 import type { LobeChatDatabase } from '@/database/type';
 
@@ -24,7 +25,8 @@ export const resolveDispatchCollaborationMode = async (
   const mode = codexCollaborationModeOf(params.topicMetadata?.heteroPlanMode);
   if (!mode) return;
   try {
-    const lab = (await new UserModel(db, userId).getUserPreference())?.lab;
+    const preference = await new UserModel(db, userId).getUserPreference();
+    const lab = await resolveEffectiveLabForPreference(db, preference);
     return lab?.enableCodexAppServer ? mode : undefined;
   } catch (error) {
     log('Reading the lab preference of %s failed: %O', userId, error);

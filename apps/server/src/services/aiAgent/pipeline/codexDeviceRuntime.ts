@@ -4,6 +4,7 @@ import type { DeviceClient, LobeAgentAgencyConfig } from '@lobechat/types';
 import { CODEX_COLLABORATION_MODE_RUNTIME } from '@lobechat/types';
 import debug from 'debug';
 
+import { resolveEffectiveLabForPreference } from '@/business/server/adminConsole/labs';
 import { UserModel } from '@/database/models/user';
 
 const log = debug('lobe-server:ai-agent-service');
@@ -179,7 +180,8 @@ export const selectCodexDeviceDispatch = async (
       isAppServerLabEnabled: async () => {
         try {
           const preference = await new UserModel(params.db, params.userId).getUserPreference();
-          return preference?.lab?.enableCodexAppServer === true;
+          const lab = await resolveEffectiveLabForPreference(params.db, preference);
+          return lab?.enableCodexAppServer === true;
         } catch (err) {
           log('execAgent: failed to read Codex app-server Lab preference: %O', err);
           return false;

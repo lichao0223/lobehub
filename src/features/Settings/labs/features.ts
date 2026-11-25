@@ -58,7 +58,14 @@ export interface LabFeatureItem {
   workspaceOnly?: boolean;
 }
 
-const ALL_LAB_FEATURES: LabFeatureItem[] = [
+/**
+ * Every lab experiment, including the ones the current deployment hides.
+ *
+ * `LAB_FEATURES` below is the user-facing filtered view; the admin console
+ * (CUST-009) renders this unfiltered list so a newly added upstream lab shows
+ * up in the deployment matrix without a second registration.
+ */
+export const ALL_LAB_FEATURES: LabFeatureItem[] = [
   {
     flag: 'enableAgentGraphConfig',
     i18nKey: 'agentGraphConfig',

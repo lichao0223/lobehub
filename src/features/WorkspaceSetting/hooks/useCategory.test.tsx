@@ -272,6 +272,26 @@ describe('workspace settings useCategory', () => {
     expect(itemKeys).toContain(WorkspaceSettingsTabs.Plans);
     expect(itemKeys).toContain(WorkspaceSettingsTabs.Usage);
   });
+
+  // CUST-009: in admin-managed Labs mode the server owns `preference.lab`, so
+  // the mirrored per-user page would toggle values nothing reads.
+  it('hides the Labs tab from non-admins when the console owns the lab flags', () => {
+    useUserStore.setState({ userState: { isAdmin: false, labsMode: 'admin' } as never });
+
+    expect(getItemKeys()).not.toContain(WorkspaceSettingsTabs.Labs);
+  });
+
+  it('keeps the Labs tab for administrators in admin-managed mode', () => {
+    useUserStore.setState({ userState: { isAdmin: true, labsMode: 'admin' } as never });
+
+    expect(getItemKeys()).toContain(WorkspaceSettingsTabs.Labs);
+  });
+
+  it('keeps the Labs tab for everyone in the upstream user mode', () => {
+    useUserStore.setState({ userState: { isAdmin: false, labsMode: 'user' } as never });
+
+    expect(getItemKeys()).toContain(WorkspaceSettingsTabs.Labs);
+  });
 });
 
 describe('workspace settings useCategory account set', () => {

@@ -684,3 +684,41 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 工程门禁：改动文件 oxlint 0 error；`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0；`tellhow.test.ts` 6/6 通过。共享文件最终清单见验收报告与 PR 描述。
 
 验收报告：<http://192.168.14.51:3210/acceptance/98d0b60e-0026-4e7f-ab48-23d4091cd271>（3 项检查；八条证据见报告）。合入：PR #8 已 merged 到 canary；P2-6 修复另以 `6dfaa3ec85` 直接推送到 canary（本机无 `gh` / GitHub token，无法新开 PR 或编辑 PR #8 描述）。
+
+## 16. CUST-009：管理员统一 Labs 开关
+
+方案与取舍见本节；实现分布在 `packages/business-server/src/labs/`（解析）、`packages/business-server/src/adminConsole/labs.ts`（存储与写校验）、`src/features/AdminConsole/Labs/`（矩阵页）。设计目标是**上游新增一个 lab 时，本 fork 零改动即可跟随**；三道闸门把这个承诺变成可执行的检查。
+
+### 16.1 三道闸门
+
+| 闸门       | 落点                                                                                                                      | 断言                                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 一、编译期 | `src/features/Settings/labs/features.ts` 的 `LabFeatureItem.flag: keyof typeof labPreferSelectors`                        | catalog 里的 flag 必须是真实 selector，写错编译不过。无需额外代码，本阶段仅确认。                                                      |
+| 二、测试期 | `src/features/Settings/labs/{catalog,i18n}.test.ts`、`packages/business-server/src/labs/{readPoints,orphanFlags}.test.ts` | ① selector ⊆ catalog（豁免 `enableTaskVerify`）；② 服务端读取点白名单；③ 孤儿键容忍；④ i18n 完整性。                                   |
+| 三、运行期 | `src/features/AdminConsole/Labs/matrix.ts` 的 `getLabRowAvailability` / `getLabRowBadges`                                 | `businessOnly` 未启用时置灰、`desktopOnly` / `workspaceOnly` 标注、selector-only 行标「无设置入口」。UI 无法断言的判定抽成纯函数单测。 |
+
+闸门二第 2 条是源文本扫描（`preference.lab?.`、`preference?.lab?.`、`->'lab'->>`），扫描根为 `apps/server/src` 与 `packages/database/src`，文件清单与理由写在测试里，不用 AST 也不用 glob 差异。`packages/business-server/src` 刻意排除：它就是 resolver 本身。白名单每个条目还钉死了必须经过的 resolver 名，换实现同样会失败。
+
+### 16.2 新增 lab 时的维护动作
+
+理论上零动作。上游新增 selector 后：
+
+1. `UserLabSchema` 变化 → 写校验与解析自动跟上（注册表就是 schema，不维护第二份列表）；
+2. `/admin/labs` 矩阵自动多一行（行来自 `ALL_LAB_FEATURES` + selector 差集）；
+3. 若上游同时加了 Labs 页开关，catalog、i18n 也会一起进。
+
+闸门报警时才会需要人工，且只有两种：
+
+- **`selector ⊆ catalog` 失败**：上游新增 selector 但没进 `ALL_LAB_FEATURES`（上游把开关放在别处，或本 fork 的 catalog 更新落后）。要么补 catalog + 文案，要么把它加进 `catalog.test.ts` 的 `NO_SETTINGS_ENTRY_SELECTORS` 并写明原因（现有唯一豁免是 `enableTaskVerify`）。
+- **读取点白名单失败**：新增了直接读 `preference.lab` 的代码路径，绕过了部署解析。改成 `resolveEffectiveLabForPreference(db, preference)` 后再读；确实不能 await 的（SQL 谓词）按 `nightlyReview` 的方式接收三元态，并把文件加进 `READ_POINTS` 写清理由。
+
+其余两项（孤儿键、i18n）失败通常说明改动本身有问题，不涉及维护动作。
+
+### 16.3 闸门有效性验证（2026-11-25）
+
+测试必须能真的失败，因此两个方向都反向跑过：
+
+- 从 `ALL_LAB_FEATURES` 删掉 `enableAgentIdentity` → `catalog.test.ts` 的 `has an entry for every lab selector` 失败，失败信息点名 `enableAgentIdentity` 并指出应改的文件；恢复后 4/4 通过。
+- 在 `apps/server/src/services/` 临时放入一个直接读 `preference?.lab?.enableProjects` 的文件 → `readPoints.test.ts` 报 `apps/server/src/services/__labsGateProbe.ts:2` 未走 resolver，同时 `routes every read point through its declared resolver` 失败；删除探针后 5/5 通过。
+
+工程结果：`packages/business-server` 全量 6 文件 / 35 项测试通过；`src/features/Settings/labs/` 4 文件 / 24 项通过；改动文件 oxlint 0 error / 0 warning；`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0。

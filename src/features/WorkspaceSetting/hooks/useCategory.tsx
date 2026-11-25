@@ -38,6 +38,7 @@ import {
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useLabsSettingsVisible } from '@/features/AdminConsole/Labs/visibility';
 import { type SettingsScope } from '@/features/SettingsSwitch/settingsScope';
 import { usePermission } from '@/hooks/usePermission';
 import { useElectronStore } from '@/store/electron';
@@ -113,6 +114,8 @@ export const useWorkspaceSettingCategory = (): WorkspaceSettingCategoryGroup[] =
     userProfileSelectors.nickName(s),
   ]);
   const remoteServerUrl = useElectronStore(electronSyncSelectors.remoteServerUrl);
+  // CUST-009: admin-managed Labs hides the per-user page from normal users.
+  const showLabs = useLabsSettingsVisible();
 
   const avatarUrl = useMemo(() => {
     if (!avatar) return undefined;
@@ -395,7 +398,7 @@ export const useWorkspaceSettingCategory = (): WorkspaceSettingCategoryGroup[] =
               key: WorkspaceSettingsTabs.OAuthApps,
               label: tAuth('tab.oauthApps'),
             },
-            {
+            showLabs && {
               icon: FlaskConical,
               key: WorkspaceSettingsTabs.Labs,
               label: tLabs('title'),
@@ -425,6 +428,7 @@ export const useWorkspaceSettingCategory = (): WorkspaceSettingCategoryGroup[] =
       enableBusinessFeatures,
       avatarUrl,
       username,
+      showLabs,
     ],
   );
 };

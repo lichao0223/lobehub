@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { getTestDB } from '../core/getTestDB';
 import { adminConsoleSettings, apiKeys, users } from '../schemas';
 import type { LobeChatDatabase } from '../type';
-import { AdminConsoleModel } from './adminConsole';
+import { AdminConsoleModel, AdminConsoleSettingsModel } from './adminConsole';
 
 const serverDB: LobeChatDatabase = await getTestDB();
 
@@ -111,6 +111,96 @@ describe('AdminConsoleModel ban and unban cascade', () => {
     const unban = await modelFor(ids.actor).unbanUser(ids.member);
     expect(unban?.banned).toBe(false);
     expect(unban?.banReason).toBeNull();
+  });
+});
+
+describe('AdminConsoleSettingsModel Labs storage (CUST-009)', () => {
+  const settings = () => new AdminConsoleSettingsModel(serverDB);
+
+  it('answers the upstream default when the singleton row was never written', async () => {
+    const { config, updatedAt, updatedBy } = await settings().getLabsConfig();
+
+    // Zero-change install: no console write yet, so everyone keeps their own lab.
+    expect(config).toEqual({ flags: {}, mode: 'user' });
+    expect(updatedAt).toBeNull();
+    expect(updatedBy).toBeNull();
+  });
+
+  it('stores admin mode with a sparse flag map and lock version', async () => {
+    const row = await settings().updateLabsConfig(
+      { flags: { enableSelfLearning: true }, mode: 'admin' },
+      { updatedBy: ids.actor },
+    );
+
+    const read = await settings().getLabsConfig();
+
+    // Sparse: only the explicit flag is stored, every other lab is absent (= off).
+    expect(read.config).toEqual({ flags: { enableSelfLearning: true }, mode: 'admin' });
+    expect(read.updatedAt?.getTime()).toBe(row.updatedAt.getTime());
+    expect(read.updatedBy).toBe(ids.actor);
+  });
+
+  it('rejects a stale expectedUpdatedAt instead of overwriting', async () => {
+    const first = await settings().updateLabsConfig(
+      { flags: {}, mode: 'admin' },
+      { updatedBy: ids.actor },
+    );
+
+    await expect(
+      settings().updateLabsConfig(
+        { flags: { enableGroupChat: true }, mode: 'admin' },
+        { expectedUpdatedAt: new Date(0), updatedBy: ids.otherAdmin },
+      ),
+    ).rejects.toMatchObject({ code: 'CONFLICT', message: 'CONFIG_CONFLICT' });
+
+    // The read version is accepted, and the conflict left the row untouched.
+    const accepted = await settings().updateLabsConfig(
+      { flags: { enableGroupChat: true }, mode: 'admin' },
+      { expectedUpdatedAt: first.updatedAt, updatedBy: ids.otherAdmin },
+    );
+
+    expect(accepted.updatedBy).toBe(ids.otherAdmin);
+    await expect(settings().getLabsConfig()).resolves.toMatchObject({
+      config: { flags: { enableGroupChat: true } },
+    });
+  });
+
+  it('keeps config.ai and config.bootstrap when the Labs slice is written', async () => {
+    const ai = {
+      apiKey: null,
+      baseURL: 'https://llm.internal/v1',
+      enabled: true,
+      models: [],
+    };
+    const bootstrap = { at: '2026-01-01T00:00:00.000Z', userId: ids.actor };
+
+    await serverDB.insert(adminConsoleSettings).values({
+      config: { ai, bootstrap },
+      id: 'singleton',
+      updatedBy: ids.actor,
+    });
+
+    await settings().updateLabsConfig(
+      { flags: { enableGroupChat: true }, mode: 'admin' },
+      { updatedBy: ids.actor },
+    );
+
+    const row = await settings().getSettings();
+    expect(row?.config.ai).toEqual(ai);
+    expect(row?.config.bootstrap).toEqual(bootstrap);
+    expect(row?.config.labs).toEqual({ flags: { enableGroupChat: true }, mode: 'admin' });
+  });
+
+  it('normalizes a malformed stored config back to user mode', async () => {
+    await serverDB.insert(adminConsoleSettings).values({
+      config: { labs: { flags: { enableGroupChat: 'yes' }, mode: 'nonsense' } } as never,
+      id: 'singleton',
+      updatedBy: ids.actor,
+    });
+
+    await expect(settings().getLabsConfig()).resolves.toMatchObject({
+      config: { flags: {}, mode: 'user' },
+    });
   });
 });
 

@@ -98,6 +98,23 @@ describe('settings search index', () => {
     }
   });
 
+  it('hides every lab feature from non-admins when the console owns the flags', () => {
+    // CUST-009: the per-user toggles are dead UI in admin mode.
+    const labsItems = SETTINGS_SEARCH_ITEMS.filter((item) => item.tab === SettingsTabs.Labs);
+
+    for (const item of labsItems) {
+      expect(
+        item.visible?.({ ...webContext, labsVisibility: { isAdmin: false, labsMode: 'admin' } }),
+      ).toBe(false);
+    }
+    for (const item of labsItems) {
+      expect(
+        item.visible?.({ ...webContext, labsVisibility: { isAdmin: true, labsMode: 'admin' } }) ??
+          true,
+      ).toBe(item.visible?.(webContext) ?? true);
+    }
+  });
+
   it('indexes the inbox notification channel', () => {
     expect(SETTINGS_SEARCH_ITEMS.some((item) => item.anchor === 'notification-inbox')).toBe(true);
   });

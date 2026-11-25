@@ -6,16 +6,17 @@
 
 ## 功能总表
 
-| 编号     | 二开功能                            | 用户入口 / 行为                                                                                        | 维护位置                                                                                          | 状态                                                          |
-| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                             | `.github/workflows/publish-custom-image.yml`                                                      | 历史已有；本轮增加 TFS curl 构建参数                          |
-| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈            | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                      | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话 |
-| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                             | 同上；`scripts/deploy-custom-image.test.py`                                                       | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增 |
-| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                        | 下方列出的五个 `.github/workflows/` 文件                                                          | 历史已有                                                      |
-| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md) | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成    |
-| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                      | 本次新增；需要 Fork 自己的 npm Token                          |
-| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                           | 开发中；单测已交付，待与真实认证中心联调                      |
-| CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                      | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
+| 编号     | 二开功能                            | 用户入口 / 行为                                                                                        | 维护位置                                                                                                                                                                                      | 状态                                                          |
+| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                             | `.github/workflows/publish-custom-image.yml`                                                                                                                                                  | 历史已有；本轮增加 TFS curl 构建参数                          |
+| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈            | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                                                                                                                  | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话 |
+| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                             | 同上；`scripts/deploy-custom-image.test.py`                                                                                                                                                   | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增 |
+| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                        | 下方列出的五个 `.github/workflows/` 文件                                                                                                                                                      | 历史已有                                                      |
+| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md)                                                                                             | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成    |
+| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                  | 本次新增；需要 Fork 自己的 npm Token                          |
+| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                       | 开发中；单测已交付，待与真实认证中心联调                      |
+| CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                  | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
+| CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关) | 已验收（2026-11-25），待合入 canary                           |
 
 ## CUST-001：自定义镜像
 
@@ -185,11 +186,103 @@
   - 设置页、对话与 `adminConsole.getModelServiceConfig` 的响应都不含明文或密文密钥（`config.ai.apiKey` 只剩 `last4` / `updatedAt`，请求体里只有掩码占位）；`user_settings` 的 `key_vaults` / `general` / `language_model` 三列 md5 在保存配置前后完全一致。
   - **联调发现并修复**：`/admin` 与 `/admin/model-service` 深链在 Web 根路径返回 307 回首页（`src/proxy.ts` matcher 未包含 `/admin`），菜单内跳转之外无法直达 / 刷新。已补 `/admin`、`/admin/(.*)` 并加 `src/proxy.test.ts` 回归用例。
   - **交付方式**：PR #8 已 merged 到 canary（base `canary`，2026-11-24T05:59:35Z）；P2-6 修复另以合并提交 `6dfaa3ec85` 直接推送 `origin/canary`（本机没有 `gh` 与可用的 GitHub token，无法新开 PR 或编辑 PR #8 描述）。合并后仍需人工给 PR #8 补验收链接与共享文件清单。
+
 - 验收报告：<http://192.168.14.51:3210/acceptance/98d0b60e-0026-4e7f-ab48-23d4091cd271>。
 
 ### P2（状态）
 
 §11 P2 八条已在真实环境逐条验收，证据见 `ADMIN_CONSOLE_DESIGN.md` §15.7 与验收报告；剩余仅为有 GitHub 凭证时补开 PR。范围与失败态见设计文档 §3–§7、§13.3；§14 的四项产品假设结论已回写。
+
+## CUST-009：管理员统一实验室（Labs）开关
+
+设计与三道闸门见 [ADMIN\_CONSOLE\_DESIGN.md §16](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)。核心约束：**实验室开关必须挂在 `users.preference.lab` 链上，不能另建 feature flags 清单**，否则上游新增 lab 时本 Fork 需要维护第二份列表，自动跟随就断了。
+
+### 功能与入口
+
+- **管理员** `/admin/labs`（控制台侧栏「实验室」）：控制方式（每位用户 / 管理员统一控制）、实验矩阵、内部开关、只读 / 不可用标注、显式保存与 `expectedUpdatedAt` 乐观锁。矩阵行来自上游 `ALL_LAB_FEATURES`，文案走既有 `labs` i18n 命名空间 → 上游新增 / 删除 / 改名 lab 与文案阶段全部自动跟随。
+- **普通用户**：`admin` 模式下设置侧栏没有「实验室」、设置搜索搜不到实验室项、直连 `/settings/labs` 回落到外观页；`user` 模式（默认，且未配置时也是它）与上游行为完全一致，个人 Labs 页可见可切。
+- **管理员自己**：仍可打开个人 Labs 页（`isAdmin`），但其 `preference.lab` 同样被部署开关覆盖 —— 读时覆盖对所有人生效，差别只在页面是否可见。
+- **语义**：admin 模式下未显式开启的 lab = 关，**不回落个人偏好**；保留 `mode: 'user'` 作为回滚阀。
+
+### 配置与数据来源
+
+- 零迁移、零新表：`admin_console_settings.config.labs = { mode: 'user' | 'admin', flags: { [flag]: boolean } }`（复用 CUST-008 的单例行）。`flags` 稀疏，只存被显式打开的项。
+- 解析：`effectiveLab = mode === 'user' ? user.preference.lab : { ...DEFAULT_PREFERENCE.lab, ...flags }`，唯一实现在 `packages/business-server/src/labs/resolver.ts`；存储层 `packages/business-server/src/adminConsole/labs.ts` 委托它，避免客户端负载与服务端 gate 语义漂移。
+- 注册表 = 上游 `UserLabSchema`（完整列表）。不拿 `DEFAULT_PREFERENCE.lab` 当白名单 —— 它只含少量非 `false` 默认项，会把 `enableSelfLearning` 等真实 lab 丢掉。上游删除的键成为孤儿键，读取时静默丢弃；写入校验拒绝未知键。
+- 5 秒进程内缓存（`resolveLabOverrides`），写入后 `invalidateLabOverrides` 立即失效；未配置、读失败、结构损坏一律回落到 `user` 模式，绝不因为读失败覆盖所有用户的偏好。
+
+### 权限与运行边界
+
+- 写入只经 `adminConsole.updateLabsConfig`（`adminProcedure`，角色与「最后管理员」语义沿用 CUST-008），带乐观锁；非管理员调用返回 `ADMIN_REQUIRED`。
+- 读时覆盖点：① `user.getUserState` 返回前替换 `preference.lab`，并附带 `isAdmin` / `labsMode`；② 服务端 gate：agentSignal `featureGate`（自进化总闸）、`runSettings`（专家经验注入）、`codexDeviceRuntime` / `codexCollaboration`（hetero 能力）、`nightlyReview`（复盘用户筛选原始 SQL 在 admin 模式退化为 JS / 参数三态）；③ 客户端可见性：设置侧栏、工作区设置侧栏、设置搜索、Labs 路由、工作区 Labs 路由。
+- **不写任何用户的 `preference.lab`**（不做全表 UPDATE），不改 `settingsRouter.updatePreference` 与 `featureFlags`。
+- `enablePageCollab` 只读展示：另有部署级 `ENABLE_PAGE_COLLAB` 网关，单独开关不生效；`businessOnly` 项在自托管部署置灰；`enableTaskVerify` 这类「有 selector、无 Labs 页入口」的项单列在「内部开关」区。
+
+### 共享文件接点（上游文件，逐文件行数）
+
+| 文件                                                                             | 改动      | 说明                                                              |
+| -------------------------------------------------------------------------------- | --------- | ----------------------------------------------------------------- |
+| `apps/server/src/routers/lambda/user/profile.ts`                                 | +10/−1    | `getUserState` 覆盖 `preference.lab`，追加 `isAdmin` / `labsMode` |
+| `apps/server/src/services/agentSignal/featureGate.ts`                            | +9/−15    | 自进化 gate 改走 resolver，删掉本地判定                           |
+| `apps/server/src/services/agentSignal/services/selfIteration/review/schedule.ts` | +10/−3    | 复盘调度 gate 走 resolver                                         |
+| `apps/server/src/services/aiAgent/pipeline/runSettings.ts`                       | +3/−1     | 专家经验注入 gate                                                 |
+| `apps/server/src/services/aiAgent/pipeline/codexDeviceRuntime.ts`                | +3/−1     | hetero 能力 gate                                                  |
+| `apps/server/src/services/aiAgent/pipeline/heteroDispatch/codexCollaboration.ts` | +3/−1     | 同上                                                              |
+| `apps/server/src/services/aiAgent/runFacts.ts`                                   | +3/−0     | 给 gate 暴露 db                                                   |
+| `packages/database/src/models/agentSignal/nightlyReview.ts`                      | +12/−1    | 原始 SQL 谓词在 admin 模式接收三态参数                            |
+| `packages/types/src/user/preference.ts`                                          | +12/−0    | `UserInitializationState` 增加 `isAdmin` / `labsMode`             |
+| `src/features/Settings/labs/features.ts`                                         | +8/−1     | `ALL_LAB_FEATURES` 改为具名导出（矩阵唯一数据源）                 |
+| `src/features/Settings/features/SettingsContent.tsx`                             | +9/−0     | 直连 `/settings/labs` 回落外观页                                  |
+| `src/features/Settings/hooks/useCategory.tsx`                                    | +5/−1     | 个人设置侧栏入口隐藏                                              |
+| `src/features/WorkspaceSetting/hooks/useCategory.tsx`                            | +5/−1     | 工作区设置侧栏入口隐藏                                            |
+| `src/features/SettingsSearch/items.ts`                                           | +6/−4     | 搜索结果按可见性过滤                                              |
+| `src/features/SettingsSearch/useSettingsSearch.ts`                               | +6/−0     | 传入 `labsVisibility` 上下文                                      |
+| `src/routes/(main)/[workspaceSlug]/settings/labs/index.tsx`                      | +24/−1    | 工作区 Labs 路由拦截                                              |
+| `packages/locales/src/default/setting.ts`                                        | +60/−0    | 控制台文案（注册类追加）                                          |
+| `locales/{en-US,zh-CN}/setting.json`                                             | 各 +46/−0 | 同上                                                              |
+
+Fork 自有新增：`packages/business-server/src/labs/{resolver,index}.ts`、`packages/business-server/src/adminConsole/labs.ts`、`apps/server/src/routers/lambda/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/{index.tsx,matrix.ts,draft.ts,style.ts,visibility.ts,visibilityModel.ts}`、`src/features/AdminConsole/hooks/useAdminLabs.ts`、`src/routes/(main)/admin/labs/index.tsx`、`packages/business-server/vitest.config.mts`（含 9 个测试文件）。CUST-008 自有的 `packages/database/src/models/adminConsole.ts`（+59）、`packages/types/src/adminConsole.ts`（+38）、`src/services/adminConsole.ts`（+12）、`src/features/AdminConsole/{route.tsx,Layout/Body.tsx}`（+6 / +6−1）、`apps/server/src/routers/lambda/adminConsole/index.ts`（+2）属于在同一 fork 文件内追加，不计入上游共享接点。
+
+### 回归命令
+
+本机没有 `bun`，`bun run check` 按其组成分别执行：
+
+```bash
+pnpm exec oxlint <changed-files>                                    # lint
+cd packages/business-server && ../../node_modules/.bin/vitest run   # resolver / 读取点 / 孤儿键 / userState
+node_modules/.bin/vitest run src/features/Settings/labs src/features/AdminConsole/Labs src/features/SettingsSearch/items.test.ts
+node_modules/.bin/vitest run apps/server/src/routers/lambda/user/profile.labs.test.ts \
+  apps/server/src/services/agentSignal/__tests__/featureGate.test.ts \
+  apps/server/src/services/agentSignal/services/selfIteration/review/__test__/schedule.test.ts \
+  packages/database/src/models/agentSignal/__tests__/nightlyReview.test.ts
+node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类型检查
+```
+
+### 真实验收（2026-11-25）
+
+环境：本分支工作树的全栈 dev server（Next `http://localhost:29514` + Vite `http://localhost:23473`），测试库 Postgres 5434 / Redis 6380；身份为普通用户 `member@lobehub.com` 与管理员 `agent-testing@lobehub.com`。六项结论：
+
+1. **默认态**：删除 `config.labs` 后，member 设置侧栏有「实验室」，`/settings/labs` 正常渲染 10 个开关，切换「项目工作空间」后刷新仍为开 —— 与上游一致。
+2. **admin 模式**：管理员在 `/admin/labs` 切到「管理员统一控制」，只开「项目工作空间」「自进化」并保存后，member 侧栏无「实验室」、搜索「实验室」显示「未找到与 "实验室" 相关的设置」、直连 `/settings/labs` 落到 `/settings/appearance`。
+3. **开启项可用**：member 主页侧栏出现 `/projects` 入口（`enableProjects` 走客户端 selector）；member 个人偏好此时全为关，服务端 `user.getUserState` 仍返回 `enableProjects: true`、`enableSelfLearning: true`，证明读取覆盖 + 服务端 gate 数据源放行。
+4. **未开启项关闭**：member 个人偏好 `enableOAuthApps: true`，admin 模式下未开启该项 → 侧栏「OAuth 应用」消失、`getUserState` 返回 `enableOAuthApps: false`（不回落个人偏好）。
+5. **5 秒内生效**：保存到 member 服务端负载改变实测 **515 ms**，未重启服务、未重新登录。
+6. **回滚**：切回「每位用户」并保存后，member 的 `/settings/labs` 与个人偏好立即恢复；**上游跟随**：临时给 `ALL_LAB_FEATURES` 加假项后 `/admin/labs` 自动多一行、`catalog.test.ts` 按预期失败（拒绝无 selector 的条目），还原后恢复。
+
+验收报告：<http://192.168.14.51:3210/acceptance/424bc1bf-5389-459b-a49c-7a22f1936aa7>。
+
+### 上游合并时必须保留
+
+1. `src/features/Settings/labs/features.ts` 的 `ALL_LAB_FEATURES` 必须保持 `export` 且不被上游改回非导出；矩阵行从它派生，不要改成维护第二份列表。
+2. `UserLabSchema` 仍是 lab 注册表 —— 上游新增 / 删除 lab 时，先看 `src/features/Settings/labs/catalog.test.ts` 与 `packages/business-server/src/labs/{readPoints,orphanFlags}.test.ts` 是否报警，再决定补 catalog 还是加白名单。
+3. `user.getUserState` 的 `preference.lab` 覆盖与 `isAdmin` / `labsMode` 字段不能被上游的 state 重构吞掉；上表 4 处服务端 gate 必须仍经 `resolveEffectiveLabForPreference` / `resolveLabGate`。
+4. `config.labs` 是 **fork 自有字段**：上游若调整 `admin_console_settings.config` 或新增其他 `config.*` 消费者，用 `updateSettingsConfig({ labs })` 的局部合并写入，不要整行覆盖；本 Fork 不加迁移、不加表。
+5. `/admin/labs` 路由、控制台侧栏入口、`adminConsole.labs` 过程与乐观锁语义保留。
+6. 客户端可见性 5 处接点（两个 `useCategory`、`SettingsSearch` 两处、Labs 路由）保留；上游重构设置页结构时按新的 tab 注册点重新接一次，而不是整体回退文件。
+
+### 当前发布状态
+
+分支 `feat/admin-labs`（基于 `canary`）；真实验收已通过并发布；合入状态见本节更新与任务 T-69 评论。
 
 ## 上游合并统一流程
 
@@ -199,6 +292,7 @@
 4. 跑改动范围的 `bun run check [路径...]`；部署脚本变更跑 `bash -n scripts/deploy-custom-image.sh` 和 `python3 scripts/deploy-custom-image.test.py`。有 Docker 时再跑 `python3 scripts/deploy-custom-image.test.py --compose-check`，此命令只解析配置。
 5. 镜像按目标平台实际构建；在部署本分支的环境验证受影响入口。TFS 至少验个人身份隔离、项目 / 环境来源保存与一次实际代码初始化。单测、原型和生产 debug proxy 不能代替真实产品验收。
 6. 将合并日期、上游提交、迁移位置、检查结果及剩余限制补到相关条目。源码、脚本和镜像必须属于同一已发布版本，再用服务器脚本更新。
+7. 上游新增或删除 lab（`UserLabSchema` / Labs 页变化）时：确认 `src/features/Settings/labs/features.ts` 的 `ALL_LAB_FEATURES` 仍为具名导出并已包含新项，跑 CUST-009 的三道闸门测试（`catalog.test.ts`、`i18n.test.ts`、`labs/readPoints.test.ts`、`orphanFlags.test.ts`），再用管理员打开 `/admin/labs` 看新行是否自动出现。`admin_console_settings.config.labs` 是 Fork 自有配置：上游改动 `config` 结构或新增 `config.*` 消费者时，用 `updateSettingsConfig({ labs })` 局部合并，不要整行覆盖，也不要随上游删除该字段。
 
 ## 后续二开的登记格式
 

@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import timezonePlugin from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
+import { resolveSelfLearningGate } from '@/business/server/adminConsole/labs';
 import { AgentSignalNightlyReviewModel } from '@/database/models/agentSignal/nightlyReview';
 import type { LobeChatDatabase } from '@/database/type';
 import type { AgentSignalSourceEventInput } from '@/server/services/agentSignal/emitter';
@@ -462,13 +463,19 @@ export const createServerNightlyReviewScheduleService = (
         windowEnd,
         windowStart,
       }),
-    listEligibleUsers: (input) =>
-      model.listEligibleUsers({
+    listEligibleUsers: async (input) => {
+      // CUST-009: the admin console may own the switch deployment-wide; in
+      // that mode the SQL filter is replaced instead of reading every user row.
+      const selfLearningEnabled = await resolveSelfLearningGate(db);
+
+      return model.listEligibleUsers({
         activeSince: input?.activeSince,
         cursor: input?.cursor,
         limit: input?.limit,
         localHourWindow: input?.localHourWindow,
+        selfLearningEnabled,
         whitelist: input?.whitelist,
-      }),
+      });
+    },
   });
 };

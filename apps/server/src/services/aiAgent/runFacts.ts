@@ -29,6 +29,8 @@ export interface RunFactsSource {
  * that failed keeps failing for the turn rather than passing as an empty row.
  */
 export interface RunFacts {
+  /** The run's database, so a gate can resolve deployment-level config (CUST-009). */
+  db: LobeChatDatabase;
   /** System info of a device routed for this run; one RPC per device and scope. */
   deviceSystemInfo: (
     deviceId: string,
@@ -116,6 +118,7 @@ export const createRunFacts = ({ db, userId, workspaceId }: RunFactsSource): Run
   };
 
   return {
+    db,
     deviceSystemInfo: (deviceId, scope) =>
       readDeviceSystemInfo([deviceId, scope ?? 'personal'].join(KEY_SEPARATOR)),
     userPreference: readUserPreference,

@@ -159,6 +159,43 @@ describe('AgentSignalNightlyReviewModel', () => {
       expect(firstPage.map((user) => user.id)).toEqual(['nightly-review-microsecond-cursor']);
       expect(nextPage.map((user) => user.id)).toEqual(['nightly-review-microsecond-next']);
     });
+
+    // CUST-009: in admin-managed Labs mode the switch is deployment-wide, so the
+    // per-row `preference.lab` SQL predicate must not decide the page.
+    it('admin mode (on): selects every user regardless of their own lab preference', async () => {
+      await serverDB.insert(users).values([
+        {
+          createdAt: new Date('2026-05-01T00:00:00.000Z'),
+          id: enabledUserId,
+          preference: SELF_LEARNING_ON,
+        },
+        {
+          createdAt: new Date('2026-05-02T00:00:00.000Z'),
+          id: disabledUserId,
+          preference: { lab: { enableSelfLearning: false } },
+        },
+      ]);
+
+      const model = new AgentSignalNightlyReviewModel(serverDB);
+
+      const result = await model.listEligibleUsers({ selfLearningEnabled: true });
+
+      expect(result.map((user) => user.id)).toEqual([enabledUserId, disabledUserId]);
+    });
+
+    it('admin mode (off): selects no user even when their own switch is on', async () => {
+      await serverDB.insert(users).values([
+        {
+          createdAt: new Date('2026-05-01T00:00:00.000Z'),
+          id: enabledUserId,
+          preference: SELF_LEARNING_ON,
+        },
+      ]);
+
+      const model = new AgentSignalNightlyReviewModel(serverDB);
+
+      expect(await model.listEligibleUsers({ selfLearningEnabled: false })).toEqual([]);
+    });
   });
 
   describe('listEligibleUsers narrowing', () => {

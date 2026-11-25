@@ -1,3 +1,4 @@
+import { shouldHideLabs } from '@/features/AdminConsole/Labs/visibilityModel';
 import { LAB_FEATURES } from '@/features/Settings/labs/features';
 import { SettingsTabs } from '@/store/global/initialState';
 import type { WorkspaceSettingsTabs } from '@/types/workspaceSettings';
@@ -24,6 +25,7 @@ export interface SettingsSearchContext {
   isMobile: boolean;
   /** Whether the app is running on Windows (for Windows-only settings) */
   isWindows: boolean;
+  labsVisibility?: { isAdmin?: boolean; labsMode?: 'admin' | 'user' };
   showAiImage: boolean;
 }
 
@@ -589,10 +591,10 @@ export const SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
       labelKey: `features.${i18nKey}.title`,
       ns: 'labs',
       tab: SettingsTabs.Labs,
-      ...(desktopOnly ? { visible: (ctx: SettingsSearchContext) => ctx.isDesktop } : {}),
-      ...(workspaceOnly
-        ? { visible: (ctx: SettingsSearchContext) => ctx.enableBusinessFeatures }
-        : {}),
+      visible: (ctx) =>
+        (!desktopOnly || ctx.isDesktop) &&
+        (!workspaceOnly || ctx.enableBusinessFeatures) &&
+        !shouldHideLabs(ctx.labsVisibility ?? {}),
     }),
   ),
   // Service Model

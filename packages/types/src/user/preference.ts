@@ -465,9 +465,21 @@ export interface UserInitializationState {
   fullName?: string;
   hasConversation?: boolean;
   interests?: string[];
+  /**
+   * Whether the caller is an administrator (CUST-009). Only populated so the
+   * client can keep admin-only surfaces (the Labs settings page) visible while
+   * the deployment runs in admin-managed Labs mode.
+   */
+  isAdmin?: boolean;
   isFreePlan?: boolean;
   /** @deprecated Use onboarding field instead */
   isOnboard?: boolean;
+  /**
+   * Who owns `preference.lab` for this deployment (CUST-009). The server
+   * already applied the effective flags to `preference.lab`; this only tells
+   * the client whether the per-user Labs page is still meaningful.
+   */
+  labsMode?: 'admin' | 'user';
   lastName?: string;
   onboarding?: UserOnboarding;
   preference: UserPreference;
