@@ -13,11 +13,11 @@ import { z } from 'zod';
 
 import { describeSsoTicketMisconfiguration, getSsoTicketConfig } from './config';
 import { exchangeTicket } from './exchange';
-import { requestTicket } from './requestTicket';
 import { resolveSafeRedirect } from './redirect';
+import { requestTicket } from './requestTicket';
 import {
-  SsoTicketError,
   type SsoTicketConfig,
+  SsoTicketError,
   type SsoTicketErrorCode,
   type SsoTicketProfile,
 } from './types';
@@ -48,15 +48,36 @@ export interface SsoAccountLookup {
   user: SsoUserRecord;
 }
 
+export interface SsoAccountRow {
+  accountId?: string;
+  providerId?: string;
+}
+
+/** better-auth 1.7 起 `findUserByEmail` 返回 `{ user, accounts }`；1.6 直接返回用户。 */
+export interface SsoUserLookup {
+  accounts?: SsoAccountRow[];
+  user?: SsoUserRecord;
+}
+
 /** 只声明本插件用到的 internalAdapter 方法，避免绑定 better-auth 内部类型细节。 */
 export interface SsoTicketInternalAdapter {
   createSession: (userId: string) => Promise<unknown>;
   createUser: (user: SsoUserInput) => Promise<SsoUserRecord>;
-  findOAuthUser: (
+  findAccounts?: (userId: string) => Promise<SsoAccountRow[]>;
+  /**
+   * better-auth <= 1.6.x 才有；1.7.16 起已从 internalAdapter 移除
+   * （`@lobehub/lobehub` 在 #22217 升级到 1.7.16 后 SSO 回调即因此抛出
+   * `TypeError: findOAuthUser is not a function`）。
+   */
+  findOAuthUser?: (
     email: string,
     accountId: string,
     providerId: string,
   ) => Promise<SsoAccountLookup | null>;
+  findUserByEmail?: (
+    email: string,
+    options?: { includeAccounts?: boolean },
+  ) => Promise<SsoUserLookup | null>;
   linkAccount: (account: SsoAccountInput) => Promise<unknown>;
   updateUser: (userId: string, data: Record<string, unknown>) => Promise<SsoUserRecord>;
 }
@@ -75,7 +96,10 @@ export interface SsoTicketRuntime {
   config: SsoTicketConfig;
   exchange: (ticket: string, config: SsoTicketConfig) => Promise<SsoTicketProfile>;
   requestTicket: (token: string, config: SsoTicketConfig) => Promise<string>;
-  setSessionCookie: (ctx: unknown, payload: { session: unknown; user: SsoUserRecord }) => Promise<void>;
+  setSessionCookie: (
+    ctx: unknown,
+    payload: { session: unknown; user: SsoUserRecord },
+  ) => Promise<void>;
 }
 
 async function syncProfile(
@@ -94,6 +118,33 @@ async function syncProfile(
 }
 
 /**
+ * 按 providerId + accountId 找已绑定用户；工号变更时再按邮箱兜底。
+ *
+ * better-auth 1.7 移除了 `internalAdapter.findOAuthUser`，这里优先用它（1.6.x），
+ * 缺失时用等价的公开查询实现同样语义：邮箱取用户 → 取该用户的账号列表 → 比对绑定。
+ */
+async function findExistingSsoUser(
+  internal: SsoTicketInternalAdapter,
+  email: string,
+  accountId: string,
+  providerId: string,
+): Promise<SsoAccountLookup | null> {
+  if (typeof internal.findOAuthUser === 'function') {
+    return internal.findOAuthUser(email, accountId, providerId);
+  }
+
+  const result = await internal.findUserByEmail?.(email, { includeAccounts: true });
+  if (!result) return null;
+
+  const user = result.user ?? (result as unknown as SsoUserRecord);
+  const accounts = result.accounts ?? (await internal.findAccounts?.(user.id)) ?? [];
+  const linkedAccount =
+    accounts.find((item) => item.providerId === providerId && item.accountId === accountId) ?? null;
+
+  return { linkedAccount, user };
+}
+
+/**
  * 查用户 → 建绑定 → 建会话。
  *
  * 查找顺序：先 providerId + userId（账号绑定），再按邮箱兜底。这样工号变更后
@@ -105,7 +156,7 @@ export async function resolveSsoUser(
   config: SsoTicketConfig,
 ): Promise<{ session: unknown; user: SsoUserRecord }> {
   const email = generateSsoEmail(profile.userCode, config.emailDomain);
-  const found = await internal.findOAuthUser(email, profile.userId, config.providerId);
+  const found = await findExistingSsoUser(internal, email, profile.userId, config.providerId);
 
   let user: SsoUserRecord;
 
@@ -121,7 +172,7 @@ export async function resolveSsoUser(
       await internal.linkAccount(buildSsoAccountInput(profile, user.id, config.providerId));
     } catch (error) {
       // 并发首登兜底：另一个请求可能刚创建了同样账号，重查一次而不是直接失败。
-      const retry = await internal.findOAuthUser(email, profile.userId, config.providerId);
+      const retry = await findExistingSsoUser(internal, email, profile.userId, config.providerId);
       if (!retry) throw error;
 
       user = await syncProfile(internal, retry.user, profile);
@@ -161,19 +212,28 @@ export async function runSsoTicketCallback(
     }
 
     const profile = await runtime.exchange(ticket, runtime.config);
-    const { session, user } = await resolveSsoUser(ctx.context.internalAdapter, profile, runtime.config);
+    const { session, user } = await resolveSsoUser(
+      ctx.context.internalAdapter,
+      profile,
+      runtime.config,
+    );
 
     await runtime.setSessionCookie(ctx, { session, user });
   } catch (error) {
     failure = error instanceof SsoTicketError ? error.code : 'SSO_EXCHANGE_UNAVAILABLE';
 
-    if (
-      failure === 'SSO_CLIENT_AUTH_INVALID' ||
-      failure === 'SSO_EXCHANGE_UNAVAILABLE' ||
-      failure === 'SSO_TICKET_CREATE_UNAVAILABLE' ||
-      failure === 'SSO_TOKEN_INVALID'
-    ) {
-      ctx.context.logger.error(`[sso-ticket] callback failed: ${failure}`);
+    if (error instanceof SsoTicketError) {
+      if (
+        failure === 'SSO_CLIENT_AUTH_INVALID' ||
+        failure === 'SSO_EXCHANGE_UNAVAILABLE' ||
+        failure === 'SSO_TICKET_CREATE_UNAVAILABLE' ||
+        failure === 'SSO_TOKEN_INVALID'
+      ) {
+        ctx.context.logger.error(`[sso-ticket] callback failed: ${failure}`);
+      }
+    } else {
+      // 未预期异常必须带原始错误：否则线上只剩被抹平的错误码，无法定位真正原因。
+      ctx.context.logger.error(`[sso-ticket] callback failed: ${failure}`, error);
     }
   }
 

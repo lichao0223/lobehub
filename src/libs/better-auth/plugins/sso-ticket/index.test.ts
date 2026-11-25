@@ -46,12 +46,11 @@ const existingUser: SsoUserRecord = {
 function createAdapter() {
   return {
     createSession: vi.fn(async () => ({ token: 'session-token' })),
-    createUser: vi.fn(
-      async (data: Record<string, unknown>): Promise<SsoUserRecord> => ({ id: 'user-1', ...data }),
-    ),
-    findOAuthUser: vi.fn(
-      async (): Promise<SsoAccountLookup | null> => null,
-    ),
+    createUser: vi.fn(async (data: Record<string, unknown>): Promise<SsoUserRecord> => ({
+      id: 'user-1',
+      ...data,
+    })),
+    findOAuthUser: vi.fn(async (): Promise<SsoAccountLookup | null> => null),
     linkAccount: vi.fn(async () => ({})),
     updateUser: vi.fn(
       async (id: string, data: Record<string, unknown>): Promise<SsoUserRecord> => ({
@@ -65,7 +64,11 @@ function createAdapter() {
 function createContext(
   adapter: ReturnType<typeof createAdapter>,
   query: { redirect?: string; ticket?: string; token?: string },
-): { ctx: SsoTicketEndpointContext; redirect: ReturnType<typeof vi.fn>; logger: { error: ReturnType<typeof vi.fn> } } {
+): {
+  ctx: SsoTicketEndpointContext;
+  redirect: ReturnType<typeof vi.fn>;
+  logger: { error: ReturnType<typeof vi.fn> };
+} {
   const redirect = vi.fn((url: string) => {
     throw new RedirectSignal(url);
   });
@@ -367,5 +370,61 @@ describe('resolveSsoUser', () => {
     await expect(
       resolveSsoUser(adapter as unknown as SsoTicketInternalAdapter, profile, config),
     ).rejects.toThrow('unique constraint');
+  });
+});
+
+describe('better-auth 1.7 compatibility', () => {
+  it('falls back to findUserByEmail when findOAuthUser is gone', async () => {
+    const adapter = createAdapter();
+    delete (adapter as unknown as Record<string, unknown>).findOAuthUser;
+    const findUserByEmail = vi.fn(async () => ({
+      accounts: [{ accountId: 'dev-user-001', providerId: 'tellhow-sso' }],
+      user: existingUser,
+    }));
+    (adapter as unknown as Record<string, unknown>).findUserByEmail = findUserByEmail;
+
+    const { user } = await resolveSsoUser(
+      adapter as unknown as SsoTicketInternalAdapter,
+      profile,
+      config,
+    );
+
+    expect(user.id).toBe('user-1');
+    expect(findUserByEmail).toHaveBeenCalledWith('a123456@tellhow.com', { includeAccounts: true });
+    expect(adapter.linkAccount).not.toHaveBeenCalled();
+    expect(adapter.createSession).toHaveBeenCalledWith('user-1');
+  });
+
+  it('links the account when the fallback finds a user without a matching binding', async () => {
+    const adapter = createAdapter();
+    delete (adapter as unknown as Record<string, unknown>).findOAuthUser;
+    (adapter as unknown as Record<string, unknown>).findUserByEmail = vi.fn(async () => ({
+      accounts: [],
+      user: existingUser,
+    }));
+
+    await resolveSsoUser(adapter as unknown as SsoTicketInternalAdapter, profile, config);
+
+    expect(adapter.linkAccount).toHaveBeenCalledWith({
+      accountId: 'dev-user-001',
+      providerId: 'tellhow-sso',
+      userId: 'user-1',
+    });
+  });
+
+  it('logs the underlying error when an unexpected error escapes the callback', async () => {
+    const adapter = createAdapter();
+    adapter.findOAuthUser.mockImplementation(async () => {
+      throw new TypeError('findOAuthUser is not a function');
+    });
+    const { ctx, logger } = createContext(adapter, { ticket: 'ST-1234' });
+
+    const url = await runToRedirect(ctx, createRuntime());
+
+    expect(url).toBe('/auth-error?error=SSO_EXCHANGE_UNAVAILABLE');
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.stringContaining('SSO_EXCHANGE_UNAVAILABLE'),
+      expect.any(TypeError),
+    );
   });
 });
