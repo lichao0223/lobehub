@@ -1,12 +1,17 @@
+import { type ServiceModelTier } from '@/types/user/settings';
+
 import { type ServerConfigStore } from './store';
 
 export const featureFlagsSelectors = (s: ServerConfigStore) => s.featureFlags;
 
 const EMPTY_PROVIDERS: string[] = [];
+const EMPTY_TIERS: ServiceModelTier[] = [];
 
 export const serverConfigSelectors = {
   agentIdentityProviders: (s: ServerConfigStore) =>
     s.serverConfig.agentIdentityProviders ?? EMPTY_PROVIDERS,
+  /** Service Model tiers whose fallback model is the administrator's default (CUST-011). */
+  companyDefaultTiers: (s: ServerConfigStore) => s.serverConfig.companyDefaultTiers ?? EMPTY_TIERS,
   disableEmailPassword: (s: ServerConfigStore) => s.serverConfig.disableEmailPassword || false,
   enableArtboard: (s: ServerConfigStore) => s.featureFlags.enableArtboard === true,
   enableBusinessFeatures: (s: ServerConfigStore) => s.serverConfig.enableBusinessFeatures || false,

@@ -23,6 +23,8 @@ interface MockGlobalConfigOptions {
   companyServiceDefaults?: {
     defaultAgent?: { config: { model: string; provider: string } };
     systemAgent?: Record<string, { model: string; provider: string }>;
+    /** Tiers the resolver managed to fill; the client names those 「管理员默认」. */
+    tiers?: Record<string, { model: string; provider: string }>;
   };
   enableAgentGateway?: boolean;
   enablePageCollab?: boolean;
@@ -358,6 +360,7 @@ describe('getServerGlobalConfig', () => {
       companyServiceDefaults: {
         defaultAgent: { config: { model: 'tellhow-chat', provider: 'tellhow' } },
         systemAgent: { agentMeta: { model: 'tellhow-chat', provider: 'tellhow' } },
+        tiers: { main: { model: 'tellhow-chat', provider: 'tellhow' } },
       },
       systemAgentEnv: {
         agentMeta: { model: 'env-main', provider: 'env-provider' },
@@ -374,6 +377,8 @@ describe('getServerGlobalConfig', () => {
     expect(config.defaultAgent).toEqual({
       config: { model: 'tellhow-chat', provider: 'tellhow' },
     });
+    // Only the tier the administrator filled is reported back to the client.
+    expect(config.companyDefaultTiers).toEqual(['main']);
   });
 
   it('should keep the deployment env when the administrator configured nothing', async () => {
@@ -385,6 +390,8 @@ describe('getServerGlobalConfig', () => {
       model: 'env-main',
       provider: 'env-provider',
     });
+    // No administrator tier: the personal page keeps saying 「系统推荐」.
+    expect(config.companyDefaultTiers).toEqual([]);
   });
 
   it('should omit the OIDC issuer when APP_URL is not configured', async () => {

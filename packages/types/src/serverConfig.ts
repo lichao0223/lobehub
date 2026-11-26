@@ -3,6 +3,7 @@ import type { PartialDeep } from 'type-fest';
 
 import type {
   GlobalLLMProviderKey,
+  ServiceModelTier,
   UserDefaultAgent,
   UserImageConfig,
   UserServiceModelConfig,
@@ -199,6 +200,13 @@ export interface GlobalServerConfig {
    */
   agentIdentityProviders?: string[];
   aiProvider: ServerLanguageModel;
+  /**
+   * CUST-011: the Service Model tiers whose default model the administrator set
+   * in the console. The personal page names the fallback 「管理员默认」 only for
+   * these tiers; a tier the administrator left unset keeps the deployment's
+   * `SYSTEM_AGENT` / code default and keeps reading as a system recommendation.
+   */
+  companyDefaultTiers?: ServiceModelTier[];
   defaultAgent?: PartialDeep<UserDefaultAgent>;
   /** Whether the server has DEVICE_GATEWAY_URL configured, independent of its public URL. */
   deviceGatewayConfigured?: boolean;

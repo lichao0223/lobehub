@@ -1,5 +1,6 @@
 import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
 import { parseToolNameMaxLength } from '@lobechat/const/plugin';
+import { type ServiceModelTier } from '@lobechat/types';
 import { ModelProvider } from 'model-bank';
 import urlJoin from 'url-join';
 
@@ -191,6 +192,9 @@ export const getServerGlobalConfig = async () => {
     aiProvider: await withCompanyProviderCatalog(
       await genServerAiProvidersConfig(getAiProviderSpecificConfig()),
     ),
+    // CUST-011: tell the personal page which tiers the administrator actually
+    // set, so it names the fallback 「管理员默认」 only where that is true.
+    companyDefaultTiers: Object.keys(companyDefaults.tiers) as ServiceModelTier[],
     defaultAgent: {
       config: {
         ...parseAgentConfig(DEFAULT_AGENT_CONFIG),

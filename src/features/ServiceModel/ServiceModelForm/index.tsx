@@ -106,6 +106,9 @@ interface ServiceModelFormProps {
 const ServiceModelForm = ({ scope = 'personal' }: ServiceModelFormProps) => {
   const { t } = useTranslation('setting');
   const enableChannels = useServerConfigStore(serverConfigSelectors.enableChannels);
+  // CUST-011: tiers the administrator set a default for. Their fallback is that
+  // default, so the picker names it 「管理员默认」 instead of 「系统推荐」.
+  const adminDefaultTiers = useServerConfigStore(serverConfigSelectors.companyDefaultTiers);
   const { allowed: canManage, reason } = usePermission('manage_settings');
   const [storedSystemAgent, storedDefaultAgent, defaults, defaultAgentDefaults] = useUserStore(
     (s) => [
@@ -219,8 +222,22 @@ const ServiceModelForm = ({ scope = 'personal' }: ServiceModelFormProps) => {
     write(section, columns);
   };
 
+  /** What a tier runs when the user has not picked a model for it. */
+  const tierDefaultLabel = (tier: ServiceModelTier) =>
+    adminDefaultTiers.includes(tier)
+      ? t('serviceModel.adminDefault')
+      : t('serviceModel.systemRecommended');
+
+  // A deployment whose administrator set no default has nothing to explain;
+  // the page then keeps the plain 「系统推荐」 wording everywhere.
+  const hasAdminDefaults = adminDefaultTiers.length > 0;
+
   const followLabelOf = (row: RowKey) => {
-    if (row === DEFAULT_AGENT_ROW || row === ASR_ROW) return t('serviceModel.systemRecommended');
+    // 新建助理 follows the main tier but lives in `defaultAgent`, so it names
+    // that tier's source itself instead of showing a tier title.
+    if (row === DEFAULT_AGENT_ROW) return tierDefaultLabel('main');
+    // Voice and channel routing have no administrator default: no tier feeds them.
+    if (row === ASR_ROW) return t('serviceModel.systemRecommended');
     const tier = TIERS.find(({ key }) => SERVICE_MODEL_TIER_SLOTS[key].includes(row));
     return tier ? t(`serviceModel.tier.${tier.key}.title`) : t('serviceModel.systemRecommended');
   };
@@ -412,6 +429,7 @@ const ServiceModelForm = ({ scope = 'personal' }: ServiceModelFormProps) => {
             <Form.Field label={t('serviceModel.tierPicker')}>
               <TierRow
                 disabled={!canManage}
+                followLabel={tierDefaultLabel(key)}
                 modelKind={modelKind}
                 recommended={resolveFollowModel({}, defaults, SERVICE_MODEL_TIER_SLOTS[key][0])!}
                 title={title}
@@ -427,7 +445,15 @@ const ServiceModelForm = ({ scope = 'personal' }: ServiceModelFormProps) => {
           </>
         ),
         collapsible: false,
-        desc: withReason(t(`serviceModel.tier.${key}.desc`)),
+        desc: withReason(
+          [
+            t(`serviceModel.tier.${key}.desc`),
+            // Where an unset tier comes from, and that a pick outranks it.
+            hasAdminDefaults && t('serviceModel.adminDefaultNote'),
+          ]
+            .filter(Boolean)
+            .join(t('serviceModel.tierDescSeparator')),
+        ),
         extra: saveHint(key),
         title: (
           <SettingsSearchAnchor

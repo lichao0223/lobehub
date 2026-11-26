@@ -403,6 +403,7 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 - **后台任务**：标题生成 / 记忆抽取 / 任务验收等无标签页的调用走同一顺序。现状偏差要一并修正：`apps/server/src/services/systemAgent/modelConfig.ts` 的 `resolveSystemAgentModelConfig` 连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
 - **不可用模型回退**：`enabled !== true` / 缺 `baseURL` / 缺密钥 → 整块默认值视为未配置；某项模型 `open === false` 或带 `removedAt` → 该项视为未配置；两种情况都回退下一级，不产生指向不可用模型的默认值。管理端校验仍只要求 id 在目录里（允许「先选默认值、后开放模型」），UI 需提示「默认值暂不生效」。
 - **provider**：默认值的模型 id 属于 Tellhow 目录，provider 固定 `tellhow`；不提供「默认值指向其他厂商」的能力。
+- **用户侧呈现**：`serverConfig.companyDefaultTiers` 只列出管理员真的设过的档位；个人设置 → 模型只在这些档位把兜底项写成「管理员默认」（否则仍是「系统推荐」）。部署里只要有任意一个管理员默认档，四档标题下就补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」；一个都没有（纯上游部署）时不显示这句话。管理端四个默认值与个人四档同名同序（主模型 / Flash 模型 / 验收模型 / 记忆向量化模型），不再说「只影响新用户」；验收模型下拉按 `capabilities.includes('vision')` 过滤，已存的不合规值仍留在下拉里标为「不可用」并给出提示，不静默保存。
 - **备选口径（本次不实施，待用户确认可切换）**：强制覆盖所有用户自选（含 pin 与档位选择）。启用时的建议形态是 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` 即本次口径），`force` 也只做解析覆盖、不改用户行，否则切回 `follow` 时用户原选择已丢失。
 
 ### 维护位置
@@ -413,7 +414,7 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 | 写入与校验         | `packages/business-server/src/adminConsole/modelService.ts`（`validateDefaults` / `toConfigView`，P2-2 已交付）                                           |
 | 读取与缓存         | `packages/business-server/src/companyProvider.ts`（`CompanyProviderRuntime.defaults`，5 s 缓存 + `invalidateCompanyProviderCache()`）                     |
 | 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx`、`locales/{en-US,zh-CN}/adminConsole.json` 的 `modelService.defaults.*`                         |
-| 解析消费（实现中） | `serverConfig` 注入（`apps/server/src/globalConfig/index.ts`）与后台任务读取点，统一解析函数放在 `packages/business-server`                               |
+| 解析消费（实现中） | `serverConfig` 注入（`apps/server/src/globalConfig/index.ts`，含 `companyDefaultTiers` 来源标记）与后台任务读取点，统一解析函数放在 `packages/business-server`                                   |
 | 用户侧跟随链路     | `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`；`src/store/user/slices/settings/selectors/settings.ts` 的 `currentSettings`   |
 
 ### 与 CUST-008 §7 的关系
@@ -432,11 +433,11 @@ CUST-008（管理员控制台）负责「配置能不能写、密钥怎么存、
 4. 写盘侧 diff 基准仍是 `defaultSettings`；「选回跟随」依赖 `replaceServiceModelSettings` 删除槽位键，上游若改成合并写，要补一条删键路径。
 5. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）必须走统一解析函数，不能被上游改成各写一份默认值。
 6. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并在保存配置后失效。
-7. 管理端默认值文案 `modelService.defaults.*` 与语义同步（现有「只影响新用户的初始选择」需要改写），en-US 源文案写 `packages/locales/src/default/`，zh-CN 手写。
+7. 管理端默认值文案 `modelService.defaults.*` 与语义同步；en-US 源文案写 `packages/locales/src/default/`，zh-CN 手写。个人页「管理员默认」的来源标记依赖 `serverConfig.companyDefaultTiers`（`packages/types/src/serverConfig.ts` 的可选字段），上游改 `GlobalServerConfig` 或 `SERVICE_MODEL_TIER_SLOTS` 时不要丢；验收模型的视觉过滤只看 `capabilities.includes('vision')`，目录同步若换了能力字段名要同步改 `acceptsDefaultModel`。
 
 ### 当前发布状态
 
-文档先行（2026-11-26，分支 `feat/admin-model-defaults`）：语义已定稿并登记。代码实现与真实验收在 T-90 ~ T-94（注入 `serverConfig`、后台任务兜底、新用户默认只开 TellhowAI、个人页与文案对齐、存量 / 新注册 / SSO 验收），**尚未合入 canary、未发布验收报告**。
+文档先行（2026-11-26，分支 `feat/admin-model-defaults`）：语义已定稿并登记。代码实现与真实验收在 T-90 ~ T-94：T-90（`serverConfig` 注入）与 T-93（个人页 / 管理端文案与来源标记）已提交到 `feat/admin-model-defaults`，后台任务兜底（T-91）、新用户默认只开 TellhowAI（T-92）、存量 / 新注册 / SSO 真实验收（T-94）仍在进行，**尚未合入 canary、未发布验收报告**。
 
 ## 上游合并统一流程
 
@@ -465,6 +466,8 @@ CUST-008（管理员控制台）负责「配置能不能写、密钥怎么存、
 - 本轮部署自动重跑（2026-11-17）：`python3 scripts/deploy-custom-image.test.py` 24 项通过（登记先于结算、只登记运行中会话、跳过 `waiting_for_human` 陈留、写入失败不阻塞结算、`RESUME_AFTER_DEPLOY=0` 不登记、dry-run 不登记、`RETURNING` 计数不被 psql 命令标签污染）；`pnpm exec vitest run apps/server/src/services/deployResume/index.test.ts` 19 项通过；`pnpm exec oxlint` 覆盖改动文件 0 warning / 0 error；`pnpm exec tsrs --noEmit -p tsconfig.type-check.json` 退出码 0；`bash -n scripts/deploy-custom-image.sh` 通过。本机没有 `bun`，`bun run check` 按其组成（lint + 相关测试 + 全仓类型检查）分别执行。迁移 `9000` 与 `queue_resumes()` 的真实 SQL 已在 `lobe-postgres` 的临时库 `deploy_resume_probe` 上跑通：建表建索引、3 行登记（2 任务 + 1 对话）、二次部署就地重新武装（总行数仍为 3）、`RESUME_AFTER_DEPLOY=0` 写 0 行、按 id 的 `claim` 只有一方成功、`listPending` 命中 `(status, created_at)` 索引。
 
 - 同批修正一个既有类型错误：`apps/server/src/services/tfs/git.ts` 读取 `getUserSettings()` 返回的 `market` jsonb 时被推断为 `{}`，导致全仓 `type-check` 失败；按 `MarketAuthTokens` 收窄后再读 `accessToken`。与部署自动重跑无关，仅因阻塞类型检查门禁一并修复。
+
+- T-93（个人模型页与管理员默认值对齐）：改动文件 `bun run check --lint --test` 通过（9 个文件 lint clean，33 项测试通过，含新增 `ModelService/utils.test.ts` 与 `getServerGlobalConfig.test.ts` 的 `companyDefaultTiers` 用例）。全仓 `tsrs -p tsconfig.type-check.json` 在本工作树不可用：`node_modules` 软链到主工作树，`@lobechat/*` 解析到 `lobehub/packages`，报 305 条跨树重复类型错误（`../lobehub/apps/desktop`、`LlmStepTimeout` / `maxOutput` 等），主工作树 `76d16fc3` 同命令 0 错误。按目录定向检查（`AdminConsole/ModelService`、`ServiceModel/ServiceModelForm`、`store/serverConfig`）除缺失的 CSS / vite 环境声明外无错误，改动文件均无报错。
 
 - 尚未执行：真实造一次中断（更新时正在跑的任务 / 对话）后由新容器启动自动重跑的端到端验收、Docker 镜像构建、目标服务器升级。线上容器镜像早于本次改动，单纯重启只会跑旧代码；真实验收要先构建并推送镜像再走一次更新。库表与脚本 SQL 已在真实 PostgreSQL 上验证，但这不等于产品级恢复验收。
 
