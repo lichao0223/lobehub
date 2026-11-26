@@ -45,7 +45,7 @@ const ConnectionCard = memo<ConnectionCardProps>(
     onApiKeyChange,
     onTest,
   }) => {
-    const { t } = useTranslation('setting');
+    const { t } = useTranslation('adminConsole');
 
     const result = testResult ?? lastTest;
     const canTest = Boolean(baseURL.trim()) && Boolean(keySummary);
@@ -55,7 +55,7 @@ const ConnectionCard = memo<ConnectionCardProps>(
           result.latencyMs === undefined ? undefined : `${result.latencyMs}ms`,
           result.modelCount === undefined
             ? undefined
-            : t('adminConsole.modelService.connection.modelCount', { count: result.modelCount }),
+            : t('modelService.connection.modelCount', { count: result.modelCount }),
           formatDateTime(lastTest?.at),
         ]
           .filter(Boolean)
@@ -66,28 +66,28 @@ const ConnectionCard = memo<ConnectionCardProps>(
       <div {...sx(styles.card)}>
         <div {...sx(styles.cardHeader)}>
           <div {...sx(styles.cardHeaderText)}>
-            <span {...sx(styles.cardTitle)}>{t('adminConsole.modelService.connection.title')}</span>
+            <span {...sx(styles.cardTitle)}>{t('modelService.connection.title')}</span>
             <Text fontSize={12} lineHeight={1.6} type={'secondary'}>
-              {t('adminConsole.modelService.connection.desc')}
+              {t('modelService.connection.desc')}
             </Text>
           </div>
-          <Tag size={'small'}>{t('adminConsole.modelService.connection.gatewayTag')}</Tag>
+          <Tag size={'small'}>{t('modelService.connection.gatewayTag')}</Tag>
         </div>
 
         <div>
           <FieldRow
-            description={t('adminConsole.modelService.connection.enabledDesc')}
-            label={t('adminConsole.modelService.connection.enabled')}
+            description={t('modelService.connection.enabledDesc')}
+            label={t('modelService.connection.enabled')}
           >
             <Switch checked={enabled} onChange={onEnabledChange} />
           </FieldRow>
 
           <FieldRow
-            description={t('adminConsole.modelService.connection.baseURLDesc')}
-            label={t('adminConsole.modelService.connection.baseURL')}
+            description={t('modelService.connection.baseURLDesc')}
+            label={t('modelService.connection.baseURL')}
           >
             <Input
-              placeholder={t('adminConsole.modelService.connection.baseURLPlaceholder')}
+              placeholder={t('modelService.connection.baseURLPlaceholder')}
               style={{ width: '100%' }}
               value={baseURL}
               onChange={(event) => onBaseURLChange(event.target.value)}
@@ -95,8 +95,8 @@ const ConnectionCard = memo<ConnectionCardProps>(
           </FieldRow>
 
           <FieldRow
-            description={t('adminConsole.modelService.connection.apiKeyDesc')}
-            label={t('adminConsole.modelService.connection.apiKey')}
+            description={t('modelService.connection.apiKeyDesc')}
+            label={t('modelService.connection.apiKey')}
           >
             <Flexbox gap={4} width={'100%'}>
               <Input
@@ -107,25 +107,25 @@ const ConnectionCard = memo<ConnectionCardProps>(
                 placeholder={
                   keySummary
                     ? `••••${keySummary.last4}`
-                    : t('adminConsole.modelService.connection.apiKeyPlaceholder')
+                    : t('modelService.connection.apiKeyPlaceholder')
                 }
                 onChange={(event) => onApiKeyChange(event.target.value)}
               />
               <span {...sx(styles.keyMeta)}>
                 {keySummary
-                  ? t('adminConsole.modelService.connection.keyMeta', {
+                  ? t('modelService.connection.keyMeta', {
                       last4: keySummary.last4,
                       time: formatDateTime(keySummary.updatedAt),
                     })
-                  : t('adminConsole.modelService.connection.keyNotSet')}
+                  : t('modelService.connection.keyNotSet')}
               </span>
             </Flexbox>
           </FieldRow>
 
           <FieldRow
             last
-            description={t('adminConsole.modelService.connection.testDesc')}
-            label={t('adminConsole.modelService.connection.lastTest')}
+            description={t('modelService.connection.testDesc')}
+            label={t('modelService.connection.lastTest')}
           >
             <Flexbox align={'flex-end'} gap={4} style={{ minWidth: 0 }}>
               <Flexbox horizontal align={'center'} gap={8} wrap={'wrap'}>
@@ -133,31 +133,25 @@ const ConnectionCard = memo<ConnectionCardProps>(
                   {result
                     ? t(
                         result.ok
-                          ? 'adminConsole.modelService.connection.testOk'
-                          : 'adminConsole.modelService.connection.testFailed',
+                          ? 'modelService.connection.testOk'
+                          : 'modelService.connection.testFailed',
                       )
-                    : t('adminConsole.modelService.connection.neverTested')}
+                    : t('modelService.connection.neverTested')}
                 </Tag>
                 <Button disabled={!canTest} loading={testing} size={'small'} onClick={onTest}>
-                  {t(
-                    testing
-                      ? 'adminConsole.modelService.connection.testing'
-                      : 'adminConsole.modelService.connection.test',
-                  )}
+                  {t(testing ? 'modelService.connection.testing' : 'modelService.connection.test')}
                 </Button>
               </Flexbox>
               {meta && <span {...sx(styles.meta)}>{meta}</span>}
               {result && !result.ok && result.errorCode && (
                 <span {...sx(styles.meta)}>
-                  {t('adminConsole.modelService.connection.errorCode', {
+                  {t('modelService.connection.errorCode', {
                     code: result.errorCode,
                   })}
                 </span>
               )}
               {!canTest && (
-                <span {...sx(styles.meta)}>
-                  {t('adminConsole.modelService.connection.testNeedsConfig')}
-                </span>
+                <span {...sx(styles.meta)}>{t('modelService.connection.testNeedsConfig')}</span>
               )}
             </Flexbox>
           </FieldRow>

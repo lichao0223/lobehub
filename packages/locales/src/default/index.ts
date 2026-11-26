@@ -1,3 +1,4 @@
+import adminConsole from './adminConsole';
 import agent from './agent';
 import agentGroup from './agentGroup';
 import auth from './auth';
@@ -58,6 +59,7 @@ import video from './video';
 import welcome from './welcome';
 
 const resources = {
+  adminConsole,
   agent,
   agentGroup,
   auth,

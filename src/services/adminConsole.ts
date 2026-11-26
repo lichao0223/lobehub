@@ -5,6 +5,10 @@ import type {
   AdminConsoleLabsConfigUpdate,
   AdminConsoleLabsConfigView,
   AdminConsoleModelServiceConfig,
+  AdminDeviceDetail,
+  AdminDeviceListParams,
+  AdminDeviceListResult,
+  AdminDeviceStats,
   AdminRole,
   AdminUserDetail,
   AdminUserListParams,
@@ -64,6 +68,25 @@ class AdminConsoleService {
     input: AdminConsoleLabsConfigUpdate,
   ): Promise<AdminConsoleLabsConfigView> =>
     lambdaClient.adminConsole.updateLabsConfig.mutate(input);
+
+  // ── Device overview (CUST-010) ────────────────────────────────────────────
+  // Read-only: presence is resolved server-side per page, so `online` filters
+  // after the SQL page and a page can come back shorter than `pageSize`.
+
+  listDevices = async (params: AdminDeviceListParams = {}): Promise<AdminDeviceListResult> =>
+    lambdaClient.adminConsole.listDevices.query(params);
+
+  /** Read-only projection; filesystem paths are absent from the type by design. */
+  getDevice = async (input: {
+    deviceId: string;
+    /** Owner of a personal row; ignored for workspace rows. */
+    ownerId?: string | null;
+    workspaceId?: string | null;
+  }): Promise<AdminDeviceDetail> => lambdaClient.adminConsole.getDevice.query(input);
+
+  /** Header counters, independent of the current filter; no gateway call. */
+  getDeviceStats = async (): Promise<AdminDeviceStats> =>
+    lambdaClient.adminConsole.getDeviceStats.query();
 }
 
 export const adminConsoleService = new AdminConsoleService();

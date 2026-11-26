@@ -245,6 +245,78 @@ describe('DeviceGateway', () => {
     });
   });
 
+  /**
+   * `queryDeviceList` answers `[]` both for "nobody is online" and for "the
+   * gateway did not answer". Callers that render presence to a human (the admin
+   * device overview) must not fold the second into the first, so they read
+   * through `readDeviceList`, which keeps the failure visible.
+   */
+  describe('readDeviceList', () => {
+    it('reports a missing configuration as a failure, not an empty pool', async () => {
+      const result = await new DeviceGateway().readDeviceList('user-1');
+
+      expect(result).toEqual({ ok: false, reason: 'GATEWAY_NOT_CONFIGURED' });
+      expect(mockClient.queryDeviceList).not.toHaveBeenCalled();
+    });
+
+    it('returns the mapped pool on success', async () => {
+      mockEnv.DEVICE_GATEWAY_URL = 'https://gateway.example.com';
+      mockEnv.DEVICE_GATEWAY_SERVICE_TOKEN = 'token';
+      const connectedAt = Date.parse('2025-01-15T10:30:00Z');
+      mockClient.queryDeviceList.mockResolvedValue([
+        { connectedAt, deviceId: 'dev-1', hostname: 'my-laptop', platform: 'darwin' },
+      ]);
+
+      const result = await new DeviceGateway().readDeviceList('user-1');
+
+      expect(result).toEqual({
+        devices: [
+          {
+            channels: [],
+            deviceId: 'dev-1',
+            hostname: 'my-laptop',
+            lastSeen: new Date(connectedAt).toISOString(),
+            online: true,
+            platform: 'darwin',
+          },
+        ],
+        ok: true,
+      });
+    });
+
+    it('absorbs a transient failure', async () => {
+      mockEnv.DEVICE_GATEWAY_URL = 'https://gateway.example.com';
+      mockEnv.DEVICE_GATEWAY_SERVICE_TOKEN = 'token';
+      const connectedAt = Date.parse('2025-01-15T10:30:00Z');
+      mockClient.queryDeviceList
+        .mockRejectedValueOnce(new Error('fetch failed'))
+        .mockResolvedValueOnce([
+          { connectedAt, deviceId: 'dev-1', hostname: 'my-laptop', platform: 'darwin' },
+        ]);
+
+      const result = await new DeviceGateway().readDeviceList('user-1');
+
+      expect(mockClient.queryDeviceList).toHaveBeenCalledTimes(2);
+      expect(result).toMatchObject({ ok: true });
+    });
+
+    it('says why the pool is unreadable instead of answering an empty list', async () => {
+      mockEnv.DEVICE_GATEWAY_URL = 'https://gateway.example.com';
+      mockEnv.DEVICE_GATEWAY_SERVICE_TOKEN = 'token';
+      mockClient.queryDeviceList.mockRejectedValue(new Error('fetch failed'));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(function () {});
+
+      const result = await new DeviceGateway().readDeviceList('user-1', 'ws-1');
+
+      expect(result).toEqual({ ok: false, reason: expect.any(String) });
+      expect(mockClient.queryDeviceList).toHaveBeenCalledTimes(2);
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('readDeviceList'),
+        expect.objectContaining({ error: 'fetch failed', userId: 'user-1', workspaceId: 'ws-1' }),
+      );
+    });
+  });
+
   describe('queryDeviceSystemInfo', () => {
     it('should return undefined when not configured', async () => {
       const proxy = new DeviceGateway();

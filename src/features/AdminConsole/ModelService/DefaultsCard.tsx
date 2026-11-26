@@ -26,7 +26,7 @@ const PURPOSE_TYPES: Record<DefaultKey, Array<CompanyModel['type']>> = {
 };
 
 const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
 
   const optionsFor = useMemo(
     () => (key: DefaultKey) => {
@@ -37,7 +37,7 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
 
       return [
         {
-          label: t('adminConsole.modelService.defaults.inherit'),
+          label: t('modelService.defaults.inherit'),
           value: '',
         },
         ...rows.map((model) => ({
@@ -57,24 +57,24 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
   };
   const rows = [
     {
-      descriptionKey: 'adminConsole.modelService.defaults.chatDesc',
+      descriptionKey: 'modelService.defaults.chatDesc',
       key: 'chat',
-      labelKey: 'adminConsole.modelService.defaults.chat',
+      labelKey: 'modelService.defaults.chat',
     },
     {
-      descriptionKey: 'adminConsole.modelService.defaults.embeddingDesc',
+      descriptionKey: 'modelService.defaults.embeddingDesc',
       key: 'embedding',
-      labelKey: 'adminConsole.modelService.defaults.embedding',
+      labelKey: 'modelService.defaults.embedding',
     },
     {
-      descriptionKey: 'adminConsole.modelService.defaults.titleDesc',
+      descriptionKey: 'modelService.defaults.titleDesc',
       key: 'title',
-      labelKey: 'adminConsole.modelService.defaults.title',
+      labelKey: 'modelService.defaults.title',
     },
     {
-      descriptionKey: 'adminConsole.modelService.defaults.verifyDesc',
+      descriptionKey: 'modelService.defaults.verifyDesc',
       key: 'verify',
-      labelKey: 'adminConsole.modelService.defaults.verify',
+      labelKey: 'modelService.defaults.verify',
     },
   ] as const;
 
@@ -82,14 +82,12 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
     <div {...sx(styles.card)}>
       <div {...sx(styles.cardHeader)}>
         <div {...sx(styles.cardHeaderText)}>
-          <span {...sx(styles.cardTitle)}>
-            {t('adminConsole.modelService.defaults.sectionTitle')}
-          </span>
+          <span {...sx(styles.cardTitle)}>{t('modelService.defaults.sectionTitle')}</span>
           <Text fontSize={12} lineHeight={1.6} type={'secondary'}>
-            {t('adminConsole.modelService.defaults.desc')}
+            {t('modelService.defaults.desc')}
           </Text>
         </div>
-        <Tag size={'small'}>{t('adminConsole.modelService.defaults.optional')}</Tag>
+        <Tag size={'small'}>{t('modelService.defaults.optional')}</Tag>
       </div>
 
       <div>

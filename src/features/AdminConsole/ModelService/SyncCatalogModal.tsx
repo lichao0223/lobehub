@@ -34,7 +34,7 @@ interface SyncDiffContentProps {
 }
 
 const DiffRow = ({ model }: { model: CompanyModel }) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
 
   return (
     <div {...sx(styles.diffRow)}>
@@ -49,12 +49,12 @@ const DiffRow = ({ model }: { model: CompanyModel }) => {
         )}
         {model.pending && (
           <Tag color={'warning'} size={'small'}>
-            {t('adminConsole.modelService.catalog.pending')}
+            {t('modelService.catalog.pending')}
           </Tag>
         )}
         {model.removedAt && (
           <Tag color={'error'} size={'small'}>
-            {t('adminConsole.modelService.catalog.removed')}
+            {t('modelService.catalog.removed')}
           </Tag>
         )}
       </Flexbox>
@@ -77,14 +77,14 @@ const DiffGroup = ({ models, title }: { models: CompanyModel[]; title: string })
   );
 
 const CountTags = ({ diff }: { diff: AdminConsoleCatalogDiff }) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
 
   const entries: Array<{ key: keyof AdminConsoleCatalogDiff; label: string; tone?: string }> = [
-    { key: 'added', label: t('adminConsole.modelService.sync.added'), tone: 'success' },
-    { key: 'removed', label: t('adminConsole.modelService.sync.removed'), tone: 'error' },
-    { key: 'restored', label: t('adminConsole.modelService.sync.restored') },
-    { key: 'updated', label: t('adminConsole.modelService.sync.updated') },
-    { key: 'unchanged', label: t('adminConsole.modelService.sync.unchanged') },
+    { key: 'added', label: t('modelService.sync.added'), tone: 'success' },
+    { key: 'removed', label: t('modelService.sync.removed'), tone: 'error' },
+    { key: 'restored', label: t('modelService.sync.restored') },
+    { key: 'updated', label: t('modelService.sync.updated') },
+    { key: 'unchanged', label: t('modelService.sync.unchanged') },
   ];
 
   return (
@@ -99,7 +99,7 @@ const CountTags = ({ diff }: { diff: AdminConsoleCatalogDiff }) => {
 };
 
 const SyncDiffContent = ({ expectedUpdatedAt, onApplied }: SyncDiffContentProps) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const { close } = useModalContext();
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState<string>();
@@ -120,7 +120,7 @@ const SyncDiffContent = ({ expectedUpdatedAt, onApplied }: SyncDiffContentProps)
         expectedUpdatedAt,
       });
       toast.success(
-        t('adminConsole.modelService.sync.applied', {
+        t('modelService.sync.applied', {
           added: result.diff.added.length,
           removed: result.diff.removed.length,
         }),
@@ -154,16 +154,16 @@ const SyncDiffContent = ({ expectedUpdatedAt, onApplied }: SyncDiffContentProps)
         <Flexbox gap={12} paddingBlock={8}>
           <Text>
             {needsConfig
-              ? t('adminConsole.modelService.sync.needsConfig')
-              : t('adminConsole.modelService.sync.failed', { code: errorCode })}
+              ? t('modelService.sync.needsConfig')
+              : t('modelService.sync.failed', { code: errorCode })}
           </Text>
         </Flexbox>
         <ModalFooter>
           <Button type={'fill'} onClick={close}>
-            {t('adminConsole.modelService.action.close')}
+            {t('modelService.action.close')}
           </Button>
           <Button type={'text'} onClick={retry}>
-            {t('adminConsole.modelService.action.retry')}
+            {t('modelService.action.retry')}
           </Button>
         </ModalFooter>
       </>
@@ -180,7 +180,7 @@ const SyncDiffContent = ({ expectedUpdatedAt, onApplied }: SyncDiffContentProps)
     <>
       <Flexbox gap={12} paddingBlock={8}>
         <Text fontSize={12} type={'secondary'}>
-          {t('adminConsole.modelService.sync.desc', {
+          {t('modelService.sync.desc', {
             count: data?.upstreamModelCount ?? 0,
           })}
         </Text>
@@ -188,32 +188,29 @@ const SyncDiffContent = ({ expectedUpdatedAt, onApplied }: SyncDiffContentProps)
 
         {changed ? (
           <Flexbox gap={4}>
-            <DiffGroup models={diff.added} title={t('adminConsole.modelService.sync.added')} />
-            <DiffGroup
-              models={diff.restored}
-              title={t('adminConsole.modelService.sync.restored')}
-            />
-            <DiffGroup models={diff.removed} title={t('adminConsole.modelService.sync.removed')} />
-            <DiffGroup models={diff.updated} title={t('adminConsole.modelService.sync.updated')} />
+            <DiffGroup models={diff.added} title={t('modelService.sync.added')} />
+            <DiffGroup models={diff.restored} title={t('modelService.sync.restored')} />
+            <DiffGroup models={diff.removed} title={t('modelService.sync.removed')} />
+            <DiffGroup models={diff.updated} title={t('modelService.sync.updated')} />
           </Flexbox>
         ) : (
-          <Text type={'secondary'}>{t('adminConsole.modelService.sync.noChanges')}</Text>
+          <Text type={'secondary'}>{t('modelService.sync.noChanges')}</Text>
         )}
 
         {diff.needsReview.length > 0 && (
           <Text fontSize={12} type={'secondary'}>
-            {t('adminConsole.modelService.sync.needsReview', { count: diff.needsReview.length })}
+            {t('modelService.sync.needsReview', { count: diff.needsReview.length })}
           </Text>
         )}
 
         <Text fontSize={12} type={'secondary'}>
-          {t('adminConsole.modelService.sync.applyHint')}
+          {t('modelService.sync.applyHint')}
         </Text>
       </Flexbox>
 
       <ModalFooter>
         <Button type={'fill'} onClick={close}>
-          {t('adminConsole.modelService.action.close')}
+          {t('modelService.action.close')}
         </Button>
         <Button
           disabled={!changed}
@@ -223,7 +220,7 @@ const SyncDiffContent = ({ expectedUpdatedAt, onApplied }: SyncDiffContentProps)
             void apply();
           }}
         >
-          {t('adminConsole.modelService.sync.apply')}
+          {t('modelService.sync.apply')}
         </Button>
       </ModalFooter>
     </>

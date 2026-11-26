@@ -7,6 +7,11 @@ const userManagementElement = dynamicElement(
   'Desktop > Admin > Users',
 );
 
+const devicesElement = dynamicElement(
+  () => import('@/routes/(main)/admin/devices'),
+  'Desktop > Admin > Devices',
+);
+
 const modelServiceElement = dynamicElement(
   () => import('@/routes/(main)/admin/model-service'),
   'Desktop > Admin > Model service',
@@ -29,6 +34,7 @@ export const adminConsoleRoute: RouteObject = {
   children: [
     { element: userManagementElement, index: true },
     { element: userManagementElement, path: 'users' },
+    { element: devicesElement, path: 'devices' },
     { element: modelServiceElement, path: 'model-service' },
     { element: labsElement, path: 'labs' },
   ],

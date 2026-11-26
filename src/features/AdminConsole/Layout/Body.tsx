@@ -1,7 +1,7 @@
 'use client';
 
 import { Flexbox } from '@lobehub/ui';
-import { FlaskConical, Server, Users } from 'lucide-react';
+import { FlaskConical, MonitorSmartphone, Server, Users } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -11,33 +11,34 @@ import SectionTitle from '@/features/NavPanel/components/SectionTitle';
 import { useActiveLocation } from '@/hooks/useActiveLocation';
 
 const USERS_PATH = '/admin';
+const DEVICES_PATH = '/admin/devices';
 const MODEL_SERVICE_PATH = '/admin/model-service';
 const LABS_PATH = '/admin/labs';
 
 const Body = memo(() => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const { pathname } = useActiveLocation();
 
   const usersActive = pathname === USERS_PATH || pathname.startsWith(`${USERS_PATH}/users`);
+  const devicesActive = pathname.startsWith(DEVICES_PATH);
   const modelServiceActive = pathname.startsWith(MODEL_SERVICE_PATH);
   const labsActive = pathname.startsWith(LABS_PATH);
 
   return (
     <Flexbox gap={4} paddingInline={4}>
       <Flexbox gap={1} paddingBlock={1}>
-        <SectionTitle>{t('adminConsole.group.management')}</SectionTitle>
+        <SectionTitle>{t('group.management')}</SectionTitle>
         <Link to={USERS_PATH}>
-          <NavItem active={usersActive} icon={Users} title={t('adminConsole.nav.users')} />
+          <NavItem active={usersActive} icon={Users} title={t('nav.users')} />
+        </Link>
+        <Link to={DEVICES_PATH}>
+          <NavItem active={devicesActive} icon={MonitorSmartphone} title={t('nav.devices')} />
         </Link>
         <Link to={MODEL_SERVICE_PATH}>
-          <NavItem
-            active={modelServiceActive}
-            icon={Server}
-            title={t('adminConsole.nav.modelService')}
-          />
+          <NavItem active={modelServiceActive} icon={Server} title={t('nav.modelService')} />
         </Link>
         <Link to={LABS_PATH}>
-          <NavItem active={labsActive} icon={FlaskConical} title={t('adminConsole.nav.labs')} />
+          <NavItem active={labsActive} icon={FlaskConical} title={t('nav.labs')} />
         </Link>
       </Flexbox>
     </Flexbox>

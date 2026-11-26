@@ -34,7 +34,7 @@ interface ModelFormOptions {
 }
 
 const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const { close } = useModalContext();
   const isEdit = Boolean(model);
 
@@ -53,7 +53,7 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
 
   const save = async () => {
     if (invalid) {
-      if (duplicate) toast.error(t('adminConsole.modelService.edit.duplicateId'));
+      if (duplicate) toast.error(t('modelService.edit.duplicateId'));
       return;
     }
 
@@ -81,10 +81,10 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
     if (!model || !onRemove) return;
 
     confirmModal({
-      okText: t('adminConsole.modelService.edit.removeConfirm'),
-      title: t('adminConsole.modelService.edit.removeTitle'),
-      content: t('adminConsole.modelService.edit.removeContent', { name: model.name }),
-      cancelText: t('adminConsole.modelService.action.close'),
+      okText: t('modelService.edit.removeConfirm'),
+      title: t('modelService.edit.removeTitle'),
+      content: t('modelService.edit.removeContent', { name: model.name }),
+      cancelText: t('modelService.action.close'),
       onOk: () => {
         onRemove(model);
         close();
@@ -97,27 +97,27 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
       <Flexbox gap={16} paddingBlock={8}>
         <Flexbox gap={6}>
           <Text fontSize={13} weight={500}>
-            {t('adminConsole.modelService.edit.id')}
+            {t('modelService.edit.id')}
           </Text>
           <Input
             disabled={isEdit}
-            placeholder={t('adminConsole.modelService.edit.idPlaceholder')}
+            placeholder={t('modelService.edit.idPlaceholder')}
             value={id}
             onChange={(event) => setId(event.target.value)}
           />
           {duplicate && (
             <Text fontSize={12} type={'danger'}>
-              {t('adminConsole.modelService.edit.duplicateId')}
+              {t('modelService.edit.duplicateId')}
             </Text>
           )}
         </Flexbox>
 
         <Flexbox gap={6}>
           <Text fontSize={13} weight={500}>
-            {t('adminConsole.modelService.edit.name')}
+            {t('modelService.edit.name')}
           </Text>
           <Input
-            placeholder={t('adminConsole.modelService.edit.namePlaceholder')}
+            placeholder={t('modelService.edit.namePlaceholder')}
             value={name}
             onChange={(event) => setName(event.target.value)}
           />
@@ -126,7 +126,7 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
         <Flexbox horizontal gap={12}>
           <Flexbox flex={1} gap={6}>
             <Text fontSize={13} weight={500}>
-              {t('adminConsole.modelService.edit.type')}
+              {t('modelService.edit.type')}
             </Text>
             <Select
               value={type}
@@ -139,12 +139,12 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
           </Flexbox>
           <Flexbox flex={1} gap={6}>
             <Text fontSize={13} weight={500}>
-              {t('adminConsole.modelService.edit.context')}
+              {t('modelService.edit.context')}
             </Text>
             <InputNumber
               controls={false}
               min={0}
-              placeholder={t('adminConsole.modelService.edit.contextPlaceholder')}
+              placeholder={t('modelService.edit.contextPlaceholder')}
               style={{ width: '100%' }}
               value={contextWindowTokens}
               onChange={(value) => setContextWindowTokens(value)}
@@ -154,7 +154,7 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
 
         <Flexbox gap={6}>
           <Text fontSize={13} weight={500}>
-            {t('adminConsole.modelService.edit.capabilities')}
+            {t('modelService.edit.capabilities')}
           </Text>
           <CheckboxGroup
             horizontal
@@ -171,10 +171,10 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
         <Flexbox horizontal align={'center'} gap={12} justify={'space-between'}>
           <Flexbox gap={2}>
             <Text fontSize={13} weight={500}>
-              {t('adminConsole.modelService.edit.open')}
+              {t('modelService.edit.open')}
             </Text>
             <Text fontSize={12} type={'secondary'}>
-              {t('adminConsole.modelService.edit.openDesc')}
+              {t('modelService.edit.openDesc')}
             </Text>
           </Flexbox>
           <Switch checked={open} onChange={setOpen} />
@@ -184,11 +184,11 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
       <ModalFooter>
         {isEdit && onRemove && (
           <Button danger type={'text'} onClick={remove}>
-            {t('adminConsole.modelService.edit.remove')}
+            {t('modelService.edit.remove')}
           </Button>
         )}
         <Button type={'fill'} onClick={close}>
-          {t('adminConsole.modelService.action.close')}
+          {t('modelService.action.close')}
         </Button>
         <Button
           disabled={invalid}
@@ -198,7 +198,7 @@ const ModelForm = ({ model, existingIds, onSave, onRemove }: ModelFormOptions) =
             void save();
           }}
         >
-          {t('adminConsole.modelService.edit.save')}
+          {t('modelService.edit.save')}
         </Button>
       </ModalFooter>
     </>

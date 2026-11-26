@@ -1,18 +1,32 @@
 import type {
   AdminConsoleLabsConfig,
   AdminConsoleSettingsConfig,
+  AdminDeviceDetail,
+  AdminDeviceListParams,
+  AdminDeviceListResult,
+  AdminDeviceStats,
+  AdminDeviceSummary,
+  AdminDeviceVisibility,
   AdminRole,
   AdminUserDetail,
   AdminUserListParams,
   AdminUserListResult,
   AdminUserSummary,
 } from '@lobechat/types';
-import { ADMIN_CONSOLE_SETTINGS_ID } from '@lobechat/types';
+import { ADMIN_CONSOLE_SETTINGS_ID, ADMIN_DEVICE_MAX_PAGE_SIZE } from '@lobechat/types';
 import { TRPCError } from '@trpc/server';
-import { and, asc, count, eq, ilike, isNull, ne, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
 
 import type { AdminConsoleSettingsItem } from '../schemas';
-import { adminConsoleSettings, apiKeys, session, users } from '../schemas';
+import {
+  adminConsoleSettings,
+  agents,
+  apiKeys,
+  devices,
+  session,
+  users,
+  workspaces,
+} from '../schemas';
 import type { LobeChatDatabase, Transaction } from '../type';
 
 /** Better Auth stores `role` as free text; anything but `admin` is a normal user. */
@@ -57,6 +71,136 @@ const toSummary = (row: {
   role: normalizeAdminRole(row.role),
   username: row.username,
 });
+
+/**
+ * Columns shared by the admin device list and detail reads.
+ *
+ * This is the privacy boundary at the SQL layer: `defaultCwd`, `workingDirs`,
+ * `recentCwds` and the raw `metadata` column are never selected, so no later
+ * mapping can accidentally forward another user's filesystem paths. Detail
+ * reads project the two whitelisted metadata keys explicitly.
+ */
+const adminDeviceSelection = {
+  architecture: devices.architecture,
+  deviceId: devices.deviceId,
+  firstSeenAt: devices.firstSeenAt,
+  friendlyName: devices.friendlyName,
+  hostname: devices.hostname,
+  identitySource: devices.identitySource,
+  lastSeenAt: devices.lastSeenAt,
+  ownerAvatar: users.avatar,
+  ownerEmail: users.email,
+  ownerFullName: users.fullName,
+  ownerId: users.id,
+  ownerUsername: users.username,
+  platform: devices.platform,
+  sharedFromDeviceId: devices.sharedFromDeviceId,
+  visibility: devices.visibility,
+  workspaceId: devices.workspaceId,
+  workspaceName: workspaces.name,
+  workspaceSlug: workspaces.slug,
+};
+
+type AdminDeviceRow = {
+  architecture: string | null;
+  deviceId: string;
+  firstSeenAt: Date;
+  friendlyName: string | null;
+  hostname: string | null;
+  identitySource: string;
+  lastSeenAt: Date;
+  ownerAvatar: string | null;
+  ownerEmail: string | null;
+  ownerFullName: string | null;
+  ownerId: string | null;
+  ownerUsername: string | null;
+  platform: string | null;
+  sharedFromDeviceId: string | null;
+  visibility: string | null;
+  workspaceId: string | null;
+  workspaceName: string | null;
+  workspaceSlug: string | null;
+};
+
+/**
+ * Map one joined device row to the admin list shape.
+ *
+ * Presence (`online`, `channelCount`) is live gateway state that lives outside
+ * this table, so the model answers `unknown` / `0`; the admin interface layer
+ * overwrites both after probing the gateway. Never a boolean: "gateway
+ * unreachable" must stay distinguishable from "device offline".
+ */
+const toAdminDeviceSummary = (row: AdminDeviceRow): AdminDeviceSummary => ({
+  architecture: row.architecture,
+  channelCount: 0,
+  deviceId: row.deviceId,
+  firstSeenAt: row.firstSeenAt,
+  friendlyName: row.friendlyName,
+  hostname: row.hostname,
+  identitySource: row.identitySource,
+  lastSeenAt: row.lastSeenAt,
+  online: 'unknown',
+  owner: {
+    avatar: row.ownerAvatar,
+    email: row.ownerEmail,
+    fullName: row.ownerFullName,
+    userId: row.ownerId ?? '',
+    username: row.ownerUsername,
+  },
+  platform: row.platform,
+  scope: row.workspaceId ? 'workspace' : 'personal',
+  sharedFromDeviceId: row.sharedFromDeviceId,
+  // Personal rows are implicitly private to their owner, so the column value
+  // is not surfaced for them (see `AdminDeviceVisibility`).
+  visibility: row.workspaceId ? (row.visibility as AdminDeviceVisibility | null) : null,
+  workspace: row.workspaceId
+    ? {
+        // FK cascade removes the device with its workspace, so a missing name
+        // is only reachable through a mid-transaction read.
+        name: row.workspaceName ?? row.workspaceId,
+        slug: row.workspaceSlug ?? undefined,
+        workspaceId: row.workspaceId,
+      }
+    : null,
+});
+
+/**
+ * Admin list filter over `devices`, joined with `users` / `workspaces`.
+ *
+ * No workspace or owner scoping: the administrator sees the whole deployment,
+ * including other members' `private` workspace enrollments — that is the point
+ * of the console view and the opposite of `DeviceModel.queryPersonal`.
+ *
+ * `params.online` is intentionally not translated to SQL: presence is live
+ * gateway state, so the interface layer narrows it after probing.
+ */
+const adminDeviceWhere = (params: AdminDeviceListParams) => {
+  const keyword = params.q?.trim();
+
+  const conditions = [
+    keyword
+      ? or(
+          ilike(devices.friendlyName, `%${keyword}%`),
+          ilike(devices.hostname, `%${keyword}%`),
+          ilike(users.username, `%${keyword}%`),
+          ilike(users.fullName, `%${keyword}%`),
+          ilike(users.email, `%${keyword}%`),
+        )
+      : undefined,
+    params.scope === 'personal' ? isNull(devices.workspaceId) : undefined,
+    params.scope === 'workspace' ? isNotNull(devices.workspaceId) : undefined,
+    params.workspaceId ? eq(devices.workspaceId, params.workspaceId) : undefined,
+    // Personal rows carry the column default ('private') in storage but no
+    // visibility dimension in the API, so a visibility filter must narrow to
+    // workspace enrollments only.
+    params.visibility
+      ? and(isNotNull(devices.workspaceId), eq(devices.visibility, params.visibility))
+      : undefined,
+    params.platform ? eq(devices.platform, params.platform) : undefined,
+  ].filter(Boolean);
+
+  return conditions.length > 0 ? and(...conditions) : undefined;
+};
 
 const conflict = (message: string, cause?: unknown) =>
   new TRPCError({ code: 'CONFLICT', message, cause });
@@ -450,10 +594,180 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
     return removed.length;
   };
 
+  // ── devices (CUST-010, read-only cross-user inventory) ────────────────
+
+  /**
+   * Every registered device in the deployment, any owner, any workspace.
+   *
+   * Deliberately unscoped: the admin view is machine inventory, so it includes
+   * other members' `private` workspace rows. The projection stops at
+   * `adminDeviceSelection` (no cwd fields, no raw metadata).
+   *
+   * `onlineStats` is a placeholder — presence belongs to the gateway probe the
+   * interface layer runs after this query, so the model cannot tally it.
+   */
+  listDevices = async (params: AdminDeviceListParams = {}): Promise<AdminDeviceListResult> => {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(ADMIN_DEVICE_MAX_PAGE_SIZE, Math.max(1, params.pageSize ?? 20));
+    const where = adminDeviceWhere(params);
+
+    const [totalRow, rows] = await Promise.all([
+      this.db
+        .select({ value: count() })
+        .from(devices)
+        .leftJoin(users, eq(users.id, devices.userId))
+        .leftJoin(workspaces, eq(workspaces.id, devices.workspaceId))
+        .where(where),
+      this.db
+        .select(adminDeviceSelection)
+        .from(devices)
+        .leftJoin(users, eq(users.id, devices.userId))
+        .leftJoin(workspaces, eq(workspaces.id, devices.workspaceId))
+        .where(where)
+        // `last_seen_at` has no index; MVP data volume tolerates the sort (see
+        // CUST-010 delivery notes). The tiebreaker keeps paging deterministic.
+        .orderBy(desc(devices.lastSeenAt), asc(devices.deviceId))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+    ]);
+
+    return {
+      items: rows.map(toAdminDeviceSummary),
+      onlineStats: { offline: 0, online: 0, unknown: 0 },
+      page,
+      pageSize,
+      total: totalRow[0]?.value ?? 0,
+    };
+  };
+
+  /**
+   * One device, addressed by the same pair that identifies its row.
+   *
+   * A device row's identity is `(workspaceId, deviceId)` for workspace
+   * enrollments and `(userId, deviceId)` for personal ones — that is exactly
+   * what the partial unique indexes in `schemas/device.ts` enforce. The
+   * `deviceId` hash normally mixes in the principal, but `lh connect
+   * --device-id` pins an explicit id and produces the same `deviceId` for two
+   * owners, so a personal row cannot be addressed by `deviceId` alone.
+   *
+   * `ownerId` disambiguates the personal pool. Omitting it keeps the legacy
+   * "any owner" lookup for unique ids, but an ambiguous id resolves to
+   * `undefined` rather than an arbitrary row: showing one administrator the
+   * other owner's machine is the one failure mode this must never have.
+   *
+   * `channels` is empty here: connections are gateway state. `managedPhase`
+   * likewise lives in the managed-device provider and is filled upstream.
+   */
+  getDevice = async (
+    deviceId: string,
+    scope: { ownerId?: string; workspaceId: string | null },
+  ): Promise<AdminDeviceDetail | undefined> => {
+    const rows = await this.db
+      .select({
+        ...adminDeviceSelection,
+        // Only the two whitelisted metadata keys leave the database.
+        appVersion: sql<string | null>`${devices.metadata} ->> 'appVersion'`,
+        cliVersion: sql<string | null>`${devices.metadata} ->> 'cliVersion'`,
+      })
+      .from(devices)
+      .leftJoin(users, eq(users.id, devices.userId))
+      .leftJoin(workspaces, eq(workspaces.id, devices.workspaceId))
+      .where(
+        and(
+          eq(devices.deviceId, deviceId),
+          scope.workspaceId
+            ? eq(devices.workspaceId, scope.workspaceId)
+            : and(
+                isNull(devices.workspaceId),
+                scope.ownerId ? eq(devices.userId, scope.ownerId) : undefined,
+              ),
+        ),
+      )
+      // Two rows means the address is ambiguous; the caller asked for one
+      // machine, and picking either would be a wrong answer.
+      .limit(2);
+
+    if (rows.length !== 1) return;
+    const [row] = rows;
+
+    return {
+      ...toAdminDeviceSummary(row),
+      appVersion: row.appVersion ?? undefined,
+      channels: [],
+      cliVersion: row.cliVersion ?? undefined,
+      hasFixedAgentBinding: scope.workspaceId
+        ? await this.hasFixedAgentBinding(scope.workspaceId, deviceId)
+        : false,
+    };
+  };
+
+  /**
+   * Header counters for the overview page, independent of the list filter.
+   *
+   * Two aggregate queries plus one distinct count, no per-row round-trips.
+   */
+  getDeviceStats = async (): Promise<AdminDeviceStats> => {
+    const [totals, platformRows, workspaceRow] = await Promise.all([
+      this.db
+        .select({
+          activeLast7d: sql<number>`count(*) filter (where ${devices.lastSeenAt} >= now() - interval '7 days')`,
+          personal: sql<number>`count(*) filter (where ${devices.workspaceId} is null)`,
+          total: count(),
+          workspace: sql<number>`count(*) filter (where ${devices.workspaceId} is not null)`,
+        })
+        .from(devices),
+      this.db
+        .select({ platform: devices.platform, value: count() })
+        .from(devices)
+        .groupBy(devices.platform),
+      this.db.select({ value: sql<number>`count(distinct ${devices.workspaceId})` }).from(devices),
+    ]);
+
+    const byPlatform: Record<string, number> = {};
+    for (const row of platformRows) {
+      byPlatform[row.platform ?? 'unknown'] = Number(row.value);
+    }
+
+    const row = totals[0];
+
+    return {
+      activeLast7d: Number(row?.activeLast7d ?? 0),
+      byPlatform,
+      personal: Number(row?.personal ?? 0),
+      total: Number(row?.total ?? 0),
+      workspace: Number(row?.workspace ?? 0),
+      workspaceCount: Number(workspaceRow[0]?.value ?? 0),
+    };
+  };
+
   // ── helpers ───────────────────────────────────────────────────────────
 
   private lockLastAdmin = async (tx: Transaction) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('admin_console:last_admin'))`);
+  };
+
+  /**
+   * Whether a workspace device is the enforced target of any fixed agent.
+   *
+   * Same reference guard as `DeviceModel.hasFixedAgentBinding`, but addressed
+   * by an explicit workspace because the console has no acting workspace, and
+   * reduced to a boolean so the console is never handed a binding id.
+   */
+  private hasFixedAgentBinding = async (workspaceId: string, deviceId: string) => {
+    const [row] = await this.db
+      .select({ id: agents.id })
+      .from(agents)
+      .where(
+        and(
+          eq(agents.workspaceId, workspaceId),
+          sql`${agents.agencyConfig}->>'executionTargetSelectionPolicy' = 'fixed'`,
+          sql`${agents.agencyConfig}->>'executionTarget' = 'device'`,
+          sql`${agents.agencyConfig}->>'boundDeviceId' = ${deviceId}`,
+        ),
+      )
+      .limit(1);
+
+    return !!row;
   };
 
   private loadTarget = async (tx: Transaction, userId: string) => {

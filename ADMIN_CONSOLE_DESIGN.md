@@ -722,3 +722,56 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 - 在 `apps/server/src/services/` 临时放入一个直接读 `preference?.lab?.enableProjects` 的文件 → `readPoints.test.ts` 报 `apps/server/src/services/__labsGateProbe.ts:2` 未走 resolver，同时 `routes every read point through its declared resolver` 失败；删除探针后 5/5 通过。
 
 工程结果：`packages/business-server` 全量 6 文件 / 35 项测试通过；`src/features/Settings/labs/` 4 文件 / 24 项通过；改动文件 oxlint 0 error / 0 warning；`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0。
+
+## 17. CUST-010：管理控制台设备总览
+
+只读的**机器台账**：`/admin/devices` 回答「谁有一台什么设备、在不在线」，不是个人设置设备页的复制品。管理员不做 owner 过滤——他人个人设备、所有工作区设备（含 `private`）都在列表里；但**看不到设备在哪个目录干活**。维护要点见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) 的 CUST-010 一节，本节记录设计与偏差。
+
+### 17.1 为什么不做写操作
+
+无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门（设备归属是用户在个人设置里的事），且 `devices` 是 upsert 语义——删掉下次连接自动回来。管理端在这里只承担「看见」。
+
+### 17.2 行身份必须用真实唯一键
+
+`devices` 的两个唯一键是 `(user_id, device_id)`（`devices_user_id_device_id_unique`）与 `(workspace_id, device_id)`。不能用 `(workspaceId, deviceId)` 一把梭：`lh connect --device-id` 可让两个 owner 用同一个 deviceId（`apps/cli/src/device/register.ts` 的 `resolveDeviceIdentity()` 在显式 id 时绕过哈希）。
+
+因此行键是 `workspace ? ${wsId}::${deviceId} : personal:${ownerId}::${deviceId}`，详情查询把 `ownerId` 一路带到 SQL，`limit(2)` 后 `rows.length !== 1` 即 `NOT_FOUND`——歧义不猜。这是 T-86 的修复点：早期实现用 `personal::${deviceId}`，导致 React duplicate key，点开还可能落在他人设备上。
+
+### 17.3 在线三态，`unknown` 不许折叠成 `offline`
+
+| 触发 | 结果 |
+| --- | --- |
+| 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求** |
+| 探测成功且命中 deviceId | `online`，附 `channelCount` |
+| 探测成功但池中没有该 deviceId | `offline` |
+| `readDeviceList` 返回 `ok: false` | `unknown` |
+| 探测抛错 / 超过 3s 整轮预算 | `unknown`（晚到结果由 `accepting` 丢弃） |
+
+参数：`DEVICE_PROBE_CONCURRENCY = 5`、`DEVICE_PROBE_TIMEOUT_MS = 3000`、`DEVICE_READ_ATTEMPTS = 2`、`DEVICE_READ_RETRY_DELAY_MS = 250`。
+
+### 17.4 唯一的上游授权偏差：`deviceGateway.readDeviceList`
+
+上游 `readDevices` 在传输失败时回落 `queryDeviceList` 的 `[]`，管理端会把「网关没答」渲染成「这个人的设备全没上线」——用户明确不接受。新增的 `readDeviceList(userId, workspaceId?) → { ok: true, devices } | { ok: false, reason }` 是唯一能区分二者且不改既有调用方的接法：`queryDeviceList` 保持 `[]` 回落不变，另抽 `toDeviceAttachments()` 为纯重构。`deviceGateway` 其余文件（`routers/lambda/device/**`、`packages/device-gateway-client/**`、`packages/database/src/{models,schemas}/device.ts`、`src/features/DeviceManager/**`、`src/store/device/**`）零改动。
+
+### 17.5 隐私白名单三层
+
+SQL 显式列投影（不选 `defaultCwd` / `workingDirs` / `recentCwds`，`metadata` 只取 `->> 'appVersion'` 与 `->> 'cliVersion'`）→ 类型层 `ADMIN_DEVICE_DETAIL_METADATA_KEYS = ['appVersion','cliVersion']` 用 `expectTypeOf` 编译期锁死 → 渲染层 `projectDeviceDetail()` 白名单视图，抽屉只认该视图。任一层单独失效仍有兜底。
+
+### 17.6 已知限制（不修）
+
+- **`online` 筛选在 SQL 分页之后**：在线是活状态，SQL 表达不了。命中页可能短于 `pageSize`、`total` 仍是全量，UI 以 `isDevicePagePartial` 提示，不伪造补页。
+- **`onlineStats` 只统计返回行**，非全库在线数。
+- **搜索不含 deviceId**：`q` 匹配 hostname / 用户名。
+- **`devices.last_seen_at` 无索引**：当前部署 8 行，跨用户全表列表 MVP 接受；数据量上来再谈索引。
+- **`DEVICE_GATEWAY_URL` 配了但 `SERVICE_TOKEN` 缺失**：`getClient()` 返回 `null` → `readDeviceList` 报 `GATEWAY_NOT_CONFIGURED` → 全部 `unknown`（不会误报 offline）；上游 `queryDeviceList` 同场景仍回落 `[]`。运维上两者须成对配置。
+
+### 17.7 上游合并检查点
+
+1. `apps/server/src/routers/lambda/adminConsole/index.ts` 的 `...adminDeviceProcedures` spread；
+2. `src/features/AdminConsole/route.tsx` 的 `devices` 子路由 + `src/routes/(main)/admin/devices/index.tsx` 一行 re-export（`desktopRouter.shared.tsx` 无需改，`/admin` 容器路由已注册）；
+3. `Layout/Body.tsx` 的 `DEVICES_PATH` / `devicesActive` / `NavItem(MonitorSmartphone)` + `adminConsole` 命名空间的 `nav.devices`；
+4. `packages/locales/src/default/index.ts` 的 `resources.adminConsole`——不注册则打包版（Electron / 无网络 SSR 首屏）拿不到该命名空间，表现为「浏览器能用、桌面首屏闪 key」；
+5. `deviceGateway.readDeviceList` 与 `toDeviceAttachments` 不能被上游 `readDevices` 重构吞掉；上游若改为抛错或返回哨兵值，先确认管理端仍拿得到 `ok:false` 再删本 fork 的接法，不要两边并存；
+6. 探测三参数不可调成「失败即 offline」；`resolveOnlineStates` / `tallyOnline` / `probePrincipals` 是纯函数，可被移动但语义必须保留；
+7. `adminDeviceSelection` 投影与 `ADMIN_DEVICE_DETAIL_METADATA_KEYS` 是唯一 metadata 出口，上游给 `devices.metadata` 加字段时不要顺手放开；
+8. 行身份必须仍是 `(user_id, device_id)` / `(workspace_id, device_id)`，上游改唯一键或 upsert 语义时重跑 `adminConsole.devices.test.ts` 的「双池互斥」与「他人 private 可见」。

@@ -20,7 +20,7 @@ import { openCatalogSyncModal } from './SyncCatalogModal';
 import { errorCodeOf, type ModelServiceForm, toDefaults, toForm } from './utils';
 
 const ModelService = memo(() => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const tokens = useDensityTokens();
   const { data, error, isLoading, mutate } = useAdminModelService();
 
@@ -50,10 +50,10 @@ const ModelService = memo(() => {
       switch (code) {
         case ADMIN_CONSOLE_ERROR.configConflict: {
           confirmModal({
-            cancelText: t('adminConsole.modelService.action.close'),
-            content: t('adminConsole.modelService.error.conflictContent'),
-            okText: t('adminConsole.modelService.error.conflictRefresh'),
-            title: t('adminConsole.modelService.error.conflictTitle'),
+            cancelText: t('modelService.action.close'),
+            content: t('modelService.error.conflictContent'),
+            okText: t('modelService.error.conflictRefresh'),
+            title: t('modelService.error.conflictTitle'),
             onOk: async () => {
               draftVersion.current = null;
               await mutate();
@@ -62,35 +62,33 @@ const ModelService = memo(() => {
           break;
         }
         case ADMIN_CONSOLE_ERROR.providerNotConfigured: {
-          toast.error(t('adminConsole.modelService.error.notConfigured'));
+          toast.error(t('modelService.error.notConfigured'));
           break;
         }
         case ADMIN_CONSOLE_ERROR.invalidBaseUrl: {
-          toast.error(t('adminConsole.modelService.error.invalidBaseUrl'));
+          toast.error(t('modelService.error.invalidBaseUrl'));
           break;
         }
         case ADMIN_CONSOLE_ERROR.invalidApiKey: {
-          toast.error(t('adminConsole.modelService.error.invalidApiKey'));
+          toast.error(t('modelService.error.invalidApiKey'));
           break;
         }
         case ADMIN_CONSOLE_ERROR.invalidDefaultModel: {
-          toast.error(t('adminConsole.modelService.error.invalidDefaultModel'));
+          toast.error(t('modelService.error.invalidDefaultModel'));
           break;
         }
         case ADMIN_CONSOLE_ERROR.duplicateModelId: {
-          toast.error(t('adminConsole.modelService.error.duplicateModelId'));
+          toast.error(t('modelService.error.duplicateModelId'));
           break;
         }
         case ADMIN_CONSOLE_ERROR.invalidModel:
         case ADMIN_CONSOLE_ERROR.invalidModelType: {
-          toast.error(t('adminConsole.modelService.error.invalidModel'));
+          toast.error(t('modelService.error.invalidModel'));
           break;
         }
         default: {
           toast.error(
-            code
-              ? t('adminConsole.modelService.error.withCode', { code })
-              : t('adminConsole.modelService.error.generic'),
+            code ? t('modelService.error.withCode', { code }) : t('modelService.error.generic'),
           );
         }
       }
@@ -140,7 +138,7 @@ const ModelService = memo(() => {
       draftVersion.current = result.updatedAt;
       setForm(toForm(result.config));
       setTestResult(undefined);
-      toast.success(t('adminConsole.modelService.action.saved'));
+      toast.success(t('modelService.action.saved'));
       void mutate();
     } catch (cause) {
       handleError(cause);
@@ -156,14 +154,14 @@ const ModelService = memo(() => {
       setTestResult(result);
       if (result.ok) {
         toast.success(
-          t('adminConsole.modelService.connection.testSuccess', {
+          t('modelService.connection.testSuccess', {
             count: result.modelCount ?? 0,
             latency: result.latencyMs ?? 0,
           }),
         );
       } else {
         toast.error(
-          t('adminConsole.modelService.connection.testFailure', {
+          t('modelService.connection.testFailure', {
             code: result.errorCode ?? '—',
           }),
         );
@@ -183,12 +181,7 @@ const ModelService = memo(() => {
     setPendingModelId(model.id);
     void persistModels(
       next,
-      t(
-        open
-          ? 'adminConsole.modelService.catalog.opened'
-          : 'adminConsole.modelService.catalog.closed',
-        { name: model.name },
-      ),
+      t(open ? 'modelService.catalog.opened' : 'modelService.catalog.closed', { name: model.name }),
     ).finally(() => setPendingModelId(null));
   };
 
@@ -197,9 +190,8 @@ const ModelService = memo(() => {
 
     openModelFormModal({
       existingIds: form.models.map((model) => model.id),
-      onSave: (model) =>
-        persistModels([...form.models, model], t('adminConsole.modelService.edit.added')),
-      title: t('adminConsole.modelService.edit.titleAdd'),
+      onSave: (model) => persistModels([...form.models, model], t('modelService.edit.added')),
+      title: t('modelService.edit.titleAdd'),
     });
   };
 
@@ -212,22 +204,22 @@ const ModelService = memo(() => {
       onRemove: (removed) => {
         void persistModels(
           form.models.filter((item) => item.id !== removed.id),
-          t('adminConsole.modelService.edit.removed', { name: removed.name }),
+          t('modelService.edit.removed', { name: removed.name }),
         );
       },
       onSave: (next) =>
         persistModels(
           form.models.map((item) => (item.id === next.id ? next : item)),
-          t('adminConsole.modelService.edit.saved'),
+          t('modelService.edit.saved'),
         ),
-      title: t('adminConsole.modelService.edit.titleEdit'),
+      title: t('modelService.edit.titleEdit'),
     });
   };
 
   const openSync = () => {
     openCatalogSyncModal({
       expectedUpdatedAt: data?.updatedAt ?? undefined,
-      title: t('adminConsole.modelService.sync.title'),
+      title: t('modelService.sync.title'),
       onApplied: async () => {
         draftVersion.current = null;
         await mutate();
@@ -238,7 +230,7 @@ const ModelService = memo(() => {
   const resetDraft = () => {
     if (!data) return;
     setForm(toForm(data.config));
-    toast.success(t('adminConsole.modelService.action.reset'));
+    toast.success(t('modelService.action.reset'));
   };
 
   return (
@@ -248,7 +240,7 @@ const ModelService = memo(() => {
           form ? (
             <Flexbox horizontal align={'center'} gap={8}>
               <Button size={'small'} type={'text'} onClick={resetDraft}>
-                {t('adminConsole.modelService.action.resetButton')}
+                {t('modelService.action.resetButton')}
               </Button>
               <Button
                 loading={saving}
@@ -258,13 +250,13 @@ const ModelService = memo(() => {
                   void save();
                 }}
               >
-                {t('adminConsole.modelService.action.save')}
+                {t('modelService.action.save')}
               </Button>
             </Flexbox>
           ) : null
         }
       >
-        <Text weight={500}>{t('adminConsole.modelService.title')}</Text>
+        <Text weight={500}>{t('modelService.title')}</Text>
       </NavHeader>
 
       <SettingContainer
@@ -278,15 +270,15 @@ const ModelService = memo(() => {
           </Center>
         ) : error && !form ? (
           <Empty
-            description={t('adminConsole.modelService.error.generic')}
-            title={t('adminConsole.modelService.error.loadFailed')}
+            description={t('modelService.error.generic')}
+            title={t('modelService.error.loadFailed')}
             action={
               <Button
                 onClick={() => {
                   void mutate();
                 }}
               >
-                {t('adminConsole.modelService.action.retry')}
+                {t('modelService.action.retry')}
               </Button>
             }
           />
@@ -294,10 +286,10 @@ const ModelService = memo(() => {
           <Flexbox gap={tokens.sectionGap}>
             <Flexbox gap={4}>
               <Text fontSize={12} lineHeight={1.6} type={'secondary'}>
-                {t('adminConsole.modelService.subtitle')}
+                {t('modelService.subtitle')}
               </Text>
               <Text fontSize={12} lineHeight={1.6} type={'secondary'}>
-                {t('adminConsole.modelService.note')}
+                {t('modelService.note')}
               </Text>
             </Flexbox>
 
@@ -333,7 +325,7 @@ const ModelService = memo(() => {
             />
 
             <Text fontSize={12} type={'secondary'}>
-              {t('adminConsole.modelService.footer')}
+              {t('modelService.footer')}
             </Text>
           </Flexbox>
         ) : null}

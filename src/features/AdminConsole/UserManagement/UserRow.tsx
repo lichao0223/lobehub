@@ -20,7 +20,7 @@ interface UserRowProps {
 }
 
 const UserRow = memo<UserRowProps>(({ user, onSelect }) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const tokens = useDensityTokens();
   const name = userDisplayName(user);
 
@@ -59,17 +59,13 @@ const UserRow = memo<UserRowProps>(({ user, onSelect }) => {
 
       <div>
         <Tag color={user.role === 'admin' ? 'warning' : 'default'} size={'small'}>
-          {t(
-            user.role === 'admin'
-              ? 'adminConsole.users.role.admin'
-              : 'adminConsole.users.role.user',
-          )}
+          {t(user.role === 'admin' ? 'users.role.admin' : 'users.role.user')}
         </Tag>
       </div>
 
       <div>
         <Tag color={user.banned ? 'error' : 'success'} size={'small'}>
-          {t(user.banned ? 'adminConsole.users.status.banned' : 'adminConsole.users.status.active')}
+          {t(user.banned ? 'users.status.banned' : 'users.status.active')}
         </Tag>
       </div>
 

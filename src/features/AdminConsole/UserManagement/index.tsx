@@ -30,7 +30,7 @@ type UserFilter = 'all' | 'admin' | 'banned';
 const PAGE_SIZE = 20;
 
 const UserManagement = memo(() => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const tokens = useDensityTokens();
 
   const [keyword, setKeyword] = useState('');
@@ -64,7 +64,7 @@ const UserManagement = memo(() => {
   return (
     <>
       <NavHeader>
-        <Text weight={500}>{t('adminConsole.users.title')}</Text>
+        <Text weight={500}>{t('users.title')}</Text>
       </NavHeader>
       <SettingContainer
         maxWidth={1024}
@@ -75,7 +75,7 @@ const UserManagement = memo(() => {
           <Flexbox horizontal align={'center'} gap={12} justify={'space-between'} wrap={'wrap'}>
             <SearchBar
               allowClear
-              placeholder={t('adminConsole.users.searchPlaceholder')}
+              placeholder={t('users.searchPlaceholder')}
               style={{ maxWidth: 320, minWidth: 220 }}
               value={keyword}
               variant={'filled'}
@@ -89,9 +89,9 @@ const UserManagement = memo(() => {
                 size={'small'}
                 value={filter}
                 options={[
-                  { label: t('adminConsole.users.filter.all'), value: 'all' },
-                  { label: t('adminConsole.users.filter.admin'), value: 'admin' },
-                  { label: t('adminConsole.users.filter.banned'), value: 'banned' },
+                  { label: t('users.filter.all'), value: 'all' },
+                  { label: t('users.filter.admin'), value: 'admin' },
+                  { label: t('users.filter.banned'), value: 'banned' },
                 ]}
                 onChange={(value) => {
                   setFilter(value as UserFilter);
@@ -99,18 +99,18 @@ const UserManagement = memo(() => {
                 }}
               />
               <Text fontSize={12} type={'secondary'}>
-                {t('adminConsole.users.total', { count: total })}
+                {t('users.total', { count: total })}
               </Text>
             </Flexbox>
           </Flexbox>
 
           <Flexbox>
             <div {...sx(styles.headerRow, { gridTemplateColumns: USER_LIST_COLUMNS })}>
-              <span>{t('adminConsole.users.column.user')}</span>
-              <span>{t('adminConsole.users.column.account')}</span>
-              <span>{t('adminConsole.users.column.role')}</span>
-              <span>{t('adminConsole.users.column.status')}</span>
-              <span>{t('adminConsole.users.column.lastActive')}</span>
+              <span>{t('users.column.user')}</span>
+              <span>{t('users.column.account')}</span>
+              <span>{t('users.column.role')}</span>
+              <span>{t('users.column.status')}</span>
+              <span>{t('users.column.lastActive')}</span>
               <span />
             </div>
 
@@ -120,22 +120,16 @@ const UserManagement = memo(() => {
               </Center>
             ) : error ? (
               <Empty
-                description={t('adminConsole.users.error.generic')}
-                title={t('adminConsole.users.empty.title')}
-                action={
-                  <Button onClick={() => void mutate()}>
-                    {t('adminConsole.users.empty.clear')}
-                  </Button>
-                }
+                action={<Button onClick={() => void mutate()}>{t('users.empty.clear')}</Button>}
+                description={t('users.error.generic')}
+                title={t('users.empty.title')}
               />
             ) : items.length === 0 ? (
               <Empty
-                description={t('adminConsole.users.empty.description')}
-                title={t('adminConsole.users.empty.title')}
+                description={t('users.empty.description')}
+                title={t('users.empty.title')}
                 action={
-                  hasFilters && (
-                    <Button onClick={resetFilters}>{t('adminConsole.users.empty.clear')}</Button>
-                  )
+                  hasFilters && <Button onClick={resetFilters}>{t('users.empty.clear')}</Button>
                 }
               />
             ) : (

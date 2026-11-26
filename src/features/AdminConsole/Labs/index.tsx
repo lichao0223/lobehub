@@ -57,7 +57,7 @@ const LabRow = memo<LabRowProps>(
   ({ last, onToggle, readOnly, row, switchDisabled, unavailable, value }) => {
     const { flag } = row;
     const feature = row.kind === 'feature' ? row.feature : undefined;
-    const { t } = useTranslation('setting');
+    const { t } = useTranslation('adminConsole');
     const { t: tLabs } = useTranslation('labs');
 
     // Selector-only rows with upstream copy (`enableTaskVerify`); every other
@@ -86,27 +86,27 @@ const LabRow = memo<LabRowProps>(
             ) : null}
             {readOnly ? (
               <Tag color={'warning'} size={'small'}>
-                {t('adminConsole.labs.badge.readOnly')}
+                {t('labs.badge.readOnly')}
               </Tag>
             ) : null}
             {unavailable ? (
               <Tag color={'error'} size={'small'}>
-                {t('adminConsole.labs.badge.unavailable')}
+                {t('labs.badge.unavailable')}
               </Tag>
             ) : null}
           </div>
           {desc ? <span {...sx(styles.flagDesc)}>{desc}</span> : null}
           {isSelectorOnlyRow(row) ? (
-            <span {...sx(styles.flagDesc)}>{t('adminConsole.labs.note.noSettingsEntry')}</span>
+            <span {...sx(styles.flagDesc)}>{t('labs.note.noSettingsEntry')}</span>
           ) : null}
           {feature?.noteI18nKey ? (
             <span {...sx(styles.flagDesc)}>{tLabs(`features.${feature.noteI18nKey}.note`)}</span>
           ) : null}
           {readOnly && LAB_FLAG_READ_ONLY[flag] === 'pageCollabDeployment' ? (
-            <span {...sx(styles.flagDesc)}>{t('adminConsole.labs.note.pageCollabDeployment')}</span>
+            <span {...sx(styles.flagDesc)}>{t('labs.note.pageCollabDeployment')}</span>
           ) : null}
           {unavailable ? (
-            <span {...sx(styles.flagDesc)}>{t('adminConsole.labs.note.businessUnavailable')}</span>
+            <span {...sx(styles.flagDesc)}>{t('labs.note.businessUnavailable')}</span>
           ) : null}
           <span {...sx(styles.flagCode)}>{flag}</span>
         </div>
@@ -114,7 +114,7 @@ const LabRow = memo<LabRowProps>(
         <div {...sx(styles.badges)}>
           {getLabRowBadges(row).map((badge) => (
             <Tag key={badge} size={'small'}>
-              {t(`adminConsole.labs.badge.${badge}`)}
+              {t(`labs.badge.${badge}`)}
             </Tag>
           ))}
         </div>
@@ -133,12 +133,12 @@ const LabRow = memo<LabRowProps>(
 LabRow.displayName = 'AdminLabRow';
 
 const LAB_MODE_OPTION = [
-  { labelKey: 'adminConsole.labs.mode.user', value: 'user' },
-  { labelKey: 'adminConsole.labs.mode.admin', value: 'admin' },
+  { labelKey: 'labs.mode.user', value: 'user' },
+  { labelKey: 'labs.mode.admin', value: 'admin' },
 ] as const;
 
 const Labs = memo(() => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const tokens = useDensityTokens();
   const { data, error, isLoading, mutate } = useAdminLabs();
   const rows = useMemo(() => getLabMatrixRows(), []);
@@ -169,10 +169,10 @@ const Labs = memo(() => {
 
     if (code === ADMIN_CONSOLE_ERROR.configConflict) {
       confirmModal({
-        cancelText: t('adminConsole.labs.error.conflictDismiss'),
-        content: t('adminConsole.labs.error.conflictContent'),
-        okText: t('adminConsole.labs.error.conflictRefresh'),
-        title: t('adminConsole.labs.error.conflictTitle'),
+        cancelText: t('labs.error.conflictDismiss'),
+        content: t('labs.error.conflictContent'),
+        okText: t('labs.error.conflictRefresh'),
+        title: t('labs.error.conflictTitle'),
         onOk: async () => {
           draftVersion.current = null;
           await mutate();
@@ -182,11 +182,11 @@ const Labs = memo(() => {
     }
 
     if (code === ADMIN_CONSOLE_ERROR.invalidLabsConfig) {
-      toast.error(t('adminConsole.labs.error.invalidLabsConfig'));
+      toast.error(t('labs.error.invalidLabsConfig'));
       return;
     }
 
-    toast.error(code ?? t('adminConsole.labs.error.generic'));
+    toast.error(code ?? t('labs.error.generic'));
   };
 
   const save = async () => {
@@ -200,7 +200,7 @@ const Labs = memo(() => {
       draftVersion.current = result.updatedAt;
       setMode(result.mode);
       setFlags({ ...result.flags });
-      toast.success(t('adminConsole.labs.action.saved'));
+      toast.success(t('labs.action.saved'));
       void mutate();
     } catch (cause) {
       handleError(cause);
@@ -219,14 +219,10 @@ const Labs = memo(() => {
 
     const toAdmin = next === 'admin';
     confirmModal({
-      cancelText: t('adminConsole.labs.mode.confirmCancel'),
-      content: toAdmin
-        ? t('adminConsole.labs.mode.confirmToAdminContent')
-        : t('adminConsole.labs.mode.confirmToUserContent'),
-      okText: t('adminConsole.labs.mode.confirmOk'),
-      title: toAdmin
-        ? t('adminConsole.labs.mode.confirmToAdminTitle')
-        : t('adminConsole.labs.mode.confirmToUserTitle'),
+      cancelText: t('labs.mode.confirmCancel'),
+      content: toAdmin ? t('labs.mode.confirmToAdminContent') : t('labs.mode.confirmToUserContent'),
+      okText: t('labs.mode.confirmOk'),
+      title: toAdmin ? t('labs.mode.confirmToAdminTitle') : t('labs.mode.confirmToUserTitle'),
       onOk: () => setMode(next),
     });
   };
@@ -237,7 +233,7 @@ const Labs = memo(() => {
   return (
     <>
       <NavHeader>
-        <Text weight={500}>{t('adminConsole.labs.title')}</Text>
+        <Text weight={500}>{t('labs.title')}</Text>
       </NavHeader>
       <SettingContainer
         maxWidth={1024}
@@ -248,7 +244,7 @@ const Labs = memo(() => {
           <Alert
             showIcon
             icon={FlaskConicalIcon}
-            title={t('adminConsole.labs.desc')}
+            title={t('labs.desc')}
             type={'info'}
             variant={'filled'}
           />
@@ -259,12 +255,10 @@ const Labs = memo(() => {
             </Center>
           ) : error && !data ? (
             <Empty
-              description={t('adminConsole.labs.error.loadFailed')}
-              title={t('adminConsole.labs.title')}
+              description={t('labs.error.loadFailed')}
+              title={t('labs.title')}
               action={
-                <Button onClick={() => void mutate()}>
-                  {t('adminConsole.labs.error.conflictRefresh')}
-                </Button>
+                <Button onClick={() => void mutate()}>{t('labs.error.conflictRefresh')}</Button>
               }
             />
           ) : (
@@ -272,29 +266,27 @@ const Labs = memo(() => {
               <div {...sx(styles.card)}>
                 <div {...sx(styles.cardHeader)}>
                   <div>
-                    <div {...sx(styles.cardTitle)}>{t('adminConsole.labs.mode.title')}</div>
-                    <div {...sx(styles.cardDesc)}>{t('adminConsole.labs.mode.desc')}</div>
+                    <div {...sx(styles.cardTitle)}>{t('labs.mode.title')}</div>
+                    <div {...sx(styles.cardDesc)}>{t('labs.mode.desc')}</div>
                   </div>
                   <Flexbox horizontal align={'center'} gap={12} wrap={'wrap'}>
                     {data ? (
                       <Text fontSize={12} type={'secondary'}>
-                        {t('adminConsole.labs.effectiveMode', {
-                          mode: t(
-                            `adminConsole.labs.mode.${data.mode === 'admin' ? 'admin' : 'user'}`,
-                          ),
+                        {t('labs.effectiveMode', {
+                          mode: t(`labs.mode.${data.mode === 'admin' ? 'admin' : 'user'}`),
                         })}
                       </Text>
                     ) : null}
                     {data?.updatedAt ? (
                       <Text fontSize={12} type={'secondary'}>
-                        {t('adminConsole.labs.updatedAt', {
+                        {t('labs.updatedAt', {
                           time: dayjs(data.updatedAt).format('YYYY-MM-DD HH:mm'),
                         })}
                       </Text>
                     ) : null}
                     {data?.updatedBy ? (
                       <Text fontSize={12} type={'secondary'}>
-                        {t('adminConsole.labs.updatedBy', { name: data.updatedBy })}
+                        {t('labs.updatedBy', { name: data.updatedBy })}
                       </Text>
                     ) : null}
                     <Button
@@ -303,7 +295,7 @@ const Labs = memo(() => {
                       type={'primary'}
                       onClick={() => void save()}
                     >
-                      {t('adminConsole.labs.action.save')}
+                      {t('labs.action.save')}
                     </Button>
                   </Flexbox>
                 </div>
@@ -318,33 +310,31 @@ const Labs = memo(() => {
                   onChange={(value) => requestModeChange(value as AdminConsoleLabsMode)}
                 />
                 <div {...sx(styles.cardDesc)}>
-                  {mode === 'admin'
-                    ? t('adminConsole.labs.mode.adminDesc')
-                    : t('adminConsole.labs.mode.userDesc')}
+                  {mode === 'admin' ? t('labs.mode.adminDesc') : t('labs.mode.userDesc')}
                 </div>
                 {!dirty || mode === data?.mode ? null : (
                   <Text fontSize={12} type={'warning'}>
-                    {t('adminConsole.labs.note.modePending')}
+                    {t('labs.note.modePending')}
                   </Text>
                 )}
               </div>
 
               <div {...sx(styles.card)}>
                 <div>
-                  <div {...sx(styles.cardTitle)}>{t('adminConsole.labs.flags.title')}</div>
-                  <div {...sx(styles.cardDesc)}>{t('adminConsole.labs.flags.desc')}</div>
-                  <div {...sx(styles.cardDesc)}>{t('adminConsole.labs.note.unsetOff')}</div>
+                  <div {...sx(styles.cardTitle)}>{t('labs.flags.title')}</div>
+                  <div {...sx(styles.cardDesc)}>{t('labs.flags.desc')}</div>
+                  <div {...sx(styles.cardDesc)}>{t('labs.note.unsetOff')}</div>
                 </div>
                 {!switchDisabled ? null : (
                   <Text fontSize={12} type={'secondary'}>
-                    {t('adminConsole.labs.note.userMode')}
+                    {t('labs.note.userMode')}
                   </Text>
                 )}
 
                 <div {...sx(styles.headerRow, { gridTemplateColumns: LAB_MATRIX_COLUMNS })}>
-                  <span>{t('adminConsole.labs.column.flag')}</span>
-                  <span>{t('adminConsole.labs.column.availability')}</span>
-                  <span>{t('adminConsole.labs.column.switch')}</span>
+                  <span>{t('labs.column.flag')}</span>
+                  <span>{t('labs.column.availability')}</span>
+                  <span>{t('labs.column.switch')}</span>
                 </div>
 
                 {rows.map((row: LabMatrixRow, index) => {
@@ -368,14 +358,14 @@ const Labs = memo(() => {
               {extras.length > 0 ? (
                 <div {...sx(styles.card)}>
                   <div>
-                    <div {...sx(styles.cardTitle)}>{t('adminConsole.labs.extra.title')}</div>
-                    <div {...sx(styles.cardDesc)}>{t('adminConsole.labs.extra.desc')}</div>
+                    <div {...sx(styles.cardTitle)}>{t('labs.extra.title')}</div>
+                    <div {...sx(styles.cardDesc)}>{t('labs.extra.desc')}</div>
                   </div>
 
                   <div {...sx(styles.headerRow, { gridTemplateColumns: LAB_MATRIX_COLUMNS })}>
-                    <span>{t('adminConsole.labs.column.flag')}</span>
-                    <span>{t('adminConsole.labs.column.availability')}</span>
-                    <span>{t('adminConsole.labs.column.switch')}</span>
+                    <span>{t('labs.column.flag')}</span>
+                    <span>{t('labs.column.availability')}</span>
+                    <span>{t('labs.column.switch')}</span>
                   </div>
 
                   {extras.map((row: LabMatrixRow, index) => {

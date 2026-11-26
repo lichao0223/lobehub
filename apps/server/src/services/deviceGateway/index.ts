@@ -3,6 +3,7 @@ import {
   describeGatewayRequestFailure,
   type DeviceStatusResult,
   type DeviceSystemInfo,
+  type GatewayDevice,
   GatewayHttpClient,
 } from '@lobechat/device-gateway-client';
 import type { DeviceClient, DeviceMetricSample } from '@lobechat/types';
@@ -36,9 +37,51 @@ export type { DeviceAttachment, DeviceStatusResult, DeviceSystemInfo };
 export type DeviceSystemInfoRead =
   { ok: true; systemInfo: DeviceSystemInfo } | { ok: false; reason: string };
 
+/**
+ * Outcome of a device-list read. Same shape as {@link DeviceSystemInfoRead}:
+ * a failed read says why instead of answering an empty list.
+ */
+export type DeviceListRead =
+  { ok: true; devices: DeviceAttachment[] } | { ok: false; reason: string };
+
 /** One extra attempt for a device read; see `readDevices`. */
 const DEVICE_READ_ATTEMPTS = 2;
 const DEVICE_READ_RETRY_DELAY_MS = 250;
+
+/**
+ * Map the gateway's device pool onto the runtime shape.
+ *
+ * The gateway already dedupes to one entry per physical device, with its live
+ * connections nested as `channels`; every returned device has at least one
+ * channel, so it is online.
+ */
+const toDeviceAttachments = (devices: GatewayDevice[]): DeviceAttachment[] =>
+  devices.map((d) => ({
+    // `channels` may be absent if the gateway worker deploy lags behind the
+    // server (separate Cloudflare deploy); tolerate the legacy flat shape.
+    //
+    // Sorted newest-first because every consumer reads `channels[0]` as
+    // "this device's current connection" — the settings row's
+    // "Connected {time}", a ghost row's `lastSeen`, its hostname/platform
+    // fallback — while `sortDevicesByActivity` ranks by the FRESHEST
+    // channel. The gateway promises no order, so leaving it raw lets a
+    // multi-channel device rank by one connection and get labelled with
+    // another. Normalising here (the single entry point both `listDevices`
+    // and `getScopedOnlineDevices` pull channels through) makes
+    // `channels[0]` mean the same thing everywhere.
+    channels: (d.channels ?? [])
+      .map((c) => ({
+        channel: c.channel,
+        connectedAt: new Date(c.connectedAt).toISOString(),
+        connectionId: c.connectionId,
+      }))
+      .sort((a, b) => Date.parse(b.connectedAt) - Date.parse(a.connectedAt)),
+    deviceId: d.deviceId,
+    hostname: d.hostname,
+    lastSeen: new Date(d.connectedAt).toISOString(),
+    online: true,
+    platform: d.platform,
+  }));
 
 /**
  * The gateway service. Device presence reads live here; every other device RPC
@@ -111,40 +154,49 @@ export class DeviceGateway {
     return this.readDevices(
       'queryDeviceList',
       { userId, workspaceId },
-      async () => {
-        const devices = await client.queryDeviceList(userId, workspaceId);
-        // The gateway already dedupes to one entry per physical device, with its
-        // live connections nested as `channels`. Map to the runtime shape; every
-        // returned device has at least one channel, so it's online.
-        return devices.map((d) => ({
-          // `channels` may be absent if the gateway worker deploy lags behind the
-          // server (separate Cloudflare deploy); tolerate the legacy flat shape.
-          //
-          // Sorted newest-first because every consumer reads `channels[0]` as
-          // "this device's current connection" — the settings row's
-          // "Connected {time}", a ghost row's `lastSeen`, its hostname/platform
-          // fallback — while `sortDevicesByActivity` ranks by the FRESHEST
-          // channel. The gateway promises no order, so leaving it raw lets a
-          // multi-channel device rank by one connection and get labelled with
-          // another. Normalising here (the single entry point both `listDevices`
-          // and `getScopedOnlineDevices` pull channels through) makes
-          // `channels[0]` mean the same thing everywhere.
-          channels: (d.channels ?? [])
-            .map((c) => ({
-              channel: c.channel,
-              connectedAt: new Date(c.connectedAt).toISOString(),
-              connectionId: c.connectionId,
-            }))
-            .sort((a, b) => Date.parse(b.connectedAt) - Date.parse(a.connectedAt)),
-          deviceId: d.deviceId,
-          hostname: d.hostname,
-          lastSeen: new Date(d.connectedAt).toISOString(),
-          online: true,
-          platform: d.platform,
-        }));
-      },
+      async () => toDeviceAttachments(await client.queryDeviceList(userId, workspaceId)),
       [],
     );
+  }
+
+  /**
+   * The device pool with the failure spelled out: `ok: false` means the gateway
+   * did not answer, which is NOT the same as "this principal has no devices".
+   *
+   * {@link queryDeviceList} stays as it is — every caller of it treats the
+   * online set as a hint and already accepts `[]` on failure. A caller that
+   * must tell "nothing is online" from "we could not ask" (the admin device
+   * overview renders the latter as `unknown`, never as `offline`) reads through
+   * here instead.
+   */
+  async readDeviceList(userId: string, workspaceId?: string): Promise<DeviceListRead> {
+    const client = this.getClient();
+    if (!client) return { ok: false, reason: 'GATEWAY_NOT_CONFIGURED' };
+
+    for (let attempt = 1; attempt <= DEVICE_READ_ATTEMPTS; attempt++) {
+      try {
+        return {
+          devices: toDeviceAttachments(await client.queryDeviceList(userId, workspaceId)),
+          ok: true,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (attempt < DEVICE_READ_ATTEMPTS) {
+          await new Promise((resolve) => setTimeout(resolve, DEVICE_READ_RETRY_DELAY_MS));
+          continue;
+        }
+        console.warn('[DeviceGateway] readDeviceList failed; reporting an unreadable pool', {
+          attempts: attempt,
+          error: message,
+          userId,
+          workspaceId,
+        });
+        return { ok: false, reason: describeGatewayRequestFailure(error, 'RPC call').code };
+      }
+    }
+
+    // Unreachable: the loop returns on success or on its last failed attempt.
+    return { ok: false, reason: 'GATEWAY_ERROR' };
   }
 
   /**

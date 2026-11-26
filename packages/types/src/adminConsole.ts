@@ -1,5 +1,7 @@
 import type { AiModelType } from 'model-bank';
 
+import type { ManagedDevicePhase } from './managedDevice';
+
 /**
  * Admin console (CUST-008) shared types.
  *
@@ -287,3 +289,171 @@ export const ADMIN_CONSOLE_ERROR = {
   providerUnreachable: 'PROVIDER_UNREACHABLE',
   selfLockout: 'SELF_LOCKOUT',
 } as const;
+
+// ── CUST-010 cross-user device overview (read-only) ──────────────────────
+//
+// The console lists every device row in the deployment — personal devices of
+// every user plus every workspace enrollment, including other members'
+// `private` rows — because an administrator's job is machine inventory, not
+// per-user self-service. The device layer itself is upstream-owned and stays
+// untouched: these types are a read-only projection of `devices` decorated
+// with owner / workspace display info, and they are the single place that
+// encodes what an admin read is allowed to see (see `AdminDeviceDetail`).
+
+/** Which principal owns a device row (`devices.workspace_id` is null or not). */
+export type AdminDeviceScope = 'personal' | 'workspace';
+
+/**
+ * Three-state presence. `unknown` is a first-class answer, not a synonym for
+ * `offline`: it means the gateway was not configured or the probe failed, and
+ * the page must render it as "unknown" rather than inventing an offline state.
+ */
+export type AdminDeviceOnlineState = 'online' | 'offline' | 'unknown';
+
+/**
+ * Visibility of a WORKSPACE-scoped device (upstream `DeviceVisibility`).
+ * Personal devices have no visibility dimension: they are implicitly private
+ * to their owner, so a personal row carries `null`.
+ */
+export type AdminDeviceVisibility = 'private' | 'public';
+
+/** Owner display info, resolved server-side so the list needs one round-trip. */
+export interface AdminDeviceOwner {
+  avatar: string | null;
+  email?: string | null;
+  fullName: string | null;
+  userId: string;
+  username: string | null;
+}
+
+/**
+ * Workspace a device is enrolled into, or `null` for a personal device.
+ *
+ * `name`/`slug` are display-only joins; the identity of the row is
+ * (`workspaceId`, `deviceId`), never the name.
+ */
+export type AdminDeviceWorkspace = {
+  name: string;
+  slug?: string;
+  workspaceId: string;
+} | null;
+
+/** One live gateway connection, reduced to the two fields the console shows. */
+export interface AdminDeviceChannel {
+  /** Gateway channel label; `null` on legacy gateways that omit it. */
+  channel: string | null;
+  connectedAt: Date;
+}
+
+/**
+ * One row of the admin device list — the whole deployment, any owner.
+ *
+ * Presence is `AdminDeviceOnlineState`, never a boolean: the page must be able
+ * to say "unknown" when the device gateway is unreachable.
+ */
+export interface AdminDeviceSummary {
+  /** CPU architecture as reported by the client; `null` on rows that predate it. */
+  architecture: string | null;
+  /** Live gateway channels at read time; `0` for offline and unknown rows. */
+  channelCount: number;
+  deviceId: string;
+  firstSeenAt: Date;
+  friendlyName: string | null;
+  hostname: string | null;
+  /** `'machine-id'`, `'fallback'` or the managed-cloud value. */
+  identitySource: string;
+  lastSeenAt: Date;
+  online: AdminDeviceOnlineState;
+  owner: AdminDeviceOwner;
+  platform: string | null;
+  scope: AdminDeviceScope;
+  /**
+   * Workspace rows only: the personal deviceId this enrollment was shared
+   * from (`devices.shared_from_device_id`). `null` for personal rows and for
+   * machines enrolled directly with `lh connect --workspace`.
+   */
+  sharedFromDeviceId: string | null;
+  /** `null` for personal rows — they are private to their owner by definition. */
+  visibility: AdminDeviceVisibility | null;
+  /** `null` for personal devices. */
+  workspace: AdminDeviceWorkspace;
+}
+
+/**
+ * Device detail, with the admin privacy whitelist fixed at the type level.
+ *
+ * This shape deliberately has NO `defaultCwd`, `workingDirs` or `recentCwds`:
+ * filesystem paths from another user's machine are not an administrator's
+ * business, and a field that is absent from the type cannot leak through a
+ * later implementation that "just returns the row".
+ *
+ * `devices.metadata` is likewise never returned wholesale. Only the known keys
+ * listed in {@link ADMIN_DEVICE_DETAIL_METADATA_KEYS} are projected, each as
+ * its own top-level field (`appVersion`, `cliVersion`); an unknown metadata key
+ * has no field and therefore no way out.
+ */
+export interface AdminDeviceDetail extends AdminDeviceSummary {
+  /** `metadata.appVersion` of the last connect; absent for CLI/ghost rows. */
+  appVersion?: string;
+  channels: AdminDeviceChannel[];
+  /** `metadata.cliVersion` of the last connect; absent for desktop rows. */
+  cliVersion?: string;
+  /** Whether the device carries a fixed agent binding (never the binding itself). */
+  hasFixedAgentBinding?: boolean;
+  /** Managed cloud devices only; absent for regular machines. */
+  managedPhase?: ManagedDevicePhase;
+}
+
+/** `metadata` keys the detail projection may read; nothing else is exposed. */
+export const ADMIN_DEVICE_DETAIL_METADATA_KEYS = ['appVersion', 'cliVersion'] as const;
+
+export type AdminDeviceDetailMetadataKey = (typeof ADMIN_DEVICE_DETAIL_METADATA_KEYS)[number];
+
+/** Hard cap for {@link AdminDeviceListParams.pageSize}; the server clamps to it. */
+export const ADMIN_DEVICE_MAX_PAGE_SIZE = 100;
+
+/** Admin list query. Every filter is optional and ANDed. */
+export interface AdminDeviceListParams {
+  online?: AdminDeviceOnlineState;
+  page?: number;
+  /** Rows per page, clamped to {@link ADMIN_DEVICE_MAX_PAGE_SIZE}. */
+  pageSize?: number;
+  /** Exact match on the reported platform (`darwin` / `win32` / `linux`). */
+  platform?: string;
+  /** Search across friendly name, hostname and owner username / email. */
+  q?: string;
+  scope?: AdminDeviceScope;
+  /**
+   * Workspace rows only. Personal rows carry no visibility, so setting this
+   * narrows the result to workspace enrollments.
+   */
+  visibility?: AdminDeviceVisibility;
+  workspaceId?: string;
+}
+
+/** Presence tally for the current filter, computed over the whole result. */
+export interface AdminDeviceOnlineStats {
+  offline: number;
+  online: number;
+  unknown: number;
+}
+
+export interface AdminDeviceListResult {
+  items: AdminDeviceSummary[];
+  onlineStats: AdminDeviceOnlineStats;
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+/** Header counters for the overview page; independent of the current filter. */
+export interface AdminDeviceStats {
+  /** Devices whose `lastSeenAt` falls inside the last 7 days. */
+  activeLast7d: number;
+  byPlatform: Record<string, number>;
+  personal: number;
+  total: number;
+  workspace: number;
+  /** Distinct workspaces with at least one enrolled device. */
+  workspaceCount: number;
+}

@@ -31,7 +31,7 @@ const ModelCatalogCard = ({
   onSync,
   onToggleOpen,
 }: ModelCatalogCardProps) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
   const [keyword, setKeyword] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
@@ -62,9 +62,9 @@ const ModelCatalogCard = ({
     <div {...sx(styles.card)}>
       <div {...sx(styles.cardHeader)}>
         <div {...sx(styles.cardHeaderText)}>
-          <span {...sx(styles.cardTitle)}>{t('adminConsole.modelService.catalog.title')}</span>
+          <span {...sx(styles.cardTitle)}>{t('modelService.catalog.title')}</span>
           <Text fontSize={12} lineHeight={1.6} type={'secondary'}>
-            {t('adminConsole.modelService.catalog.desc', {
+            {t('modelService.catalog.desc', {
               count: models.length,
               open: openCount,
             })}
@@ -72,10 +72,10 @@ const ModelCatalogCard = ({
         </div>
         <Flexbox horizontal align={'center'} gap={8}>
           <Button size={'small'} type={'text'} onClick={onSync}>
-            {t('adminConsole.modelService.catalog.sync')}
+            {t('modelService.catalog.sync')}
           </Button>
           <Button size={'small'} onClick={onAdd}>
-            {t('adminConsole.modelService.catalog.add')}
+            {t('modelService.catalog.add')}
           </Button>
         </Flexbox>
       </div>
@@ -83,7 +83,7 @@ const ModelCatalogCard = ({
       <div {...sx(styles.toolbar)}>
         <SearchBar
           allowClear
-          placeholder={t('adminConsole.modelService.catalog.searchPlaceholder')}
+          placeholder={t('modelService.catalog.searchPlaceholder')}
           style={{ maxWidth: 320, minWidth: 220 }}
           value={keyword}
           variant={'filled'}
@@ -95,7 +95,7 @@ const ModelCatalogCard = ({
             type={typeFilter === 'all' ? 'primary' : 'text'}
             onClick={() => setTypeFilter('all')}
           >
-            {t('adminConsole.modelService.catalog.allTypes')}
+            {t('modelService.catalog.allTypes')}
             <span {...sx(styles.meta)}> {models.length}</span>
           </Button>
           {MODEL_TYPES.map((type) => (
@@ -115,10 +115,10 @@ const ModelCatalogCard = ({
 
       <div>
         <div {...sx(styles.headerRow, { gridTemplateColumns: MODEL_LIST_COLUMNS })}>
-          <span>{t('adminConsole.modelService.catalog.column.model')}</span>
-          <span>{t('adminConsole.modelService.catalog.column.type')}</span>
-          <span>{t('adminConsole.modelService.catalog.column.context')}</span>
-          <span>{t('adminConsole.modelService.catalog.column.open')}</span>
+          <span>{t('modelService.catalog.column.model')}</span>
+          <span>{t('modelService.catalog.column.type')}</span>
+          <span>{t('modelService.catalog.column.context')}</span>
+          <span>{t('modelService.catalog.column.open')}</span>
           <span />
         </div>
 
@@ -127,13 +127,13 @@ const ModelCatalogCard = ({
             <Empty
               description={t(
                 models.length === 0
-                  ? 'adminConsole.modelService.catalog.empty'
-                  : 'adminConsole.modelService.catalog.emptyFiltered',
+                  ? 'modelService.catalog.empty'
+                  : 'modelService.catalog.emptyFiltered',
               )}
             />
             {(keyword || typeFilter !== 'all') && (
               <Button size={'small'} type={'text'} onClick={resetFilters}>
-                {t('adminConsole.modelService.catalog.clear')}
+                {t('modelService.catalog.clear')}
               </Button>
             )}
           </div>
@@ -147,12 +147,12 @@ const ModelCatalogCard = ({
                   </Text>
                   {model.pending && (
                     <Tag color={'warning'} size={'small'}>
-                      {t('adminConsole.modelService.catalog.pending')}
+                      {t('modelService.catalog.pending')}
                     </Tag>
                   )}
                   {model.removedAt && (
                     <Tag color={'error'} size={'small'}>
-                      {t('adminConsole.modelService.catalog.removed')}
+                      {t('modelService.catalog.removed')}
                     </Tag>
                   )}
                 </div>
@@ -178,14 +178,14 @@ const ModelCatalogCard = ({
               />
 
               <Button size={'small'} type={'text'} onClick={() => onEdit(model)}>
-                {t('adminConsole.modelService.catalog.edit')}
+                {t('modelService.catalog.edit')}
               </Button>
             </div>
           ))
         )}
       </div>
 
-      <span {...sx(styles.footerHint)}>{t('adminConsole.modelService.catalog.hint')}</span>
+      <span {...sx(styles.footerHint)}>{t('modelService.catalog.hint')}</span>
     </div>
   );
 };

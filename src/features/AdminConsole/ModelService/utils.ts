@@ -74,7 +74,7 @@ export const isConfigConflict = (error: unknown) =>
 export const fieldRowClass = (last = false) => sx(styles.fieldRow, last && styles.fieldRowLast);
 
 export const modelTypeLabelKey = <T extends AiModelType>(type: T) =>
-  `adminConsole.modelService.type.${type}` as const;
+  `modelService.type.${type}` as const;
 
 export const capabilityLabelKey = <T extends CompanyModelCapability>(capability: T) =>
-  `adminConsole.modelService.capability.${capability}` as const;
+  `modelService.capability.${capability}` as const;

@@ -57,7 +57,7 @@ interface DetailContentProps {
 }
 
 const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) => {
-  const { t } = useTranslation(['setting', 'common']);
+  const { t } = useTranslation(['adminConsole', 'common']);
   const { data: user, isLoading, mutate } = useAdminUser(userId);
   const currentUserId = useUserStore((state) => state.user?.id);
   const [reason, setReason] = useState('');
@@ -91,11 +91,11 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
     } catch (error) {
       const message = (error as Error)?.message;
       if (message === 'LAST_ADMIN') {
-        toast.error(t('adminConsole.users.error.lastAdmin'));
+        toast.error(t('users.error.lastAdmin'));
       } else if (message === 'SELF_LOCKOUT') {
-        toast.error(t('adminConsole.users.error.selfLockout'));
+        toast.error(t('users.error.selfLockout'));
       } else {
-        toast.error(t('adminConsole.users.error.generic'));
+        toast.error(t('users.error.generic'));
       }
     } finally {
       setPending(false);
@@ -108,19 +108,17 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
       cancelText: t('cancel', { ns: 'common' }),
       content: t(
         nextRole === 'admin'
-          ? 'adminConsole.users.confirm.setAdmin.content'
-          : 'adminConsole.users.confirm.revokeAdmin.content',
+          ? 'users.confirm.setAdmin.content'
+          : 'users.confirm.revokeAdmin.content',
       ),
-      okText: t('adminConsole.users.action.confirm'),
+      okText: t('users.action.confirm'),
       title: t(
-        nextRole === 'admin'
-          ? 'adminConsole.users.confirm.setAdmin.title'
-          : 'adminConsole.users.confirm.revokeAdmin.title',
+        nextRole === 'admin' ? 'users.confirm.setAdmin.title' : 'users.confirm.revokeAdmin.title',
       ),
       onOk: () =>
         runAction(
           () => adminConsoleService.setUserRole(user.id, nextRole),
-          t('adminConsole.users.action.saved'),
+          t('users.action.saved'),
         ),
     });
   };
@@ -128,13 +126,13 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
   const onRevokeSessions = () => {
     confirmModal({
       cancelText: t('cancel', { ns: 'common' }),
-      content: t('adminConsole.users.confirm.revokeSessions.content'),
-      okText: t('adminConsole.users.action.confirm'),
-      title: t('adminConsole.users.confirm.revokeSessions.title'),
+      content: t('users.confirm.revokeSessions.content'),
+      okText: t('users.action.confirm'),
+      title: t('users.confirm.revokeSessions.title'),
       onOk: () =>
         runAction(async () => {
           const { count } = await adminConsoleService.revokeUserSessions(user.id);
-          toast.success(t('adminConsole.users.detail.revokedSessions', { count }));
+          toast.success(t('users.detail.revokedSessions', { count }));
         }),
     });
   };
@@ -148,7 +146,7 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
           reason.trim(),
           banDays > 0 ? dayjs().add(banDays, 'day').toDate() : undefined,
         ),
-      t('adminConsole.users.action.saved'),
+      t('users.action.saved'),
     );
   };
 
@@ -166,51 +164,41 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
 
       <Flexbox gap={4}>
         <Text fontSize={12} type={'secondary'} weight={500}>
-          {t('adminConsole.users.detail.overview')}
+          {t('users.detail.overview')}
         </Text>
-        <DetailRow label={t('adminConsole.users.detail.account')}>
+        <DetailRow label={t('users.detail.account')}>
           <Text ellipsis>{user.username ?? '—'}</Text>
         </DetailRow>
-        <DetailRow label={t('adminConsole.users.detail.role')}>
+        <DetailRow label={t('users.detail.role')}>
           <Tag color={user.role === 'admin' ? 'warning' : undefined} size={'small'}>
-            {t(
-              user.role === 'admin'
-                ? 'adminConsole.users.role.admin'
-                : 'adminConsole.users.role.user',
-            )}
+            {t(user.role === 'admin' ? 'users.role.admin' : 'users.role.user')}
           </Tag>
         </DetailRow>
-        <DetailRow label={t('adminConsole.users.detail.status')}>
+        <DetailRow label={t('users.detail.status')}>
           <Tag color={user.banned ? 'error' : 'success'} size={'small'}>
-            {t(
-              user.banned ? 'adminConsole.users.status.banned' : 'adminConsole.users.status.active',
-            )}
+            {t(user.banned ? 'users.status.banned' : 'users.status.active')}
           </Tag>
         </DetailRow>
-        <DetailRow label={t('adminConsole.users.detail.emailVerified')}>
+        <DetailRow label={t('users.detail.emailVerified')}>
           <Text fontSize={13}>
-            {t(
-              user.emailVerified
-                ? 'adminConsole.users.detail.verified'
-                : 'adminConsole.users.detail.unverified',
-            )}
+            {t(user.emailVerified ? 'users.detail.verified' : 'users.detail.unverified')}
           </Text>
         </DetailRow>
-        <DetailRow label={t('adminConsole.users.detail.lastActive')}>
+        <DetailRow label={t('users.detail.lastActive')}>
           <Text fontSize={13}>{formatDateTime(user.lastActiveAt)}</Text>
         </DetailRow>
-        <DetailRow label={t('adminConsole.users.detail.createdAt')}>
+        <DetailRow label={t('users.detail.createdAt')}>
           <Text fontSize={13}>{formatDateTime(user.createdAt)}</Text>
         </DetailRow>
         {user.banned && user.banReason && (
-          <DetailRow label={t('adminConsole.users.detail.banReason')}>
+          <DetailRow label={t('users.detail.banReason')}>
             <Text align={'right'} fontSize={13}>
               {user.banReason}
             </Text>
           </DetailRow>
         )}
         {user.banned && user.banExpires && (
-          <DetailRow label={t('adminConsole.users.detail.banExpires')}>
+          <DetailRow label={t('users.detail.banExpires')}>
             <Text fontSize={13}>{formatDateTime(user.banExpires)}</Text>
           </DetailRow>
         )}
@@ -218,19 +206,15 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
 
       <Flexbox gap={8}>
         <Text fontSize={12} type={'secondary'} weight={500}>
-          {t('adminConsole.users.detail.actions')}
+          {t('users.detail.actions')}
         </Text>
         {isSelf && (
           <Text fontSize={12} type={'secondary'}>
-            {t('adminConsole.users.detail.selfHint')}
+            {t('users.detail.selfHint')}
           </Text>
         )}
         <Button block disabled={isSelf || pending} onClick={onToggleRole}>
-          {t(
-            user.role === 'admin'
-              ? 'adminConsole.users.detail.revokeAdmin'
-              : 'adminConsole.users.detail.setAdmin',
-          )}
+          {t(user.role === 'admin' ? 'users.detail.revokeAdmin' : 'users.detail.setAdmin')}
         </Button>
 
         {user.banned ? (
@@ -238,47 +222,44 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
             block
             disabled={pending}
             onClick={() =>
-              runAction(
-                () => adminConsoleService.unbanUser(user.id),
-                t('adminConsole.users.action.saved'),
-              )
+              runAction(() => adminConsoleService.unbanUser(user.id), t('users.action.saved'))
             }
           >
-            {t('adminConsole.users.detail.unban')}
+            {t('users.detail.unban')}
           </Button>
         ) : (
           <Flexbox gap={8}>
             <TextArea
-              placeholder={t('adminConsole.users.detail.banReasonPlaceholder')}
+              placeholder={t('users.detail.banReasonPlaceholder')}
               rows={3}
               value={reason}
               onChange={(event) => setReason(event.target.value)}
             />
             <Flexbox horizontal align={'center'} gap={8}>
               <Text fontSize={12} style={{ whiteSpace: 'nowrap' }} type={'secondary'}>
-                {t('adminConsole.users.detail.banDuration')}
+                {t('users.detail.banDuration')}
               </Text>
               <Select
                 size={'small'}
                 style={{ minWidth: 120 }}
                 value={banDays}
                 options={[
-                  { label: t('adminConsole.users.detail.banDuration.never'), value: 0 },
-                  { label: t('adminConsole.users.detail.banDuration.oneDay'), value: 1 },
-                  { label: t('adminConsole.users.detail.banDuration.sevenDays'), value: 7 },
-                  { label: t('adminConsole.users.detail.banDuration.thirtyDays'), value: 30 },
+                  { label: t('users.detail.banDuration.never'), value: 0 },
+                  { label: t('users.detail.banDuration.oneDay'), value: 1 },
+                  { label: t('users.detail.banDuration.sevenDays'), value: 7 },
+                  { label: t('users.detail.banDuration.thirtyDays'), value: 30 },
                 ]}
                 onChange={(value) => setBanDays(Number(value))}
               />
             </Flexbox>
             <Button block danger disabled={isSelf || pending || !reason.trim()} onClick={onBan}>
-              {t('adminConsole.users.detail.ban')}
+              {t('users.detail.ban')}
             </Button>
           </Flexbox>
         )}
 
         <Button block disabled={pending} onClick={onRevokeSessions}>
-          {t('adminConsole.users.detail.revokeSessions')}
+          {t('users.detail.revokeSessions')}
         </Button>
       </Flexbox>
 
@@ -292,13 +273,13 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
 DetailContent.displayName = 'AdminUserDetailContent';
 
 const UserDetailDrawer = memo<UserDetailDrawerProps>(({ userId, onClose, onChanged }) => {
-  const { t } = useTranslation('setting');
+  const { t } = useTranslation('adminConsole');
 
   return (
     <Drawer
       open={Boolean(userId)}
       placement={'right'}
-      title={t('adminConsole.users.title')}
+      title={t('users.title')}
       width={520}
       onClose={onClose}
     >
