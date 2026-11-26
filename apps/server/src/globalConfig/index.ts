@@ -1,4 +1,7 @@
-import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
+import {
+  DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED,
+  ENABLE_BUSINESS_FEATURES,
+} from '@lobechat/business-const';
 import { parseToolNameMaxLength } from '@lobechat/const/plugin';
 import { type ServiceModelTier } from '@lobechat/types';
 import { ModelProvider } from 'model-bank';
@@ -6,7 +9,7 @@ import urlJoin from 'url-join';
 
 import { loadModels } from '@/business/client/model-bank/loadModels';
 import { getCompanyServiceDefaults } from '@/business/server/adminConsole/serviceDefaults';
-import { withCompanyProviderCatalog } from '@/business/server/companyProvider';
+import { COMPANY_PROVIDER_ID, withCompanyProviderCatalog } from '@/business/server/companyProvider';
 import { composioEnv } from '@/config/composio';
 import { isDesktop } from '@/const/version';
 import { agentIdentityEnv } from '@/envs/agentIdentity';
@@ -130,6 +133,23 @@ const getAiProviderSpecificConfig = () => {
       aiProviderSpecificConfig[provider] = {
         ...aiProviderSpecificConfig[provider],
         enabled: provider === ModelProvider.LobeHub,
+      };
+    }
+  } else if (DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED) {
+    // CUST-011-C: a user who has not chosen otherwise sees only the enterprise
+    // built-in provider (Tellhow AI) enabled. This is a *default*, not a ban —
+    // `AiInfraRepos.getAiProviderList()` ORs the user's own `ai_provider.enabled`
+    // row over this value, and custom providers never read it. The explicit
+    // boolean also overrides the `ENABLED_*` env switches (see
+    // `DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED`): an operator that wants another
+    // provider on by default should edit this branch, not those env vars.
+    //
+    // `withCompanyProviderCatalog()` still owns the real Tellhow switch below:
+    // an unconfigured / disabled console service overwrites this to `false`.
+    for (const provider of Object.values(ModelProvider)) {
+      aiProviderSpecificConfig[provider] = {
+        ...aiProviderSpecificConfig[provider],
+        enabled: provider === COMPANY_PROVIDER_ID,
       };
     }
   }

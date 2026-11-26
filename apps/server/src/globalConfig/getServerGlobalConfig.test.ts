@@ -30,6 +30,12 @@ interface MockGlobalConfigOptions {
   enablePageCollab?: boolean;
   enableWorkspacePageCollab?: boolean;
   filesConfigEnv?: string;
+  /**
+   * CUST-011-C fork switch. Defaults to the shipped value (`true`) so the suite
+   * exercises what a deployment actually gets; pass `false` to assert the
+   * untouched upstream behaviour.
+   */
+  onlyCompanyProviderEnabled?: boolean;
   /** What `SYSTEM_AGENT` parses into. */
   systemAgentEnv?: Record<string, { model: string; provider: string }>;
   toolNameMaxLengthEnv?: string;
@@ -40,6 +46,7 @@ const mockGlobalConfigDependencies = (
   options: MockGlobalConfigOptions = {},
 ) => {
   vi.doMock('@lobechat/business-const', () => ({
+    DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED: options.onlyCompanyProviderEnabled ?? true,
     ENABLE_BUSINESS_FEATURES: enableBusinessFeatures,
   }));
 
@@ -120,6 +127,7 @@ const mockGlobalConfigDependencies = (
   // The catalog merge owns its own DB read; this suite tests the config shape,
   // not the Tellhow console, so it stays out of the database entirely.
   vi.doMock('@/business/server/companyProvider', () => ({
+    COMPANY_PROVIDER_ID: 'tellhow',
     withCompanyProviderCatalog: vi.fn(async (configs: Record<string, unknown>) => configs),
   }));
 
@@ -151,10 +159,13 @@ const mockGlobalConfigDependencies = (
   }));
 };
 
-const loadCapturedProviderConfig = async (enableBusinessFeatures: boolean) => {
+const loadCapturedProviderConfig = async (
+  enableBusinessFeatures: boolean,
+  options?: MockGlobalConfigOptions,
+) => {
   vi.resetModules();
   mocks.genServerAiProvidersConfig.mockClear();
-  mockGlobalConfigDependencies(enableBusinessFeatures);
+  mockGlobalConfigDependencies(enableBusinessFeatures, options);
 
   const { getServerGlobalConfig } = await import('./index');
   await getServerGlobalConfig();
@@ -196,8 +207,29 @@ describe('getServerGlobalConfig', () => {
     }
   });
 
-  it('should keep upstream defaults outside business feature mode', async () => {
+  it('should only enable Tellhow by default for a user who has not chosen (CUST-011-C)', async () => {
     const providerConfig = await loadCapturedProviderConfig(false);
+
+    // The enterprise built-in provider is the one exception; the admin console
+    // still overwrites it in `withCompanyProviderCatalog()` when it is closed.
+    expect(providerConfig.tellhow.enabled).toBe(true);
+    expect(providerConfig.tellhow.fetchOnClient).toBeUndefined();
+
+    for (const provider of Object.values(ModelProvider)) {
+      if (provider === ModelProvider.Tellhow) continue;
+
+      expect(providerConfig[provider].enabled).toBe(false);
+    }
+
+    // Provider-specific metadata survives the override: it is merged, not
+    // replaced. `fetchOnClient` is independent from the default-enabled flag.
+    expect(providerConfig[ModelProvider.Ollama].fetchOnClient).toBe(true);
+  });
+
+  it('should keep upstream defaults when the CUST-011-C switch is off', async () => {
+    const providerConfig = await loadCapturedProviderConfig(false, {
+      onlyCompanyProviderEnabled: false,
+    });
 
     expect(providerConfig[ModelProvider.LobeHub]).toBeUndefined();
     expect(providerConfig[ModelProvider.OpenAI]).toBeUndefined();

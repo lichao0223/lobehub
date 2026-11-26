@@ -108,6 +108,7 @@ type CompanyModel = {
 - Tellhow 在「AI 服务商」里常驻已启用，不需要填 Key，也没有配置入口；
 - 右侧模型列表由公司目录决定：管理员 `open: true` 的模型才出现；
 - 用户可勾选启用 / 停用某个模型，也可以继续添加其他厂商；
+- 新用户的厂商开关默认只有 Tellhow 打开，其它内置厂商默认关闭；用户在设置里打开即照常可用（**默认关闭 ≠ 禁止**，见 §7.2）；
 - 用户看不到、也不能改服务地址与密钥，不能删除这个厂商；
 - 管理员关闭 `enabled` 后，用户侧不再出现该厂商；已选过它的会话下一次请求收到可读错误。
 
@@ -361,6 +362,50 @@ P2 交付时它是「只存不用」：`getCompanyProviderRuntime()` 把 `defaul
 
 **实现与验收分工**：T-90 注入 `serverConfig` + 统一解析函数；T-91 后台任务读取点改走同一函数；T-92 新用户默认只开 TellhowAI（默认模型之外的另一件事）；T-93 个人服务模型页与管理端默认值文案；T-94 存量 / 新注册 / SSO 三条真实链路验收。
 
+### 7.2 厂商默认开关（CUST-011-C）
+
+产品口径：新用户（注册、SSO 首次登录）打开「AI 服务商」时，只有 TellhowAI 的开关是开的，其它内置厂商默认关闭。用户自己打开某个厂商后照常可用；自定义厂商不受影响。
+
+**「默认关闭」不是「禁止」**。厂商是否可用由两处值「或」出来（`packages/database/src/repositories/aiInfra/index.ts:105-107`）：
+
+```text
+最终 enabled = 用户 ai_provider.enabled  或  服务端 serverConfig.aiProvider[id].enabled
+```
+
+CUST-011-C 只改后半段（默认值），前半段仍是用户自己的选择：用户点开开关就写用户行 `enabled: true`，列表、模型选择器与后续请求都恢复正常。自定义厂商（`source: 'custom'`）只存在于用户行，这份默认值根本不参与。
+
+**开关**：`packages/business/const/src/index.ts` 的 `DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED`（本 Fork 为 `true`）。生效点在 `apps/server/src/globalConfig/index.ts` 的 `getAiProviderSpecificConfig()`：
+
+```ts
+for (const provider of Object.values(ModelProvider)) {
+  aiProviderSpecificConfig[provider] = {
+    ...aiProviderSpecificConfig[provider],
+    enabled: provider === COMPANY_PROVIDER_ID, // tellhow
+  };
+}
+```
+
+合并写法是硬要求：上方那些 `fetchOnClient` / `modelListKey` / `withDeploymentName` 是厂商元数据，不能被默认开关冲掉。
+
+**与 `withCompanyProviderCatalog()` 的分工**：控制台仍然决定 Tellhow 的生死——`getServerGlobalConfig()` 在 `genServerAiProvidersConfig()` 之后调用 `withCompanyProviderCatalog()`，未配置或管理员关闭时把 `tellhow.enabled` 覆盖为 `false`，用户侧立即不可见（§5.6 不变）。默认开关只负责「Tellhow 之外的厂商默认关」。
+
+**为什么不复用 `ENABLE_BUSINESS_FEATURES`**：`getAiProviderSpecificConfig()` 里已有一条现成的「只开内置厂商」分支（`enabled: provider === ModelProvider.LobeHub`），但它与业务特性总开关绑定——后者还决定 `agentGatewayProtocol`、页面协作与 `isOfficialProvider`，且默认厂商是 `lobehub` 不是 `tellhow`。本 Fork 必须保持 `ENABLE_BUSINESS_FEATURES = false`，所以复制写法、另立只表达「默认厂商集合」的常量。
+
+**对服务端解析零影响（T-92 已用测试证明）**：`initModelRuntimeFromDB()` 只读用户 / 厂商行与控制台凭据，从不读 `aiProvider[id].enabled`：
+
+| 链路 | 是否读厂商级默认 | 说明 |
+| --- | --- | --- |
+| 标题 / 翻译 / 技能元数据（`resolveSystemAgentModelConfig → initModelRuntimeFromDB`） | 否 | 只解析 model + provider，随后按凭据初始化 |
+| 记忆抽取 / 向量（`getAiProviderRuntimeState` → `enabledAiModels` / `tryMatchingProviderFrom`） | 否 | 用**模型级** `enabled`，不是厂商级 |
+| 任务验收（`resolveGoalReviewModelConfig` 的 `initModelRuntimeFromDB` 探针） | 否 | 凭据初始化失败才算不可用 |
+| 异构 Agent 部署目录（`getEnabledServerChatModels` / `resolveServerModel`） | 是 | 前者只查 `lobehub` relay 目录（本 Fork 不用）；后者只用于压缩模型的 `deploymentName` 兜底查找，查不到就退回裸模型 id（best-effort，不影响请求） |
+| 用户侧厂商列表 / 模型选择器（`getAiProviderList`） | 是 | 这就是本开关要影响的那一处 |
+
+`apps/server/src/modules/ModelRuntime/providerDefaults.test.ts` 用真实初始化路径锁住：无用户行的新用户调用 Tellhow 成功；默认关闭的 openai / deepseek 在用户打开后仍能初始化；自定义厂商不受影响。
+
+**已知取舍**：开启后内置厂商的 `ENABLED_*` 环境变量不再把该厂商在用户侧默认打开（凭据仍生效，用户打开开关即可用）；桌面端 `ollama` 也一并默认关闭（本 Fork 为 Web 部署）。需要另一个默认开启的厂商时，改 `getAiProviderSpecificConfig()` 的放行表达式，不要改 `ENABLE_BUSINESS_FEATURES`。
+
+
 ## 8. 对现有代码的侵入清单
 
 ### 8.0 最小侵入原则（开发时按此执行）
@@ -465,6 +510,9 @@ src/services/adminConsole.ts
 10. `getServerGlobalConfig` 仍组装 `systemAgent` / `defaultAgent`，且客户端 `#project` 仍把它们合并进 `defaultSettings`；这两处任一被上游重构，「未自选 = 跟随默认」就会失效；
 11. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）仍经过统一解析函数，不能被上游改成各写一份默认值；
 12. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并由 `invalidateCompanyProviderCache()` 在保存后失效。
+13. 厂商默认开关（CUST-011-C）依赖三处，任一处被上游重构都要重跑 `getServerGlobalConfig` / `getAiProviderList` / `providerDefaults`：`getAiProviderSpecificConfig()` 的显式 `enabled` 覆盖、`AiInfraRepos.getAiProviderList()` 的「用户行 OR 服务端配置」合并、`withCompanyProviderCatalog()` 在 `genServerAiProvidersConfig()` 之后对 `tellhow.enabled` 的最终覆盖。
+14. `ENABLE_BUSINESS_FEATURES` 语义不得被改成「只开 tellhow」（它还控制网关协议、页面协作与 `isOfficialProvider`）；上游若把「只开内置厂商」抽成独立参数，可改为复用，但默认厂商必须仍是 `COMPANY_PROVIDER_ID`。
+15. `ProviderSpecificConfig` 新增字段时，默认开关的覆盖循环必须保持 `{ ...existing, enabled }` 的合并写法，否则 `fetchOnClient` / `modelListKey` / `withDeploymentName` 会丢。
 
 ## 11. 验收清单
 
@@ -478,6 +526,7 @@ src/services/adminConsole.ts
 **P2**
 
 - [ ] 用户首次登录，设置 → AI 服务商里看到「泰豪 AI」已启用，无需填 Key；
+- [ ] 新用户只有 TellhowAI 默认开启，其它内置厂商默认关闭；用户自己打开某个厂商后可用；管理员关闭 Tellhow 后该厂商不可见（CUST-011-C，§7.2）；
 - [ ] 管理员开放的模型出现在用户模型列表；关闭后刷新即消失；
 - [ ] 用户可自建其他厂商并正常对话；
 - [ ] 抓包 / 接口响应中不出现明文或密文密钥；

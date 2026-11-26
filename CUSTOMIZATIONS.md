@@ -18,7 +18,7 @@
 | CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                  | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
 | CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关) | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）               |
 | CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态 | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览) | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补 |
-| CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat / title / verify / embedding 成为全站默认模型                        | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/modelService.ts`                   | 文档已定稿（2026-11-26）；实现 T-90~T-94 进行中               |
+| CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat / title / verify / embedding 成为全站默认模型；新用户厂商开关默认只开 TellhowAI | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、[厂商默认开关](ADMIN_CONSOLE_DESIGN.md#72-厂商默认开关cust-011-c)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/modelService.ts` | 文档已定稿（2026-11-26）；T-90 / T-93、T-91、T-92 分别在三条分支上，待 T-94 合并与验收 |
 
 ## CUST-001：自定义镜像
 
@@ -406,6 +406,18 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 - **用户侧呈现**：`serverConfig.companyDefaultTiers` 只列出管理员真的设过的档位；个人设置 → 模型只在这些档位把兜底项写成「管理员默认」（否则仍是「系统推荐」）。部署里只要有任意一个管理员默认档，四档标题下就补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」；一个都没有（纯上游部署）时不显示这句话。管理端四个默认值与个人四档同名同序（主模型 / Flash 模型 / 验收模型 / 记忆向量化模型），不再说「只影响新用户」；验收模型下拉按 `capabilities.includes('vision')` 过滤，已存的不合规值仍留在下拉里标为「不可用」并给出提示，不静默保存。
 - **备选口径（本次不实施，待用户确认可切换）**：强制覆盖所有用户自选（含 pin 与档位选择）。启用时的建议形态是 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` 即本次口径），`force` 也只做解析覆盖、不改用户行，否则切回 `follow` 时用户原选择已丢失。
 
+### CUST-011-C：新用户默认只开 TellhowAI（默认关闭 ≠ 禁止）
+
+需求：新用户（注册、SSO 首次登录）在「AI 服务商」里的开关只有 TellhowAI 是开的，其它内置厂商默认关闭；用户自己打开的照常可用，自定义厂商不受影响。
+
+- **开关**：`packages/business/const/src/index.ts` 的 `DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED`（本仓库为 `true`）。生效点是 `apps/server/src/globalConfig/index.ts` 的 `getAiProviderSpecificConfig()`：非业务模式下把每个内置厂商的 `enabled` 显式写成 `provider === COMPANY_PROVIDER_ID`，再随 `serverConfig.aiProvider` 下发。厂商专属元数据（`fetchOnClient` / `modelListKey` / `withDeploymentName`）用 spread 保留，不会被开关冲掉。
+- **「默认关闭」不是「禁止」**：`AiInfraRepos.getAiProviderList()`（`packages/database/src/repositories/aiInfra/index.ts:105-107`）的合并语义是「用户 `ai_provider.enabled` **或** 服务端 `aiProvider[id].enabled`」。服务端默认值只是新用户看到的初始状态；用户在设置里打开某厂商即写用户行 `enabled: true`，列表与后续请求都照常。自定义厂商（`source: 'custom'`）来自用户行，这份默认值根本不参与。
+- **Tellhow 仍由控制台决定**：`withCompanyProviderCatalog()` 在 `getServerGlobalConfig()` 里最后覆盖 `tellhow.enabled`——控制台未配置或关闭时为 `false`，用户侧立即不可见（沿用 CUST-008 §5.6）。本开关只决定 Tellhow 之外的厂商默认关，不接管 Tellhow 的生死。
+- **为什么另加常量而不是复用 `ENABLE_BUSINESS_FEATURES`**：`getAiProviderSpecificConfig()` 里确有一条「只开内置厂商」的现成分支（`enabled: provider === ModelProvider.LobeHub`），但它与 `ENABLE_BUSINESS_FEATURES` 绑定，而这个常量的语义是业务特性总开关（还决定 `agentGatewayProtocol`、页面协作、`isOfficialProvider` 等）。本 Fork 的 `ENABLE_BUSINESS_FEATURES = false` 必须保持；翻成 `true` 会连带打开网关 v2 与协作能力，且默认厂商会变成 `lobehub` 而不是 `tellhow`。因此复制它的**写法**、另立只表达「默认厂商集合」的常量，语义不再扩张。
+- **对服务端模型解析零影响（已用测试证明）**：`initModelRuntimeFromDB()` 只读用户/厂商行与控制台凭据，从不读 `aiProvider[id].enabled`——`apps/server/src/modules/ModelRuntime/providerDefaults.test.ts` 用真实初始化路径锁住三件事：没有用户行的新用户调用 Tellhow 成功、默认关闭的 openai / deepseek 在用户打开后仍能初始化、自定义厂商不受影响。其余后台链路同样不看厂商级开关：标题 / 验收等走 `resolveSystemAgentModelConfig → initModelRuntimeFromDB`；记忆抽取用 `getAiProviderRuntimeState().enabledAiModels`（模型级 `enabled`），`tryMatchingProviderFrom` 也只查模型集合；`getEnabledServerChatModels()` 只服务 `lobehub` relay 的部署目录。
+- **已知取舍**：开启本开关后，内置厂商的 `ENABLED_*` 环境变量不再把该厂商在用户侧默认打开（凭据仍然生效，用户在设置里打开即可用）；桌面端 `ollama` 也一并默认关闭（本 Fork 是 Web 部署）。需要别的默认开启厂商时，改 `getAiProviderSpecificConfig()` 的放行表达式，不要改 `ENABLE_BUSINESS_FEATURES`。
+- **验证**：`apps/server/src/globalConfig/getServerGlobalConfig.test.ts`（只有 tellhow `enabled`；开关关闭时恢复上游默认）、`packages/database/src/repositories/aiInfra/__tests__/getAiProviderList.test.ts`（新用户只有 tellhow / 用户打开 openai 后可用 / 管理员关掉 tellhow 后不可见）、`apps/server/src/modules/ModelRuntime/providerDefaults.test.ts`（运行时证明）。
+
 ### 维护位置
 
 | 层                 | 位置                                                                                                                                                      |
@@ -416,6 +428,7 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 | 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx`、`locales/{en-US,zh-CN}/adminConsole.json` 的 `modelService.defaults.*`                         |
 | 解析消费（实现中） | `serverConfig` 注入（`apps/server/src/globalConfig/index.ts`，含 `companyDefaultTiers` 来源标记）与后台任务读取点，统一解析函数放在 `packages/business-server`                                   |
 | 用户侧跟随链路     | `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`；`src/store/user/slices/settings/selectors/settings.ts` 的 `currentSettings`   |
+| 厂商默认开关（C）  | 常量 `packages/business/const/src/index.ts` 的 `DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED`；生效点 `apps/server/src/globalConfig/index.ts` 的 `getAiProviderSpecificConfig()`；合并语义 `packages/database/src/repositories/aiInfra/index.ts` 的 `getAiProviderList()` |
 
 ### 与 CUST-008 §7 的关系
 
@@ -434,10 +447,13 @@ CUST-008（管理员控制台）负责「配置能不能写、密钥怎么存、
 5. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）必须走统一解析函数，不能被上游改成各写一份默认值。
 6. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并在保存配置后失效。
 7. 管理端默认值文案 `modelService.defaults.*` 与语义同步；en-US 源文案写 `packages/locales/src/default/`，zh-CN 手写。个人页「管理员默认」的来源标记依赖 `serverConfig.companyDefaultTiers`（`packages/types/src/serverConfig.ts` 的可选字段），上游改 `GlobalServerConfig` 或 `SERVICE_MODEL_TIER_SLOTS` 时不要丢；验收模型的视觉过滤只看 `capabilities.includes('vision')`，目录同步若换了能力字段名要同步改 `acceptsDefaultModel`。
+8. 厂商默认开关（CUST-011-C）依赖三处，任一处被上游重构都要重跑 `getServerGlobalConfig` / `getAiProviderList` / `providerDefaults` 三个测试：`getAiProviderSpecificConfig()` 的显式 `enabled` 覆盖、`AiInfraRepos.getAiProviderList()` 的「用户行 OR 服务端配置」合并、`withCompanyProviderCatalog()` 对 `tellhow.enabled` 的最终覆盖（顺序必须在 `genServerAiProvidersConfig` 之后）。
+9. `ENABLE_BUSINESS_FEATURES` 语义不得被本 Fork 改成「只开 tellhow」：它同时控制 `agentGatewayProtocol`、页面协作与 `isOfficialProvider`。上游若把「只开内置厂商」逻辑抽成独立参数，可改为复用它，但要确认默认厂商仍是 `COMPANY_PROVIDER_ID` 而不是 `lobehub`。
+10. 上游给 `ProviderSpecificConfig` 新增字段时，`getAiProviderSpecificConfig()` 的覆盖循环必须是 `{ ...existing, enabled }` 的合并写法，不能整体替换对象，否则 `fetchOnClient` / `modelListKey` / `withDeploymentName` 会丢。
 
 ### 当前发布状态
 
-文档先行（2026-11-26，分支 `feat/admin-model-defaults`）：语义已定稿并登记。代码实现与真实验收在 T-90 ~ T-94：T-90（`serverConfig` 注入）与 T-93（个人页 / 管理端文案与来源标记）已提交到 `feat/admin-model-defaults`，后台任务兜底（T-91）、新用户默认只开 TellhowAI（T-92）、存量 / 新注册 / SSO 真实验收（T-94）仍在进行，**尚未合入 canary、未发布验收报告**。
+文档与实现（2026-11-26）：语义已定稿并登记。代码分三条分支推进，尚未合并：`feat/admin-model-defaults`（T-90 `serverConfig` 注入 + T-93 个人页 / 管理端文案与来源标记）、`feat/cust011-b2-runtime`（T-91 后台任务兜底）、`feat/cust011-c-provider-defaults`（T-92 新用户默认只开 TellhowAI）。存量 / 新注册 / SSO 真实验收与合并在 T-94，**尚未合入 canary、未发布验收报告**。
 
 ## 上游合并统一流程
 
