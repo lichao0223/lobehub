@@ -3,7 +3,11 @@ import type { AdminConsoleAiDefaults, CompanyModel, ServiceModelTier } from '@lo
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as CompanyProviderModule from '../companyProvider';
-import { getCompanyServiceDefaults, resolveCompanyServiceDefaults } from './serviceDefaults';
+import {
+  getCompanyServiceDefaultModel,
+  getCompanyServiceDefaults,
+  resolveCompanyServiceDefaults,
+} from './serviceDefaults';
 
 const mocks = vi.hoisted(() => ({ getCompanyProviderRuntimeFromServer: vi.fn() }));
 
@@ -132,5 +136,27 @@ describe('getCompanyServiceDefaults', () => {
     mocks.getCompanyProviderRuntimeFromServer.mockResolvedValue(null);
 
     await expect(getCompanyServiceDefaults()).resolves.toEqual({ systemAgent: {}, tiers: {} });
+  });
+});
+
+describe('getCompanyServiceDefaultModel', () => {
+  beforeEach(() => {
+    mocks.getCompanyProviderRuntimeFromServer.mockReset();
+  });
+
+  it('returns the administrator default for one slot', async () => {
+    mocks.getCompanyProviderRuntimeFromServer.mockResolvedValue(
+      runtimeOf({ title: 'tellhow-flash' }, [flashModel]),
+    );
+
+    await expect(getCompanyServiceDefaultModel('topic')).resolves.toEqual(tellhow('tellhow-flash'));
+  });
+
+  it('returns nothing for a tier the administrator left unset', async () => {
+    mocks.getCompanyProviderRuntimeFromServer.mockResolvedValue(
+      runtimeOf({ title: 'tellhow-flash' }, [flashModel]),
+    );
+
+    await expect(getCompanyServiceDefaultModel('verify')).resolves.toBeUndefined();
   });
 });

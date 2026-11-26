@@ -6,19 +6,19 @@
 
 ## 功能总表
 
-| 编号     | 二开功能                            | 用户入口 / 行为                                                                                        | 维护位置                                                                                                                                                                                      | 状态                                                          |
-| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                             | `.github/workflows/publish-custom-image.yml`                                                                                                                                                  | 历史已有；本轮增加 TFS curl 构建参数                          |
-| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈            | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                                                                                                                  | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话 |
-| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                             | 同上；`scripts/deploy-custom-image.test.py`                                                                                                                                                   | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增 |
-| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                        | 下方列出的五个 `.github/workflows/` 文件                                                                                                                                                      | 历史已有                                                      |
-| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md)                                                                                             | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成    |
-| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                  | 本次新增；需要 Fork 自己的 npm Token                          |
-| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                       | 开发中；单测已交付，待与真实认证中心联调                      |
-| CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                  | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
-| CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关) | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）               |
-| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态 | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览) | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补 |
-| CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat / title / verify / embedding 成为全站默认模型                        | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/modelService.ts`                   | 文档已定稿（2026-11-26）；实现 T-90~T-94 进行中               |
+| 编号     | 二开功能                            | 用户入口 / 行为                                                                                        | 维护位置                                                                                                                                                                                                                                    | 状态                                                                          |
+| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                             | `.github/workflows/publish-custom-image.yml`                                                                                                                                                                                                | 历史已有；本轮增加 TFS curl 构建参数                                          |
+| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈            | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                                                                                                                                                                | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话                 |
+| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                             | 同上；`scripts/deploy-custom-image.test.py`                                                                                                                                                                                                 | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增                 |
+| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                        | 下方列出的五个 `.github/workflows/` 文件                                                                                                                                                                                                    | 历史已有                                                                      |
+| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览 | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md)                                                                                                                                           | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                    |
+| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                            | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                                                                | 本次新增；需要 Fork 自己的 npm Token                                          |
+| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                                                     | 开发中；单测已交付，待与真实认证中心联调                                      |
+| CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                                                                | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24）                 |
+| CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)                                               | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）                               |
+| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态 | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)                               | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补 |
+| CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat / title / verify / embedding 成为全站默认模型                        | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/serviceDefaults.ts`、`packages/business-server/src/adminConsole/modelService.ts` | 后台任务兜底已接入（T-91）；前端对齐（T-93）、真实验收（T-94）进行中          |
 
 ## CUST-001：自定义镜像
 
@@ -298,15 +298,15 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 ### 共享文件接点（上游文件，逐文件行数）
 
-| 文件 | + | − | 说明 |
-| --- | --- | --- | --- |
-| `apps/server/src/services/deviceGateway/index.ts` | +84 | −32 | **授权偏差**：抽出 `toDeviceAttachments()`（纯重构，行为不变）+ 新增 `readDeviceList()`，见下方「为什么必须改这里」 |
-| `apps/server/src/services/deviceGateway/index.devices.test.ts` | +72 | 0 | 上述新方法的测试（上游同文件追加，不改既有用例） |
-| `packages/locales/src/default/index.ts` | +2 | 0 | 注册新命名空间 `adminConsole`（`import adminConsole from './adminConsole'` + `resources` 首项） |
-| `packages/locales/src/default/setting.ts` | 0 | −273 | 230 条 `adminConsole.*` 键迁往 `adminConsole.ts`（含 42 条值续行 + 1 条注释） |
-| `locales/en-US/setting.json` | 0 | −230 | 同上，迁往 `locales/en-US/adminConsole.json` |
-| `locales/zh-CN/setting.json` | 0 | −230 | 同上，迁往 `locales/zh-CN/adminConsole.json` |
-| **合计（6 个）** | **+158** | **−765** | 四个 locale 文件自 `merge-base`(`5489db1143`) 起上游提交数为 **0**；两个 `deviceGateway` 文件同样为 **0** |
+| 文件                                                           | +        | −        | 说明                                                                                                                |
+| -------------------------------------------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
+| `apps/server/src/services/deviceGateway/index.ts`              | +84      | −32      | **授权偏差**：抽出 `toDeviceAttachments()`（纯重构，行为不变）+ 新增 `readDeviceList()`，见下方「为什么必须改这里」 |
+| `apps/server/src/services/deviceGateway/index.devices.test.ts` | +72      | 0        | 上述新方法的测试（上游同文件追加，不改既有用例）                                                                    |
+| `packages/locales/src/default/index.ts`                        | +2       | 0        | 注册新命名空间 `adminConsole`（`import adminConsole from './adminConsole'` + `resources` 首项）                     |
+| `packages/locales/src/default/setting.ts`                      | 0        | −273     | 230 条 `adminConsole.*` 键迁往 `adminConsole.ts`（含 42 条值续行 + 1 条注释）                                       |
+| `locales/en-US/setting.json`                                   | 0        | −230     | 同上，迁往 `locales/en-US/adminConsole.json`                                                                        |
+| `locales/zh-CN/setting.json`                                   | 0        | −230     | 同上，迁往 `locales/zh-CN/adminConsole.json`                                                                        |
+| **合计（6 个）**                                               | **+158** | **−765** | 四个 locale 文件自 `merge-base`(`5489db1143`) 起上游提交数为 **0**；两个 `deviceGateway` 文件同样为 **0**           |
 
 **为什么必须改 `deviceGateway`（任务书原本列为禁改，已获授权）**：上游 `readDevices` 在传输失败时回落 `queryDeviceList` 的 `[]`，管理端会把「网关没答」渲染成「这个人的设备全都没上线」——用户明确不接受这个谎言。`readDeviceList` 是**唯一**能区分「网关不可达」与「没有在线设备」的接法；`queryDeviceList` 保持原样（其既有调用方都把在线集当提示、本就接受 `[]`），因此是**单向新增 + 一次纯重构**，不改变任何既有调用方行为。约束：`deviceGateway` 的其余文件（`routers/lambda/device/**`、`packages/device-gateway-client/**`、`packages/database/src/{models,schemas}/device.ts`、`src/features/DeviceManager/**`、`src/store/device/**`）仍**零改动**。
 
@@ -325,25 +325,25 @@ Fork 自有新增（21 个文件，不产生合并冲突面）：`packages/types
 - 三个 procedure 均为 `adminProcedure`：`adminConsole.listDevices` / `getDevice` / `getDeviceStats`。角色语义与「最后一个管理员」保护沿用 CUST-008。
 - **在线三态 `online | offline | unknown`**，`unknown` 与 `offline` 在任何一层都不得合并：
 
-  | 触发 | 结果 |
-  | --- | --- |
-  | 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求** |
-  | 探测成功且命中 deviceId | `online`，`channelCount` = 实际通道数 |
-  | 探测成功但池里没有该 deviceId | `offline` |
-  | `readDeviceList` 返回 `ok: false`（连不上 / 重试 2 次后仍失败） | `unknown` |
-  | 探测抛错 | `unknown` |
-  | 超过 3s 整轮预算 | 未回者 `unknown`，晚到结果丢弃（`accepting` 标志） |
+  | 触发                                                            | 结果                                               |
+  | --------------------------------------------------------------- | -------------------------------------------------- |
+  | 网关未配置（`isConfigured === false`）                          | 全部 `unknown`，**零请求**                         |
+  | 探测成功且命中 deviceId                                         | `online`，`channelCount` = 实际通道数              |
+  | 探测成功但池里没有该 deviceId                                   | `offline`                                          |
+  | `readDeviceList` 返回 `ok: false`（连不上 / 重试 2 次后仍失败） | `unknown`                                          |
+  | 探测抛错                                                        | `unknown`                                          |
+  | 超过 3s 整轮预算                                                | 未回者 `unknown`，晚到结果丢弃（`accepting` 标志） |
 
 - **`online` 筛选在 SQL 之后做**（在线是活状态，SQL 无法表达）：因此命中页可能短于 `pageSize`、`total` 仍是 SQL 全量，UI 用 `isDevicePagePartial` 提示，不伪造补页。
 - 只读语义：`devices.last_seen_at` 无索引，跨用户全表列表 MVP 接受（当前部署 8 行）；数据量上来再谈索引，不改基线。
 
 ### 隐私白名单（三层纵深）
 
-| 层 | 实现 |
-| --- | --- |
-| SQL | `adminDeviceSelection` 显式列投影，**不选** `defaultCwd` / `workingDirs` / `recentCwds` / `metadata` 整列；`metadata` 只取 `sql\`${devices.metadata} ->> 'appVersion'\`` 与 `'cliVersion'` |
-| 类型 | `AdminDeviceSummary` / `AdminDeviceDetail` 无上述字段；唯一 metadata 出口是 `ADMIN_DEVICE_DETAIL_METADATA_KEYS = ['appVersion','cliVersion']`，契约测试用 `expectTypeOf` 编译期锁死 |
-| 渲染 | `projectDeviceDetail(device): DeviceDetailView` 白名单投影，抽屉只渲染该视图——即使响应体多带字段也进不了 DOM |
+| 层   | 实现                                                                                                                                                                                     |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SQL  | `adminDeviceSelection` 显式列投影，**不选** `defaultCwd` / `workingDirs` / `recentCwds` / `metadata` 整列；`metadata` 只取 `sql\`${devices.metadata} ->> 'appVersion'\``与`'cliVersion'` |
+| 类型 | `AdminDeviceSummary` / `AdminDeviceDetail` 无上述字段；唯一 metadata 出口是 `ADMIN_DEVICE_DETAIL_METADATA_KEYS = ['appVersion','cliVersion']`，契约测试用 `expectTypeOf` 编译期锁死      |
+| 渲染 | `projectDeviceDetail(device): DeviceDetailView` 白名单投影，抽屉只渲染该视图——即使响应体多带字段也进不了 DOM                                                                             |
 
 三层任一层单独失效仍有兜底，第三层防的是「取出来之后某次重构顺手渲染」。`defaultCwd` 的假命中（`devices.edit.defaultCwd` 是上游既有**重命名文案 key**）已排除。
 
@@ -400,21 +400,25 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 - **生效规则**：有自选保留自选（`user_settings.systemAgent[slot]` 的 model+provider、`systemAgent.tiers[tier]` 的档位选择、`defaultAgent.config` 的 model+provider）；没自选一律解析为管理员默认值。自选判定必须读存储行，不能读客户端合并后的 `currentSettings`。
 - **逐槽位兜底顺序**：`用户自选 > 管理员默认值 > SYSTEM_AGENT / DEFAULT_AGENT_CONFIG 环境变量 > 代码默认`。环境变量仍生效，只是排在管理员默认值之后；管理员留空即回到环境变量。
 - **不写用户行**：默认值只在解析时兜底；写进 `user_settings` 等于固化，管理员之后再改就不跟随。`initNewUserForBusiness` 在本仓库是空实现，新用户本来没有设置行。
-- **后台任务**：标题生成 / 记忆抽取 / 任务验收等无标签页的调用走同一顺序。现状偏差要一并修正：`apps/server/src/services/systemAgent/modelConfig.ts` 的 `resolveSystemAgentModelConfig` 连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
+- **后台任务**：标题生成 / 记忆抽取 / 任务验收等无标签页的调用走同一顺序（T-91 已接入）：
+  - `resolveSystemAgentModelConfig`（`apps/server/src/services/systemAgent/modelConfig.ts`）现在是 `override > 用户自选 > 管理员默认 > SYSTEM_AGENT > 代码默认`，管理员层只在用户没选全时才读，且经 `getCompanyServiceDefaultModel` 走同一个 5 s 缓存；调用方也可传入已解析的 `adminDefaults` / `envDefaults`。
+  - `resolveVerifyServiceModel`（`apps/server/src/services/verify/modelConfig.ts`）在用户 `verify` 与 `SYSTEM_AGENT` 之间插入管理员 `verify` 默认值。
+  - 记忆抽取（`apps/server/src/services/memory/userMemory/extract/`）把 `serverConfig.systemAgent`（管理员已压在 env 之上）合并到用户设置之下，只覆盖 `userMemoryEmbedding` / `memoryAnalysisAgentConfig`；`resolveRuntimeAgentConfig` 对 `tellhow` 复用 `resolveCompanyProviderParams` 取服务端密钥，不依赖用户 keyVaults。
+  - `botRetro` 等直接读 `DEFAULT_SYSTEM_AGENT_ITEM` 的固定模型不属于 Service Model 槽位，不接入管理员默认值。
 - **不可用模型回退**：`enabled !== true` / 缺 `baseURL` / 缺密钥 → 整块默认值视为未配置；某项模型 `open === false` 或带 `removedAt` → 该项视为未配置；两种情况都回退下一级，不产生指向不可用模型的默认值。管理端校验仍只要求 id 在目录里（允许「先选默认值、后开放模型」），UI 需提示「默认值暂不生效」。
 - **provider**：默认值的模型 id 属于 Tellhow 目录，provider 固定 `tellhow`；不提供「默认值指向其他厂商」的能力。
 - **备选口径（本次不实施，待用户确认可切换）**：强制覆盖所有用户自选（含 pin 与档位选择）。启用时的建议形态是 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` 即本次口径），`force` 也只做解析覆盖、不改用户行，否则切回 `follow` 时用户原选择已丢失。
 
 ### 维护位置
 
-| 层                 | 位置                                                                                                                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 语义（唯一事实源） | `ADMIN_CONSOLE_DESIGN.md` §7.1（映射与生效规则）、§5.5（产品面），槽位清单来自 `packages/const/src/settings/systemAgent.ts` 的 `SERVICE_MODEL_TIER_SLOTS` |
-| 写入与校验         | `packages/business-server/src/adminConsole/modelService.ts`（`validateDefaults` / `toConfigView`，P2-2 已交付）                                           |
-| 读取与缓存         | `packages/business-server/src/companyProvider.ts`（`CompanyProviderRuntime.defaults`，5 s 缓存 + `invalidateCompanyProviderCache()`）                     |
-| 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx`、`locales/{en-US,zh-CN}/adminConsole.json` 的 `modelService.defaults.*`                         |
-| 解析消费（实现中） | `serverConfig` 注入（`apps/server/src/globalConfig/index.ts`）与后台任务读取点，统一解析函数放在 `packages/business-server`                               |
-| 用户侧跟随链路     | `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`；`src/store/user/slices/settings/selectors/settings.ts` 的 `currentSettings`   |
+| 层                 | 位置                                                                                                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 语义（唯一事实源） | `ADMIN_CONSOLE_DESIGN.md` §7.1（映射与生效规则）、§5.5（产品面），槽位清单来自 `packages/const/src/settings/systemAgent.ts` 的 `SERVICE_MODEL_TIER_SLOTS`                                                                |
+| 写入与校验         | `packages/business-server/src/adminConsole/modelService.ts`（`validateDefaults` / `toConfigView`，P2-2 已交付）                                                                                                          |
+| 读取与缓存         | `packages/business-server/src/companyProvider.ts`（`CompanyProviderRuntime.defaults`，5 s 缓存 + `invalidateCompanyProviderCache()`）                                                                                    |
+| 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx`、`locales/{en-US,zh-CN}/adminConsole.json` 的 `modelService.defaults.*`                                                                                        |
+| 解析消费           | `packages/business-server/src/adminConsole/serviceDefaults.ts`（`resolveCompanyServiceDefaults` / `getCompanyServiceDefaultModel`）；`serverConfig` 注入在 `apps/server/src/globalConfig/index.ts`；后台任务读取点见上条 |
+| 用户侧跟随链路     | `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`；`src/store/user/slices/settings/selectors/settings.ts` 的 `currentSettings`                                                                  |
 
 ### 与 CUST-008 §7 的关系
 

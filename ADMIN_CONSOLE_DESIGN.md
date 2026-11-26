@@ -340,6 +340,8 @@ P2 交付时它是「只存不用」：`getCompanyProviderRuntime()` 把 `defaul
 
 约束：前台与后台必须共用**一个**解析函数（放在 `packages/business-server`），不允许每条链路各写一份「管理员默认值优先」，否则回退顺序会漂移。顺带修正一处现存偏差：`resolveSystemAgentModelConfig` 今天连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
 
+**已落地（T-91）**：管理员层只有 `packages/business-server/src/adminConsole/serviceDefaults.ts` 一个出口（`resolveCompanyServiceDefaults` 给整块、`getCompanyServiceDefaultModel` 给单槽位），都走 `getCompanyProviderRuntime` 的 5 s 缓存。`resolveSystemAgentModelConfig` 按 `override > 用户自选 > 管理员默认 > SYSTEM_AGENT > 代码默认` 解析，且只在用户没选全时才读管理员层；`resolveVerifyServiceModel` 在用户与 `SYSTEM_AGENT` 之间插入管理员 `verify`；记忆抽取把 `serverConfig.systemAgent`（管理员已压在 env 之上）合并到用户设置之下再走原有 `MEMORY_*` / 内置默认。记忆抽取跟随管理员默认时 provider 是 `tellhow`，`resolveRuntimeAgentConfig` 用 `resolveCompanyProviderParams` 取服务端密钥，不能用用户 keyVaults。
+
 **不可用模型回退**（不产生指向不可用模型的默认值）
 
 `validateDefaults` 只校验「id 在目录里」，不校验 `open`；目录同步又只写 `removedAt` 不删行。因此解析时逐项判定：
@@ -817,13 +819,13 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 
 ### 17.3 在线三态，`unknown` 不许折叠成 `offline`
 
-| 触发 | 结果 |
-| --- | --- |
-| 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求** |
-| 探测成功且命中 deviceId | `online`，附 `channelCount` |
-| 探测成功但池中没有该 deviceId | `offline` |
-| `readDeviceList` 返回 `ok: false` | `unknown` |
-| 探测抛错 / 超过 3s 整轮预算 | `unknown`（晚到结果由 `accepting` 丢弃） |
+| 触发                                   | 结果                                     |
+| -------------------------------------- | ---------------------------------------- |
+| 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求**               |
+| 探测成功且命中 deviceId                | `online`，附 `channelCount`              |
+| 探测成功但池中没有该 deviceId          | `offline`                                |
+| `readDeviceList` 返回 `ok: false`      | `unknown`                                |
+| 探测抛错 / 超过 3s 整轮预算            | `unknown`（晚到结果由 `accepting` 丢弃） |
 
 参数：`DEVICE_PROBE_CONCURRENCY = 5`、`DEVICE_PROBE_TIMEOUT_MS = 3000`、`DEVICE_READ_ATTEMPTS = 2`、`DEVICE_READ_RETRY_DELAY_MS = 250`。
 

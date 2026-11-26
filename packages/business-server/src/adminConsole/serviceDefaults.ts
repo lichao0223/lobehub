@@ -101,3 +101,18 @@ export const getCompanyServiceDefaults = async (
   options: CompanyProviderOptions & { db?: LobeChatDatabase } = {},
 ): Promise<CompanyServiceDefaults> =>
   resolveCompanyServiceDefaults(await getCompanyProviderRuntimeFromServer(options));
+
+/**
+ * The administrator default for one service slot, or `undefined` when the
+ * administrator left that tier unset / unusable.
+ *
+ * Background callers (title generation, verify, memory extraction) resolve the
+ * administrator layer through this function and nothing else, so "administrator
+ * before environment" exists once instead of once per chain. It shares the same
+ * 5 s cache, so a per-task call is an in-process read after the first one.
+ */
+export const getCompanyServiceDefaultModel = async (
+  slot: UserServiceModelConfigKey,
+  options: CompanyProviderOptions & { db?: LobeChatDatabase } = {},
+): Promise<SystemAgentItem | undefined> =>
+  (await getCompanyServiceDefaults(options)).systemAgent[slot];
