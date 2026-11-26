@@ -973,6 +973,7 @@ const CreateTaskInlineEntry = memo<CreateTaskInlineEntryProps>((props) => {
               canPinPrivateDevices
               assigneeAgentId={assigneeAgentId}
               disabled={!canCreateTask}
+              projectId={createProjectId ?? undefined}
               value={execution}
               onChange={setExecution}
             />

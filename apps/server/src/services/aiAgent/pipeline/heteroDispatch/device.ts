@@ -25,6 +25,7 @@ import {
   resolveHeteroDispatchErrorType,
   supportsCloudHeterogeneousSandbox,
 } from '../../helpers/heteroErrors';
+import { loadProjectDirectoryCandidates } from '../../projectDirectoryCandidates';
 import { resolveDeviceWorkingDirectoryConfig } from '../../resolveDeviceWorkingDirectory';
 import type { ExecRunContext } from '../../types';
 import { selectCodexDeviceDispatch } from '../codexDeviceRuntime';
@@ -221,6 +222,19 @@ export const dispatchToCliDevice = async (
   // Resolve the working directory for the run: a topic-level override
   // wins, else the device's user-configured defaultCwd.
   const dispatchWorkspaceId = cliDeviceWorkspaceId;
+  // Last resort before "no cwd at all": the project's own directory on this
+  // machine. A project that registered `<device>:/repo` as a runner expects its
+  // runs to start there, and without it every cwd-gated step (TFS checkout and
+  // the push credentials it injects) is silently skipped.
+  const projectDirectories = await traceHeteroStage('device project_directories', () =>
+    loadProjectDirectoryCandidates({
+      db: deps.db,
+      deviceRowId: boundDevice?.id,
+      projectId: appContext?.projectId ?? topic?.projectId,
+      userId: deps.userId,
+      workspaceId: deps.workspaceId,
+    }),
+  );
   // Resolve via the shared precedence helper so dispatch, workspace-init,
   // and the new-topic backfill below all agree on the cwd.
   const deviceCwdConfig = resolveDeviceWorkingDirectoryConfig({
@@ -229,6 +243,7 @@ export const dispatchToCliDevice = async (
     devicePlatform: boundDevice?.platform,
     initialWorkingDirectory: appContext?.initialTopicMetadata?.workingDirectory,
     initialWorkingDirectoryConfig: appContext?.initialTopicMetadata?.workingDirectoryConfig,
+    projectDirectories,
     // The run's repos, so a directory that IS one of them is skipped: this
     // device cannot have it (`owner/repo` is a cloud repo identifier).
     repos: topicRepos,
@@ -296,7 +311,13 @@ export const dispatchToCliDevice = async (
           workspaceId: deps.workspaceId,
         })
       : undefined;
-  const initializedSystemContext = [agentSystemContext, checkoutReport]
+  // No cwd means no base folder for commands and no place to inject TFS push
+  // credentials. Say so up front instead of letting the run discover it at
+  // `git push`.
+  const workingDirectoryNotice = deviceCwd
+    ? undefined
+    : 'Working directory: this run has no working folder on the device, so commands have no base folder and TFS push credentials are not available. Pick a folder in the execution device switcher, or register this project folder on this device under the project runners.';
+  const initializedSystemContext = [agentSystemContext, workingDirectoryNotice, checkoutReport]
     .filter(Boolean)
     .join('\n\n');
 

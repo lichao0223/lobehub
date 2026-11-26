@@ -176,8 +176,12 @@ export const localSystemRuntime: ServerRuntimeRegistration = {
         }
 
         const deviceWorkspaceId = await getDeviceWorkspaceId();
+        // Reached even without a bound cwd: the checkout step is also where the
+        // TFS push credentials come from, and its early return is the one
+        // readable explanation of why they are missing. Guarding the call on
+        // `context.workingDirectory` used to hide that entirely.
         const checkoutReport =
-          context.serverDB && context.topicId && context.workingDirectory
+          context.serverDB && context.topicId
             ? await (checkout ??= import('@/server/services/tfs/deviceCheckout').then(
                 async ({ initializeTfsDeviceCheckout }) =>
                   initializeTfsDeviceCheckout({
@@ -199,7 +203,7 @@ export const localSystemRuntime: ServerRuntimeRegistration = {
           finalArgs = {
             ...finalArgs,
             env: {
-              ...(finalArgs.env ?? {}),
+              ...finalArgs.env,
               GIT_CONFIG_GLOBAL: '/dev/null',
               GIT_CONFIG_NOSYSTEM: '1',
               GIT_CONFIG_COUNT: String(tfsGitConfig.length),

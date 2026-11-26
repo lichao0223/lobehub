@@ -33,7 +33,8 @@ export const initializeTfsDeviceCheckout = async (params: {
     useProjectDefault: true,
   });
   if (!init?.sources.some((source) => parseTfsRepository(source.url))) return;
-  if (!params.cwd) return 'TFS checkout: choose a working folder on the device first.';
+  if (!params.cwd)
+    return 'TFS checkout skipped: no working folder is bound to this run on the device, so no TFS push credentials were injected. Choose a working folder in the execution device switcher, or register this project folder on the device as a project runner.';
   // A shared machine can inspect command environments; keep personal credentials off it.
   if (
     params.deviceWorkspaceId ||

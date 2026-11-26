@@ -552,6 +552,7 @@ const CreateTaskContent = memo<CreateTaskContentProps>(
               canPinPrivateDevices
               assigneeAgentId={assigneeAgentId}
               disabled={!canCreateTask}
+              projectId={createProjectId ?? undefined}
               value={execution}
               onChange={setExecution}
             />

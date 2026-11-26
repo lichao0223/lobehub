@@ -16,11 +16,22 @@ import { useAgentStore } from '@/store/agent';
 import { agentByIdSelectors } from '@/store/agent/selectors';
 import { useDeviceList } from '@/store/device';
 import { useElectronStore } from '@/store/electron';
+import { useProjectDirectories, useProjectDirectoryStore } from '@/store/projectWorkingDirectory';
 
 export type DeviceLabelSource = Pick<DeviceListItem, 'deviceId' | 'friendlyName' | 'hostname'>;
 
 export const deviceLabel = (device: DeviceLabelSource, unknownLabel: string) =>
   device.friendlyName || device.hostname || unknownLabel;
+
+/**
+ * A project folder is a path on one machine, so it only names something where
+ * its own platform can read it. Mirrors the server resolver's check.
+ */
+const isAbsoluteDevicePath = (value: string, platform?: string | null): boolean => {
+  if (platform === 'win32') return /^[a-zA-Z]:[\\/]/.test(value) || value.startsWith('\\\\');
+  if (!platform) return value.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(value);
+  return value.startsWith('/');
+};
 
 /**
  * Why the run-location control is locked, for its tooltip. An author-fixed
@@ -85,6 +96,13 @@ export interface TaskRunTarget {
    * so inheritance is legible instead of a black box.
    */
   inheritedDirectory?: WorkingDirConfig;
+  /**
+   * Where {@link inheritedDirectory} came from: the agent's own choice (or the
+   * machine default), or the project's folder on that machine. A project
+   * folder is what the server falls back to when the agent names none, so the
+   * hint must show it rather than an empty "no directory" state.
+   */
+  inheritedDirectorySource?: 'agent' | 'project';
   /** Label for the target the task inherits — the same wording the chat chip uses. */
   inheritedLabel: string;
   /**
@@ -128,8 +146,14 @@ export interface TaskRunTarget {
 export const useTaskRunTarget = (
   agentId: string,
   pinnedDeviceId: string | undefined,
-  /** The caller is the task's creator, so their own private devices are pinnable. */
-  { canPinPrivateDevices }: { canPinPrivateDevices: boolean },
+  {
+    canPinPrivateDevices,
+    projectId,
+  }: {
+    canPinPrivateDevices: boolean;
+    /** The task's project, whose own folders are the run's last-resort cwd. */
+    projectId?: string;
+  },
 ): TaskRunTarget => {
   const { t } = useTranslation('chat');
   const {
@@ -215,7 +239,33 @@ export const useTaskRunTarget = (
 
   // Only a device run has a machine whose default could apply; asking for one
   // otherwise would describe a directory the cloud run never uses.
-  const inheritedDirectory = useMemo(
+  //
+  // The server resolves the cwd through one chain: topic → initial → agent →
+  // device default → the project's own folder on that machine. The last step is
+  // invisible in the agent config, so it is read here too — otherwise "follow
+  // the agent" showed an empty directory while the run actually started in the
+  // project's folder (or, worse, reported one where the run had none).
+  useProjectDirectoryStore((s) => s.useFetchDirectories)(projectId, !!projectId);
+  const projectDirectories = useProjectDirectories(projectId);
+  // The machine's own platform decides which path shapes it can read — the same
+  // check the server applies (`resolveDeviceWorkingDirectoryResolution`).
+  const devicePlatform = devices?.find((device) => device.deviceId === deviceId)?.platform;
+  const projectDirectory = useMemo(() => {
+    if (!deviceId || !projectId) return undefined;
+    const usable = projectDirectories.filter(
+      (row) =>
+        row.deviceId === deviceId &&
+        row.permission === 'readWrite' &&
+        isAbsoluteDevicePath(row.path, devicePlatform),
+    );
+    const [row] = [...usable].sort((a, b) => {
+      if (!!a.isPrimary !== !!b.isPrimary) return a.isPrimary ? -1 : 1;
+      return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+    });
+    return row;
+  }, [deviceId, devicePlatform, projectDirectories, projectId]);
+
+  const agentDirectory = useMemo(
     () =>
       deviceId
         ? resolveAgentWorkingDirectoryConfig({
@@ -229,6 +279,14 @@ export const useTaskRunTarget = (
         : undefined,
     [agencyConfig, deviceDefaultCwd, deviceId, legacyAgentWorkingDirectory, workspaceScoped],
   );
+
+  const inheritedDirectory: WorkingDirConfig | undefined =
+    agentDirectory ?? (projectDirectory ? { path: projectDirectory.path } : undefined);
+  const inheritedDirectorySource: 'agent' | 'project' | undefined = agentDirectory
+    ? 'agent'
+    : projectDirectory
+      ? 'project'
+      : undefined;
 
   // A list since the sandbox landed: more than one surface can apply to the
   // same run, so membership rather than equality.
@@ -276,6 +334,7 @@ export const useTaskRunTarget = (
     effectiveTarget,
     inheritedDeviceId,
     inheritedDirectory,
+    inheritedDirectorySource,
     inheritedLabel,
     inheritedTarget,
     isDeviceTarget,

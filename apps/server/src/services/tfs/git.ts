@@ -36,11 +36,22 @@ export const runTfsGit = async (
   );
   if (!topic || topic.senderId)
     throw new TRPCError({ code: 'NOT_FOUND', message: 'Topic not found' });
-  if (!topic.metadata?.sandboxEnvironmentId || topic.metadata.sandboxInstanceId)
+  if (!topic.metadata?.sandboxEnvironmentId || topic.metadata.sandboxInstanceId) {
+    // A device-bound conversation has no cloud sandbox: its checkout lives on
+    // the machine, where the run's injected credentials already allow a plain
+    // `git push`. Sending the agent here produced "fatal: not a git repository"
+    // from the empty cloud directory, which reads like a credentials failure.
+    if (topic.metadata?.boundDeviceId)
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message:
+          'This conversation runs in a folder on a device. Commit and push there with a plain `git push` — the run injects the TFS credentials. `lh tfs git` only operates inside the cloud sandbox.',
+      });
     throw new TRPCError({
       code: 'PRECONDITION_FAILED',
       message: 'Select a TFS repository environment in the working directory selector.',
     });
+  }
   const sandbox = await resolveSandboxSessionConfig({
     isShareVisitorRun: false,
     serverDB: deps.db,

@@ -27,6 +27,7 @@ import TaskExecutionControls from '../features/TaskExecutionControls';
 const TaskExecutionConfig = memo(() => {
   const taskId = useTaskStore(taskDetailSelectors.activeTaskId);
   const assigneeAgentId = useTaskStore(taskDetailSelectors.activeTaskAgentId);
+  const projectId = useTaskStore(taskDetailSelectors.activeTaskProjectId);
   const taskConfig = useTaskStore((s) => taskDetailSelectors.activeTaskDetail(s)?.config);
   const updateTaskExecution = useTaskStore((s) => s.updateTaskExecution);
   const { allowed: canEditTask } = usePermission('create_content');
@@ -55,6 +56,7 @@ const TaskExecutionConfig = memo(() => {
       canPinPrivateDevices={!!userId && createdByUserId === userId}
       disabled={!canEditTask}
       key={taskId}
+      projectId={projectId ?? undefined}
       value={execution}
       onChange={handleChange}
     />
