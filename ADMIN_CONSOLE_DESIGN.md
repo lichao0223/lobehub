@@ -40,7 +40,7 @@
  └─ 模型服务   → admin_console_settings.config.ai（P2）
     ├─ 服务连接：baseURL + API Key（加密）+ 测试连接
     ├─ 模型目录：类型 / 上下文 / 能力 / 是否对全员开放
-    └─ 默认值（可选）：新用户默认模型与系统任务模型
+    └─ 默认值：全站默认模型与后台任务兜底（CUST-011，见 §7.1）
 ```
 
 ## 4. 数据模型
@@ -173,15 +173,18 @@ type CompanyModel = {
 - 上游消失的不自动删除，标「上游已移除」；确认无人使用后手动移除；
 - 手工添加字段与同步模型一致。
 
-### 5.5 默认值（可选）
+### 5.5 默认值（CUST-011：管理员默认值 = 全站默认值）
 
-只影响新用户创建时的初始值，不写存量用户：
+产品语义：管理员在「默认值」里设定的四项（chat / title / verify / embedding）是**全站默认模型**，不是「只给新用户用一次的初始值」。用户没自选就跟随它，用户自选过则保留自选；存量用户、新注册、SSO 首次登录一视同仁，后台任务（标题生成、记忆向量、任务验收）也以它为兜底。
 
-- 新用户默认对话模型；
-- 记忆 / 知识库向量模型（换模型需重新索引，文案明示）；
-- 标题生成 / 历史压缩、任务校验。
+P2 原文「只影响新用户创建时的初始值，不写存量用户」是当时的旧口径，已被 CUST-011 取代（2026-11-26）：那条口径下管理员改默认值，存量用户与后台任务都不会变，正是本次反馈的现象。
 
-实现落点是 `initNewUserForBusiness` 的一次写入，失败不阻塞登录。不配置时沿用现有默认值。
+- 新用户默认对话模型（chat）：主档全部槽位 + 新会话默认模型（`defaultAgent.config`）；
+- 记忆 / 知识库向量模型（embedding）：只到 `userMemoryEmbedding`；`fileEmbedding` 仍由 `DEFAULT_FILES_CONFIG` 管（换模型会让已嵌入文件失效，不跟随默认值）；
+- 标题生成 / 历史压缩等轻量后台任务（title）：flash 档全部槽位；
+- 任务校验（verify）：`verify` 槽位，必须是多模态（视觉）模型。
+
+确定性映射、自选判定、逐槽位兜底顺序与不可用模型回退见 **§7.1**；本轮只落文档，实现与验收见 T-90 ~ T-94。
 
 ### 5.6 失败与回滚
 
@@ -240,7 +243,7 @@ type CompanyModel = {
 ### 6.3 两页结构
 
 - **用户管理**：搜索、筛选（全部 / 管理员 / 已禁用）；行 = 头像 + 姓名 / 邮箱、工号、角色、状态、最后活跃、chevron；点行开 520px 详情抽屉（概览 / 操作）；
-- **模型服务**：服务连接、模型目录（拉取 + 手工添加 + 编辑弹窗）、默认值（可选）。
+- **模型服务**：服务连接、模型目录（拉取 + 手工添加 + 编辑弹窗）、默认值（全站默认模型，CUST-011）。
 
 ### 6.4 与最新代码的对齐（v8 记录）
 
@@ -286,6 +289,75 @@ type CompanyModel = {
 | `refreshModelCatalog`        | `{ apply: boolean }`                                                     | 拉取并返回 diff；`apply` 时写入新增模型                                    |
 
 全部使用 `adminProcedure`；`whoami` 用 `authedProcedure`。
+
+### 7.1 默认值解析（CUST-011）
+
+`updateModelServiceConfig` 的 `defaults` 只写 `admin_console_settings.config.ai.defaults`，**接口层不做传播**：不新增 procedure、不写任何用户行、不新增迁移；保存后由用户侧下一次读取（下一次页面请求 / 下一次后台任务）按本节规则解析。
+
+P2 交付时它是「只存不用」：`getCompanyProviderRuntime()` 把 `defaults` 放进 `CompanyProviderRuntime.defaults`（`packages/business-server/src/companyProvider.ts`），全仓库没有消费者。所以管理员改默认值，存量用户、新用户与后台任务都不会变。CUST-011 补的就是这段消费。
+
+**映射**（唯一事实源：`packages/const/src/settings/systemAgent.ts` 的 `SERVICE_MODEL_TIER_SLOTS`）
+
+| 管理员默认值 | 解析到的槽位                                                                                                                                                                                                | 说明                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `chat`       | `SERVICE_MODEL_TIER_SLOTS.main`：`agentMeta` / `expertise` / `goal` / `topicAutoSummary`；外加 `defaultAgent.config`                                                                                        | 主档全部槽位 + 新会话默认模型                  |
+| `title`      | `SERVICE_MODEL_TIER_SLOTS.flash`：`topic` / `thread` / `generationTopic` / `translation` / `promptRewrite` / `memoryAnalysisAgentConfig` / `userMemoryPersonaWriter` / `inputCompletion` / `followUpAction` | 标题、历史压缩、翻译、提示词改写等轻量后台任务 |
+| `verify`     | `SERVICE_MODEL_TIER_SLOTS.verify`：`verify`                                                                                                                                                                 | 必须视觉模型；pinned verifier agent 优先于本节 |
+| `embedding`  | `SERVICE_MODEL_TIER_SLOTS.embedding`：`userMemoryEmbedding`                                                                                                                                                 | 记忆向量；换模型需重新索引                     |
+| —            | `fileEmbedding` 仍由 `DEFAULT_FILES_CONFIG` 管；`asr` / `channelRouting` / onboarding 槽位不归管理员默认值                                                                                                  | `fileEmbedding` 跟随档位会让已嵌入向量失效     |
+
+槽位清单不在本节硬编码：上游增删槽位只改 `SERVICE_MODEL_TIER_SLOTS`，映射自动跟随（与 §16 的 lab 闸门同一思路）。
+
+**provider**：默认值的模型 id 属于 Tellhow 目录，解析出的 provider 固定为 `tellhow`。不提供「默认值指向其他 provider」的能力——其他厂商属于用户个人自选。
+
+**生效规则**
+
+1. 用户自选优先，不被管理员默认值覆盖：
+   - 槽位 pin：`user_settings.systemAgent[slot]` 带 `model` + `provider`，且不等于该槽位所属档位的 pin（`systemAgent.tiers[tier]`）→ 保留用户选择；
+   - 档位选择：`systemAgent.tiers.{main,flash,verify,embedding}` 有值时，个人页的 `syncTierPins` 已把该档模型写进它管辖的槽位（`src/features/ServiceModel/serviceModelState.ts`），所以「用户选了档」= 已自选，槽位跟用户选的档，不跟管理员默认值；
+   - 新会话模型：`user_settings.defaultAgent.config` 带 `model` + `provider` → 保留用户选择；
+   - **自选判定必须读存储行**（`user_settings`）。不能读客户端合并后的 `currentSettings`：后者已混入默认值，会把「跟随」误判成「自选」。
+2. 未自选 → 管理员默认值：存量用户、新注册、SSO 首次登录同一套规则；某个槽位没有管理员默认值时，继续走第 4 条的下一级。
+3. **不写入用户行**：管理员默认值只在解析时兜底。写进 `user_settings` 等于固化，管理员之后再改默认值这些用户就不再跟随；`initNewUserForBusiness` 在本仓库是空实现（`packages/business-server/src/user.ts`），新用户本来没有设置行。
+4. 逐槽位优先级：
+
+```text
+用户自选 > 管理员默认值 > SYSTEM_AGENT / DEFAULT_AGENT_CONFIG 环境变量 > 代码默认
+```
+
+- 客户端：管理员默认值经 `serverConfig.systemAgent` / `serverConfig.defaultAgent` 注入，仍走 `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`，再由 `currentSettings = merge(defaultSettings, settings)` 合并；既有 selector 不改。
+- 环境变量继续生效，只是排在管理员默认值之后；管理员留空（`inherit`）即回到环境变量。
+- 写盘侧的 diff 基准仍是 `defaultSettings`：用户显式选回「跟随」时 `replaceServiceModelSettings` 删除槽位键，槽位重新跟随默认值；不要改成合并写。
+
+**后台任务兜底**（无当前标签页的调用，顺序同上）
+
+| 读取点                                                                | 现状                                                                         | 目标                                                                  |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 标题 / 翻译 / 技能元数据 / 任务复盘等 `resolveSystemAgentModelConfig` | 用户槽位 → 代码默认（`apps/server/src/services/systemAgent/modelConfig.ts`） | 用户槽位 → 管理员默认值 → `SYSTEM_AGENT` → 代码默认                   |
+| 验证 `resolveVerifyServiceModel`                                      | 用户槽位 → `SYSTEM_AGENT` → `VERIFY_FALLBACK_MODEL_CONFIG`                   | 用户槽位 → 管理员默认值 → `SYSTEM_AGENT` → 代码默认                   |
+| 记忆向量 `userMemoryEmbedding`（记忆抽取 runtime）                    | 用户槽位 → `MEMORY_USER_MEMORY_EMBEDDING_*` / 内置默认                       | 用户槽位 → 管理员默认值 → `MEMORY_USER_MEMORY_EMBEDDING_*` / 内置默认 |
+| 文件向量 `fileEmbedding`                                              | `DEFAULT_FILES_CONFIG`                                                       | 不变                                                                  |
+
+约束：前台与后台必须共用**一个**解析函数（放在 `packages/business-server`），不允许每条链路各写一份「管理员默认值优先」，否则回退顺序会漂移。顺带修正一处现存偏差：`resolveSystemAgentModelConfig` 今天连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
+
+**不可用模型回退**（不产生指向不可用模型的默认值）
+
+`validateDefaults` 只校验「id 在目录里」，不校验 `open`；目录同步又只写 `removedAt` 不删行。因此解析时逐项判定：
+
+| 条件                                               | 结果                                 |
+| -------------------------------------------------- | ------------------------------------ |
+| `config.ai.enabled !== true`、缺 `baseURL`、缺密钥 | 整块默认值视为未配置，全部回退下一级 |
+| 该项模型 `open === false`                          | 该项视为未配置（用户侧看不到它）     |
+| 该项模型带 `removedAt`                             | 同上（上游已移除）                   |
+| 槽位被用户 pin                                     | 不受影响，保留用户选择               |
+
+保存时仍允许「先选默认值、后开放模型」的顺序（校验不变）；管理端 UI 需标注「该模型当前未对全员开放，默认值暂不生效」（T-93）。
+
+**备选口径（本次不实施，待用户确认可切换）**
+
+强制覆盖所有用户自选（含槽位 pin、档位 pin、`defaultAgent.config`）。只在产品方明确要求「管理员改默认值，所有人立刻跟着变」时启用；届时建议做成 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` = 本节口径），个人页显示「由管理员统一指定」。`force` 也只做解析覆盖、不改用户行——否则切回 `follow` 时用户原选择已丢失。风险：用户改了又被改回去，「用户显式选择」也会失去意义。
+
+**实现与验收分工**：T-90 注入 `serverConfig` + 统一解析函数；T-91 后台任务读取点改走同一函数；T-92 新用户默认只开 TellhowAI（默认模型之外的另一件事）；T-93 个人服务模型页与管理端默认值文案；T-94 存量 / 新注册 / SSO 三条真实链路验收。
 
 ## 8. 对现有代码的侵入清单
 
@@ -386,7 +458,11 @@ src/services/adminConsole.ts
 5. `getServerGlobalConfig` 是否新增默认值来源；
 6. 设置页列表 / Form 的 token 是否变化；
 7. `src/styles/densityScale.ts` 是否新增 token 或改动两档数值，控制台视觉规范随之更新；
-8. `ssrfSafeFetch` 的选项与默认策略是否变化（企业内网网关的白名单方式）。
+8. `ssrfSafeFetch` 的选项与默认策略是否变化（企业内网网关的白名单方式）；
+9. `SERVICE_MODEL_TIER_SLOTS` 是否仍覆盖 main / flash / verify / embedding 四档且 `fileEmbedding` 不在其中；上游增删槽位时管理员默认值映射要自动跟随（§7.1）；
+10. `getServerGlobalConfig` 仍组装 `systemAgent` / `defaultAgent`，且客户端 `#project` 仍把它们合并进 `defaultSettings`；这两处任一被上游重构，「未自选 = 跟随默认」就会失效；
+11. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）仍经过统一解析函数，不能被上游改成各写一份默认值；
+12. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并由 `invalidateCompanyProviderCache()` 在保存后失效。
 
 ## 11. 验收清单
 
@@ -561,6 +637,8 @@ P2 开工时有 4 项产品假设。P2 交付时在本地真实运行环境（�
 2. 是否允许用户继续使用第三方内置厂商；
 3. 是否允许用户停用 Tellhow 厂商；
 4. 记忆向量等系统能力是否有对应模型。
+
+假设 4 的结论已由 CUST-011 修订（2026-11-26，见 §7.1）：`defaults` 的真实字段是 `{ chat, embedding, title, verify }`（不是 `embeddingModel` / `titleModel` / `verifyModel`），且 P2 交付时只存不用；「只影响未单独配置的用户」这半句保留，但解析链要补管理员默认值这一级。
 
 前 4 项不影响 P1；P2 开工前需要产品方拍板。P2 已按上述结论交付；若产品方改变结论，改动点集中在 `packages/business-server/src/companyProvider.ts`（默认关闭 / 读取）、`src/features/AdminConsole/ModelService/*`（管理端）与 provider 卡片开关，不需要数据库迁移。
 

@@ -18,6 +18,7 @@
 | CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                  | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
 | CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关) | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）               |
 | CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态 | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览) | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补 |
+| CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat / title / verify / embedding 成为全站默认模型                        | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/modelService.ts`                   | 文档已定稿（2026-11-26）；实现 T-90~T-94 进行中               |
 
 ## CUST-001：自定义镜像
 
@@ -387,6 +388,56 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 
 代码已完成并通过本地质量门与接口级验证，已随 `feat/admin-labs` 合入 `canary`（2026-11-26，合并提交 `fb30266fd8`）。**未发布 acceptance 报告**：三态中的 `unknown` 只有单测覆盖，未在真机停网关复现；UI 侧列表 / 详情抽屉 / 普通用户被拒三张截图未归档。因此本条目状态是「代码已合入、产品验收待补」，不是「已验收」——补证后需回填本节与总表行。
 
+## CUST-011：管理员默认值 = 全站默认值
+
+一句话：管理员在 `/admin` 模型服务里设的 `defaults`（chat / title / verify / embedding）是**全站默认模型**——存量用户、新注册、SSO 首次登录，以及标题生成 / 记忆向量 / 任务验收等后台任务，只要用户没自选，都按它解析；用户自选过则保留自选。
+
+完整语义（映射表、自选判定、逐槽位兜底顺序、不可用模型回退、备选口径）见 [ADMIN\_CONSOLE\_DESIGN.md §7.1](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)；产品面描述见同文档 §5.5。
+
+### 功能与语义
+
+- **映射**：`chat` → 主档全部槽位（`SERVICE_MODEL_TIER_SLOTS.main`：`agentMeta` / `expertise` / `goal` / `topicAutoSummary`）+ `defaultAgent.config`（新会话默认模型）；`title` → flash 档全部槽位；`verify` → `verify` 槽位（必须视觉模型）；`embedding` → `userMemoryEmbedding`。`fileEmbedding` 仍归 `DEFAULT_FILES_CONFIG`，`asr` / `channelRouting` / onboarding 槽位不归本项。
+- **生效规则**：有自选保留自选（`user_settings.systemAgent[slot]` 的 model+provider、`systemAgent.tiers[tier]` 的档位选择、`defaultAgent.config` 的 model+provider）；没自选一律解析为管理员默认值。自选判定必须读存储行，不能读客户端合并后的 `currentSettings`。
+- **逐槽位兜底顺序**：`用户自选 > 管理员默认值 > SYSTEM_AGENT / DEFAULT_AGENT_CONFIG 环境变量 > 代码默认`。环境变量仍生效，只是排在管理员默认值之后；管理员留空即回到环境变量。
+- **不写用户行**：默认值只在解析时兜底；写进 `user_settings` 等于固化，管理员之后再改就不跟随。`initNewUserForBusiness` 在本仓库是空实现，新用户本来没有设置行。
+- **后台任务**：标题生成 / 记忆抽取 / 任务验收等无标签页的调用走同一顺序。现状偏差要一并修正：`apps/server/src/services/systemAgent/modelConfig.ts` 的 `resolveSystemAgentModelConfig` 连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
+- **不可用模型回退**：`enabled !== true` / 缺 `baseURL` / 缺密钥 → 整块默认值视为未配置；某项模型 `open === false` 或带 `removedAt` → 该项视为未配置；两种情况都回退下一级，不产生指向不可用模型的默认值。管理端校验仍只要求 id 在目录里（允许「先选默认值、后开放模型」），UI 需提示「默认值暂不生效」。
+- **provider**：默认值的模型 id 属于 Tellhow 目录，provider 固定 `tellhow`；不提供「默认值指向其他厂商」的能力。
+- **备选口径（本次不实施，待用户确认可切换）**：强制覆盖所有用户自选（含 pin 与档位选择）。启用时的建议形态是 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` 即本次口径），`force` 也只做解析覆盖、不改用户行，否则切回 `follow` 时用户原选择已丢失。
+
+### 维护位置
+
+| 层                 | 位置                                                                                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 语义（唯一事实源） | `ADMIN_CONSOLE_DESIGN.md` §7.1（映射与生效规则）、§5.5（产品面），槽位清单来自 `packages/const/src/settings/systemAgent.ts` 的 `SERVICE_MODEL_TIER_SLOTS` |
+| 写入与校验         | `packages/business-server/src/adminConsole/modelService.ts`（`validateDefaults` / `toConfigView`，P2-2 已交付）                                           |
+| 读取与缓存         | `packages/business-server/src/companyProvider.ts`（`CompanyProviderRuntime.defaults`，5 s 缓存 + `invalidateCompanyProviderCache()`）                     |
+| 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx`、`locales/{en-US,zh-CN}/adminConsole.json` 的 `modelService.defaults.*`                         |
+| 解析消费（实现中） | `serverConfig` 注入（`apps/server/src/globalConfig/index.ts`）与后台任务读取点，统一解析函数放在 `packages/business-server`                               |
+| 用户侧跟随链路     | `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`；`src/store/user/slices/settings/selectors/settings.ts` 的 `currentSettings`   |
+
+### 与 CUST-008 §7 的关系
+
+CUST-008（管理员控制台）负责「配置能不能写、密钥怎么存、目录怎么同步」；CUST-011 只负责「写下来的默认值有没有人读、按什么规则读」。两者共用同一行 `admin_console_settings.config.ai`：
+
+- 不新增表、不新增迁移、不新增 procedure —— `updateModelServiceConfig` 的 `defaults` 入参与 `validateDefaults` 校验在 P2-2 已存在，CUST-011 补的是运行时消费与回退；
+- CUST-008 的 §5.1–§5.4、§5.6、§11 验收清单不变，只有 §5.5「默认值」被重写、§7 增加 §7.1 解析小节；
+- 任务书写作「§7（模型服务）」；本文档当前编号里模型服务是 §5（§5.5 默认值），§7 是「后端接口」——因此映射与解析规则落在 §7.1，§5.5 只保留产品面口径并指向 §7.1。
+
+### 上游合并时必须保留 / 检查接点
+
+1. `SERVICE_MODEL_TIER_SLOTS` 仍是槽位唯一事实源，`fileEmbedding` 不得进档位映射；上游新增 / 删除槽位时管理员默认值映射要自动跟随，不维护第二份清单。
+2. 客户端 `#project` 仍把 `serverConfig.systemAgent` / `serverConfig.defaultAgent` 合并进 `defaultSettings`，`currentSettings = merge(defaultSettings, settings)` 不变——「未自选 = 跟随默认」靠这条链路成立。
+3. 自选判定必须读 `user_settings` 存储行，不得读合并后的 `currentSettings`（否则跟随会被误判成自选，管理员默认值永远不生效）。
+4. 写盘侧 diff 基准仍是 `defaultSettings`；「选回跟随」依赖 `replaceServiceModelSettings` 删除槽位键，上游若改成合并写，要补一条删键路径。
+5. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）必须走统一解析函数，不能被上游改成各写一份默认值。
+6. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并在保存配置后失效。
+7. 管理端默认值文案 `modelService.defaults.*` 与语义同步（现有「只影响新用户的初始选择」需要改写），en-US 源文案写 `packages/locales/src/default/`，zh-CN 手写。
+
+### 当前发布状态
+
+文档先行（2026-11-26，分支 `feat/admin-model-defaults`）：语义已定稿并登记。代码实现与真实验收在 T-90 ~ T-94（注入 `serverConfig`、后台任务兜底、新用户默认只开 TellhowAI、个人页与文案对齐、存量 / 新注册 / SSO 验收），**尚未合入 canary、未发布验收报告**。
+
 ## 上游合并统一流程
 
 1. 提交或备份本地改动，记录本次上游起止提交、当前镜像 SHA，备份数据库 / 卷和 `.env` /override。不要重建加密密钥。
@@ -438,3 +489,4 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
   6. `src/features/Projects/CreateFromGithub/Content.tsx`：以上游结构为骨架（单一 `repositories` 状态、`RepositoryField` + `AdvancedRepositories`、`useDefaultMainAgent`），只在 `provider === 'tfs'` 处把 TFS 选择器作为同一列表的入口，TFS 跳转改为 `/settings/tfs`。不要再用单仓库表单整体替换上游文件，否则每次上游改动都会重新冲突。
   7. 新增 `SettingsTabs.Tfs = 'tfs'`、`src/features/Tfs/SettingsPage.tsx`、`/settings/tfs`（复用设置 `:tab` 路由）、侧栏「TFS / Azure DevOps」入口与 `setting:tab.tfs` 文案；旧 `/settings/integrations/tfs` 由 `buildLegacyIntegrationPath` 跳到新页。
      验证：`db:fork:reconcile --check` 通过；改动文件 esbuild 语法检查通过、相关 JSON 可解析；本机无 `node_modules`，未跑 `bun run check` / 类型检查 / 测试。
+- CUST-011 文档登记（2026-11-26，分支 `feat/admin-model-defaults`）：只改 `ADMIN_CONSOLE_DESIGN.md`（§5.5 重写、新增 §7.1、§10 检查点、§14 修订说明）与本文档（功能总表 + CUST-011 章节），未动代码。`git diff --check` 通过；无代码改动，未跑测试与类型检查。
