@@ -17,7 +17,7 @@
 | CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                         | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                       | 开发中；单测已交付，待与真实认证中心联调                      |
 | CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话）；P2 模型服务（Tellhow 内置厂商）        | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                  | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24） |
 | CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                         | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关) | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）               |
-| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态 | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览) | 已验收并合入 canary（2026-11-26）                             |
+| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态 | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览) | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补 |
 
 ## CUST-001：自定义镜像
 
@@ -361,7 +361,7 @@ node_modules/.bin/vitest run \
 npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全仓类型检查
 ```
 
-### 真实验收（2026-11-26）
+### 真实验收（2026-11-26，接口级）
 
 环境：本分支工作树全栈 dev（Next `:29514` + Vite `:23473`），库 Postgres 5434 / Redis 6380，网关 `:8788`；身份 `qa.bob@lobehub.com`（admin）与 `member@lobehub.com`（普通用户）。
 
@@ -385,7 +385,7 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 
 ### 当前发布状态
 
-代码已完成并通过本地质量门与接口级真实验收，随 `feat/admin-labs` 合入 `canary`（2026-11-26）。UI 截图、`unknown` 态真机证据未单独归档；`CUSTOMIZATIONS.md` 与 `ADMIN_CONSOLE_DESIGN.md §17` 为本文档面交付。
+代码已完成并通过本地质量门与接口级验证，已随 `feat/admin-labs` 合入 `canary`（2026-11-26，合并提交 `fb30266fd8`）。**未发布 acceptance 报告**：三态中的 `unknown` 只有单测覆盖，未在真机停网关复现；UI 侧列表 / 详情抽屉 / 普通用户被拒三张截图未归档。因此本条目状态是「代码已合入、产品验收待补」，不是「已验收」——补证后需回填本节与总表行。
 
 ## 上游合并统一流程
 
