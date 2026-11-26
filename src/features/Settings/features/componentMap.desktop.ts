@@ -1,4 +1,5 @@
 import Billing from '@/business/client/BusinessSettingPages/Billing';
+import CodingPlans from '@/business/client/BusinessSettingPages/CodingPlans';
 import Credits from '@/business/client/BusinessSettingPages/Credits';
 import Plans from '@/business/client/BusinessSettingPages/Plans';
 import Referral from '@/business/client/BusinessSettingPages/Referral';
@@ -68,6 +69,7 @@ export const componentMap = {
   [SettingsTabs.Tfs]: Tfs,
 
   [SettingsTabs.Plans]: Plans,
+  [SettingsTabs.CodingPlans]: CodingPlans,
   [SettingsTabs.Credits]: Credits,
   [SettingsTabs.Billing]: Billing,
   [SettingsTabs.Referral]: Referral,

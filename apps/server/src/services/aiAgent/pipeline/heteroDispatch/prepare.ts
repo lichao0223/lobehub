@@ -8,7 +8,6 @@ import {
   resolveDispatchedClaudeCodeEntrypoint,
 } from '@lobechat/heterogeneous-agents';
 import {
-  BOT_CHANNEL_MESSAGING_INSTRUCTIONS,
   CHANNEL_INSTRUCTIONS,
   formatContextSelections,
   formatPageSelections,
@@ -65,7 +64,6 @@ export const prepareHeteroRun = async (
     | 'agentConfig'
     | 'appContext'
     | 'assistantMessageId'
-    | 'botContext'
     | 'prompt'
     | 'shareGate'
     | 'topicId'
@@ -106,18 +104,11 @@ export const prepareHeteroRun = async (
     workspaceId: deps.workspaceId,
   });
   const isChannelOperation = ctx.trigger === 'channel' && input.reservedOperationId === operationId;
-  // The bot's owner messaging their own Agent (e.g. on Telegram) may have it post into their
-  // Channels. `isOwner` is decided once, fail-closed, in `buildBotContext`.
-  const isOwnerBotOperation =
-    ctx.trigger === RequestTrigger.Bot && ctx.botContext?.isOwner === true;
   // A scheduled run replays the user's own message off history, so it has
   // no fresh user row; server-started `chat` deliveries have none either.
   const isUserTurn =
     (ctx.trigger === RequestTrigger.Chat && !!ctx.userMessageId) ||
     ctx.trigger === RequestTrigger.Scheduled;
-  // Mirrors the `channel:message` grant in `heteroOperationCapabilities`.
-  const canMessageForUser =
-    !shareGate && (isOwnerBotOperation || (isUserTurn && !isChannelOperation && !operationTaskId));
 
   // Sign an operation-scoped JWT so the CLI can authenticate against
   // heteroIngest / heteroFinish without full user credentials.
@@ -130,7 +121,6 @@ export const prepareHeteroRun = async (
         // `acceptance:evidence` for its own verification round.
         capabilities: heteroOperationCapabilities(prompt, {
           channel: isChannelOperation,
-          ownerBotTurn: isOwnerBotOperation,
           shareVisitor: !!shareGate,
           taskId: operationTaskId,
           userTurn: isUserTurn,
@@ -351,11 +341,7 @@ export const prepareHeteroRun = async (
     projectContext,
     viewedTaskContext,
     selectionContext,
-    isChannelOperation
-      ? CHANNEL_INSTRUCTIONS
-      : canMessageForUser
-        ? BOT_CHANNEL_MESSAGING_INSTRUCTIONS
-        : undefined,
+    isChannelOperation ? CHANNEL_INSTRUCTIONS : undefined,
   );
   // A share visitor gets no goal capability (see `heteroOperationCapabilities`),
   // so a `/goal` prompt must not add goal instructions either.

@@ -22,12 +22,17 @@ vi.mock('@/database/models/project', () => ({
   }),
 }));
 
+const runnersContext = vi.hoisted(() => ({ read: vi.fn() }));
+
+vi.mock('./projectRunners', () => ({ readProjectRunnersContext: runnersContext.read }));
+
 const deps = { db: {} as never, userId: 'user-1' };
 
 describe('buildRunProjectContextPrompt', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.tfsContext.mockReset().mockResolvedValue(undefined);
+    runnersContext.read.mockResolvedValue({});
     mocks.findById.mockResolvedValue({
       coordinatorAgentId: 'agt-coord',
       description: 'Autumn launch',
@@ -131,5 +136,41 @@ describe('buildRunProjectContextPrompt', () => {
     mocks.tfsContext.mockResolvedValue('<tfs_repositories>repo</tfs_repositories>');
     mocks.listTasks.mockRejectedValueOnce(new Error('tasks unavailable'));
     expect(await buildRunProjectContextPrompt(deps, 'proj-1', 'agt-coord')).toContain('repo');
+  });
+});
+
+describe('buildRunProjectContextPrompt runners', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.findById.mockResolvedValue({
+      coordinatorAgentId: 'agt-coord',
+      name: 'Apollo',
+      status: 'active',
+    });
+    mocks.listAgents.mockResolvedValue([]);
+    mocks.listKnowledgeBases.mockResolvedValue([]);
+    mocks.listTasks.mockResolvedValue([]);
+  });
+
+  it('tells the agent where the work can run and what each runner prepares', async () => {
+    runnersContext.read.mockResolvedValue({
+      environment: { repositories: [{ url: 'https://github.com/lobehub/lobe-pet' }] },
+      runners: [{ kind: 'sandbox' }],
+    });
+
+    const prompt = await buildRunProjectContextPrompt(deps, 'proj-1', 'agt-coord');
+
+    expect(prompt).toContain('<runners');
+    expect(prompt).toContain('1. Cloud sandbox');
+    expect(prompt).toContain('https://github.com/lobehub/lobe-pet');
+  });
+
+  it('keeps the rest of the context when the runners cannot be read', async () => {
+    runnersContext.read.mockRejectedValue(new Error('gateway down'));
+
+    const prompt = await buildRunProjectContextPrompt(deps, 'proj-1', 'agt-coord');
+
+    expect(prompt).toContain('Apollo');
+    expect(prompt).not.toContain('<runners');
   });
 });

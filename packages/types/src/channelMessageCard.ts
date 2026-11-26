@@ -1,3 +1,5 @@
+import { type A2uiSurfaceRecord, surfacesToText, toSurfaceRecords } from '@lobehub/a2ui';
+
 import type { ChannelMemberGrantStatus, ChannelMessageMetadata } from './channel';
 
 /**
@@ -149,39 +151,42 @@ export interface ChannelConnectorRequestResult {
 }
 
 /**
- * A card an Agent drew in its reply, stored in `metadata.surfaces` and drawn by `@lobehub/a2ui`.
- * Mirrors `A2uiSurfaceRecord` there; `fallback` is its one-line text where it can't be drawn.
+ * A card an Agent drew in its reply, stored in `metadata.surfaces` and drawn by `@lobehub/a2ui`:
+ * its stored record, with `state` set once a person acted on it.
  */
-export interface ChannelMessageSurface {
-  catalogId: string;
-  fallback: string;
-  operations: Record<string, unknown>[];
-  /** Set once a person acted on it; a submitted card is read-only. */
-  state?: { status: 'open' | 'submitted'; submittedAt?: string };
-  surfaceId: string;
-  title?: string;
-  version: string;
-}
+export type ChannelMessageSurface = A2uiSurfaceRecord;
 
 /** `metadata.surfaces` of an Agent's reply, keeping only well-formed entries. */
 export const channelMessageSurfaces = (
   metadata: ChannelMessageMetadata | null | undefined,
-): ChannelMessageSurface[] => {
-  const surfaces = metadata?.surfaces;
-  if (!Array.isArray(surfaces)) return [];
-  return surfaces.filter(
-    (surface): surface is ChannelMessageSurface =>
-      !!surface &&
-      typeof surface === 'object' &&
-      typeof (surface as ChannelMessageSurface).surfaceId === 'string' &&
-      Array.isArray((surface as ChannelMessageSurface).operations),
-  );
-};
+): ChannelMessageSurface[] => toSurfaceRecords(metadata?.surfaces);
 
 /** A reply's cards as text, for where cards can't be drawn: history an Agent reads, previews. */
-export const channelSurfacesText = (surfaces: ChannelMessageSurface[]) =>
-  surfaces
-    .map((surface) => surface.fallback || surface.title)
-    .filter(Boolean)
-    .map((line) => `[Card] ${line}`)
-    .join('\n');
+export const channelSurfacesText = (surfaces: ChannelMessageSurface[]) => surfacesToText(surfaces);
+
+/**
+ * A message the running Agent posts as itself (`lobe-channel.postMessage`): on the main timeline
+ * or a Thread of its current Channel, or of another Channel where it is an active member.
+ */
+export interface ChannelPostMessageParams {
+  /** Another Channel the Agent is a member of; omit for the Channel it is answering in. */
+  channelId?: string;
+  /** The post's own words; may be empty when it carries cards. */
+  content?: string;
+  /** Carry the cards this run drew (`lobe-a2ui.renderUI`). Default true. */
+  includeCards?: boolean;
+  /** A Thread of that Channel; omit for its main timeline. */
+  threadId?: string;
+}
+
+/** Where a `postMessage` landed. */
+export interface ChannelPostedMessage {
+  /** How many cards went out with it. */
+  cards: number;
+  channelId: string;
+  channelTitle: string;
+  messageId: string;
+  /** The Thread it is in; null on the main timeline. */
+  threadId: string | null;
+  url: string;
+}

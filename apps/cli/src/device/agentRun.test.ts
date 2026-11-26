@@ -22,6 +22,10 @@ const { identityMock, hasLoginMock } = vi.hoisted(() => ({
 }));
 
 vi.mock('node:child_process', () => ({ spawn: spawnMock }));
+// Never read the developer's real `~/.lobehub/agent-credentials`.
+vi.mock('./agentCredentials', () => ({
+  agentCredentialRootDir: () => '/nonexistent/lobehub-test/agent-credentials',
+}));
 // The device's own Claude Code login, read for account routing.
 vi.mock('@lobechat/heterogeneous-agents/quota-sampler', () => ({
   hasClaudeCodeLogin: hasLoginMock,
@@ -259,6 +263,7 @@ describe('spawnHeteroAgentRun', () => {
       agentType: 'claude-code',
       claudeCodeEntrypoint: 'lobehub',
     });
+    await vi.waitFor(() => expect(spawnMock).toHaveBeenCalled());
     child.emit('spawn');
     await ackPromise;
 
@@ -282,6 +287,7 @@ describe('spawnHeteroAgentRun', () => {
       agentType: 'claude-code',
       claudeCodeEntrypoint: 'x\nLD_PRELOAD=/tmp/evil.so',
     });
+    await vi.waitFor(() => expect(spawnMock).toHaveBeenCalled());
     child.emit('spawn');
     await ackPromise;
 
@@ -300,6 +306,7 @@ describe('spawnHeteroAgentRun', () => {
       agentType: 'claude-code',
       claudeCodeEntrypoint: '',
     });
+    await vi.waitFor(() => expect(spawnMock).toHaveBeenCalled());
     child.emit('spawn');
     await ackPromise;
 
@@ -314,6 +321,7 @@ describe('spawnHeteroAgentRun', () => {
     spawnMock.mockReturnValue(child);
 
     const ackPromise = spawnHeteroAgentRun({ ...baseParams, agentType: 'claude-code' });
+    await vi.waitFor(() => expect(spawnMock).toHaveBeenCalled());
     child.emit('spawn');
     await ackPromise;
 

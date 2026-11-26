@@ -8,6 +8,7 @@ import {
   BrainCircuit,
   ChartColumnBigIcon,
   ChartPieIcon,
+  CodeXmlIcon,
   ContainerIcon,
   CreditCard,
   Database,
@@ -35,6 +36,7 @@ import {
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useCodingPlansTab } from '@/business/client/hooks/useCodingPlansTab';
 import { useLabsSettingsVisible } from '@/features/AdminConsole/Labs/visibility';
 import { type SettingsScope } from '@/features/SettingsSwitch/settingsScope';
 import { useElectronStore } from '@/store/electron';
@@ -104,6 +106,7 @@ export const useCategory = () => {
   const enableBusinessFeatures = useServerConfigStore(serverConfigSelectors.enableBusinessFeatures);
   // CUST-009: admin-managed Labs hides the per-user page from normal users.
   const showLabs = useLabsSettingsVisible();
+  const codingPlansTab = useCodingPlansTab();
   const categoryGroups: CategoryGroup[] = useMemo(() => {
     const groups: CategoryGroup[] = [];
 
@@ -207,8 +210,13 @@ export const useCategory = () => {
           key: SettingsTabs.Usage,
           label: tSubscription('tab.usage'),
         },
+        codingPlansTab && {
+          icon: CodeXmlIcon,
+          key: SettingsTabs.CodingPlans,
+          label: codingPlansTab.label,
+        },
         { icon: CreditCard, key: SettingsTabs.Billing, label: tSubscription('tab.billing') },
-      ];
+      ].filter(Boolean) as CategoryItem[];
 
       groups.push({
         items: subscriptionItems,
@@ -355,6 +363,7 @@ export const useCategory = () => {
     tLabs,
     tSubscription,
     enableBusinessFeatures,
+    codingPlansTab,
     hideDocs,
     mobile,
     showApiKeyManage,
