@@ -176,7 +176,7 @@ type CompanyModel = {
 
 ### 5.5 默认值（CUST-011：管理员默认值 = 全站默认值）
 
-产品语义：管理员在「默认值」里设定的四项（chat / title / verify / embedding）是**全站默认模型**，不是「只给新用户用一次的初始值」。用户没自选就跟随它，用户自选过则保留自选；存量用户、新注册、SSO 首次登录一视同仁，后台任务（标题生成、记忆向量、任务验收）也以它为兜底。
+产品语义：管理员在「默认值」里设定的四项（chat /title/verify/embedding）是**全站默认模型**，不是「只给新用户用一次的初始值」。用户没自选就跟随它，用户自选过则保留自选；存量用户、新注册、SSO 首次登录一视同仁，后台任务（标题生成、记忆向量、任务验收）也以它为兜底。
 
 P2 原文「只影响新用户创建时的初始值，不写存量用户」是当时的旧口径，已被 CUST-011 取代（2026-11-26）：那条口径下管理员改默认值，存量用户与后台任务都不会变，正是本次反馈的现象。
 
@@ -185,9 +185,9 @@ P2 原文「只影响新用户创建时的初始值，不写存量用户」是�
 - 标题生成 / 历史压缩等轻量后台任务（title）：flash 档全部槽位；
 - 任务校验（verify）：`verify` 槽位，必须是多模态（视觉）模型。
 
-确定性映射、自选判定、逐槽位兜底顺序与不可用模型回退见 **§7.1**；本轮只落文档，实现与验收见 T-90 ~ T-94。
+确定性映射、自选判定、逐槽位兜底顺序与不可用模型回退见 **§7.1**；本轮只落文档，实现与验收见 T-90 \~ T-94。
 
-**界面口径（T-93，2026-11-26）**：管理端四项与个人页四档**同名同序**——主模型 / Flash 模型 / 验收模型 / 记忆向量化模型；卡片说明不再写「只影响新用户」，改为「对未自选模型的全部用户与后台任务生效，用户自选后以自己的为准」。验收模型下拉按 `capabilities.includes('vision')` 过滤，已存的不合规值仍留在下拉里标为「不可用」，并在字段下给出提示（不静默保存）。个人页只在管理员真的设过的档位显示「管理员默认」（来源标记 `serverConfig.companyDefaultTiers`），其余仍是「系统推荐」；部署里存在任意管理员默认档时，四档标题下补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」。
+**界面口径（T-93，2026-11-26）**：管理端四项与个人页四档**同名同序**—— 主模型 / Flash 模型 / 验收模型 / 记忆向量化模型；卡片说明不再写「只影响新用户」，改为「对未自选模型的全部用户与后台任务生效，用户自选后以自己的为准」。验收模型下拉按 `capabilities.includes('vision')` 过滤，已存的不合规值仍留在下拉里标为「不可用」，并在字段下给出提示（不静默保存）。个人页只在管理员真的设过的档位显示「管理员默认」（来源标记 `serverConfig.companyDefaultTiers`），其余仍是「系统推荐」；部署里存在任意管理员默认档时，四档标题下补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」。
 
 ### 5.6 失败与回滚
 
@@ -307,11 +307,11 @@ P2 交付时它是「只存不用」：`getCompanyProviderRuntime()` 把 `defaul
 | `title`      | `SERVICE_MODEL_TIER_SLOTS.flash`：`topic` / `thread` / `generationTopic` / `translation` / `promptRewrite` / `memoryAnalysisAgentConfig` / `userMemoryPersonaWriter` / `inputCompletion` / `followUpAction` | 标题、历史压缩、翻译、提示词改写等轻量后台任务 |
 | `verify`     | `SERVICE_MODEL_TIER_SLOTS.verify`：`verify`                                                                                                                                                                 | 必须视觉模型；pinned verifier agent 优先于本节 |
 | `embedding`  | `SERVICE_MODEL_TIER_SLOTS.embedding`：`userMemoryEmbedding`                                                                                                                                                 | 记忆向量；换模型需重新索引                     |
-| —            | `fileEmbedding` 仍由 `DEFAULT_FILES_CONFIG` 管；`asr` / `channelRouting` / onboarding 槽位不归管理员默认值                                                                                                  | `fileEmbedding` 跟随档位会让已嵌入向量失效     |
+| —            | `fileEmbedding` 仍由 `DEFAULT_FILES_CONFIG` 管；`asr` / `channelRouting` /onboarding 槽位不归管理员默认值                                                                                                   | `fileEmbedding` 跟随档位会让已嵌入向量失效     |
 
 槽位清单不在本节硬编码：上游增删槽位只改 `SERVICE_MODEL_TIER_SLOTS`，映射自动跟随（与 §16 的 lab 闸门同一思路）。
 
-**provider**：默认值的模型 id 属于 Tellhow 目录，解析出的 provider 固定为 `tellhow`。不提供「默认值指向其他 provider」的能力——其他厂商属于用户个人自选。
+**provider**：默认值的模型 id 属于 Tellhow 目录，解析出的 provider 固定为 `tellhow`。不提供「默认值指向其他 provider」的能力 —— 其他厂商属于用户个人自选。
 
 **生效规则**
 
@@ -343,6 +343,8 @@ P2 交付时它是「只存不用」：`getCompanyProviderRuntime()` 把 `defaul
 
 约束：前台与后台必须共用**一个**解析函数（放在 `packages/business-server`），不允许每条链路各写一份「管理员默认值优先」，否则回退顺序会漂移。顺带修正一处现存偏差：`resolveSystemAgentModelConfig` 今天连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
 
+**已落地（T-91）**：管理员层只有 `packages/business-server/src/adminConsole/serviceDefaults.ts` 一个出口（`resolveCompanyServiceDefaults` 给整块、`getCompanyServiceDefaultModel` 给单槽位），都走 `getCompanyProviderRuntime` 的 5 s 缓存。`resolveSystemAgentModelConfig` 按 `override > 用户自选 > 管理员默认 > SYSTEM_AGENT > 代码默认` 解析，且只在用户没选全时才读管理员层；`resolveVerifyServiceModel` 在用户与 `SYSTEM_AGENT` 之间插入管理员 `verify`；记忆抽取把 `serverConfig.systemAgent`（管理员已压在 env 之上）合并到用户设置之下再走原有 `MEMORY_*` / 内置默认。记忆抽取跟随管理员默认时 provider 是 `tellhow`，`resolveRuntimeAgentConfig` 用 `resolveCompanyProviderParams` 取服务端密钥，不能用用户 keyVaults。
+
 **不可用模型回退**（不产生指向不可用模型的默认值）
 
 `validateDefaults` 只校验「id 在目录里」，不校验 `open`；目录同步又只写 `removedAt` 不删行。因此解析时逐项判定：
@@ -358,7 +360,7 @@ P2 交付时它是「只存不用」：`getCompanyProviderRuntime()` 把 `defaul
 
 **备选口径（本次不实施，待用户确认可切换）**
 
-强制覆盖所有用户自选（含槽位 pin、档位 pin、`defaultAgent.config`）。只在产品方明确要求「管理员改默认值，所有人立刻跟着变」时启用；届时建议做成 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` = 本节口径），个人页显示「由管理员统一指定」。`force` 也只做解析覆盖、不改用户行——否则切回 `follow` 时用户原选择已丢失。风险：用户改了又被改回去，「用户显式选择」也会失去意义。
+强制覆盖所有用户自选（含槽位 pin、档位 pin、`defaultAgent.config`）。只在产品方明确要求「管理员改默认值，所有人立刻跟着变」时启用；届时建议做成 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` = 本节口径），个人页显示「由管理员统一指定」。`force` 也只做解析覆盖、不改用户行 —— 否则切回 `follow` 时用户原选择已丢失。风险：用户改了又被改回去，「用户显式选择」也会失去意义。
 
 **实现与验收分工**：T-90 注入 `serverConfig` + 统一解析函数；T-91 后台任务读取点改走同一函数；T-92 新用户默认只开 TellhowAI（默认模型之外的另一件事）；T-93 个人服务模型页与管理端默认值文案；T-94 存量 / 新注册 / SSO 三条真实链路验收。
 
@@ -387,24 +389,23 @@ for (const provider of Object.values(ModelProvider)) {
 
 合并写法是硬要求：上方那些 `fetchOnClient` / `modelListKey` / `withDeploymentName` 是厂商元数据，不能被默认开关冲掉。
 
-**与 `withCompanyProviderCatalog()` 的分工**：控制台仍然决定 Tellhow 的生死——`getServerGlobalConfig()` 在 `genServerAiProvidersConfig()` 之后调用 `withCompanyProviderCatalog()`，未配置或管理员关闭时把 `tellhow.enabled` 覆盖为 `false`，用户侧立即不可见（§5.6 不变）。默认开关只负责「Tellhow 之外的厂商默认关」。
+**与 `withCompanyProviderCatalog()` 的分工**：控制台仍然决定 Tellhow 的生死 ——`getServerGlobalConfig()` 在 `genServerAiProvidersConfig()` 之后调用 `withCompanyProviderCatalog()`，未配置或管理员关闭时把 `tellhow.enabled` 覆盖为 `false`，用户侧立即不可见（§5.6 不变）。默认开关只负责「Tellhow 之外的厂商默认关」。
 
-**为什么不复用 `ENABLE_BUSINESS_FEATURES`**：`getAiProviderSpecificConfig()` 里已有一条现成的「只开内置厂商」分支（`enabled: provider === ModelProvider.LobeHub`），但它与业务特性总开关绑定——后者还决定 `agentGatewayProtocol`、页面协作与 `isOfficialProvider`，且默认厂商是 `lobehub` 不是 `tellhow`。本 Fork 必须保持 `ENABLE_BUSINESS_FEATURES = false`，所以复制写法、另立只表达「默认厂商集合」的常量。
+**为什么不复用 `ENABLE_BUSINESS_FEATURES`**：`getAiProviderSpecificConfig()` 里已有一条现成的「只开内置厂商」分支（`enabled: provider === ModelProvider.LobeHub`），但它与业务特性总开关绑定 —— 后者还决定 `agentGatewayProtocol`、页面协作与 `isOfficialProvider`，且默认厂商是 `lobehub` 不是 `tellhow`。本 Fork 必须保持 `ENABLE_BUSINESS_FEATURES = false`，所以复制写法、另立只表达「默认厂商集合」的常量。
 
 **对服务端解析零影响（T-92 已用测试证明）**：`initModelRuntimeFromDB()` 只读用户 / 厂商行与控制台凭据，从不读 `aiProvider[id].enabled`：
 
-| 链路 | 是否读厂商级默认 | 说明 |
-| --- | --- | --- |
-| 标题 / 翻译 / 技能元数据（`resolveSystemAgentModelConfig → initModelRuntimeFromDB`） | 否 | 只解析 model + provider，随后按凭据初始化 |
-| 记忆抽取 / 向量（`getAiProviderRuntimeState` → `enabledAiModels` / `tryMatchingProviderFrom`） | 否 | 用**模型级** `enabled`，不是厂商级 |
-| 任务验收（`resolveGoalReviewModelConfig` 的 `initModelRuntimeFromDB` 探针） | 否 | 凭据初始化失败才算不可用 |
-| 异构 Agent 部署目录（`getEnabledServerChatModels` / `resolveServerModel`） | 是 | 前者只查 `lobehub` relay 目录（本 Fork 不用）；后者只用于压缩模型的 `deploymentName` 兜底查找，查不到就退回裸模型 id（best-effort，不影响请求） |
-| 用户侧厂商列表 / 模型选择器（`getAiProviderList`） | 是 | 这就是本开关要影响的那一处 |
+| 链路                                                                                           | 是否读厂商级默认 | 说明                                                                                                                                            |
+| ---------------------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 标题 / 翻译 / 技能元数据（`resolveSystemAgentModelConfig → initModelRuntimeFromDB`）           | 否               | 只解析 model + provider，随后按凭据初始化                                                                                                       |
+| 记忆抽取 / 向量（`getAiProviderRuntimeState` → `enabledAiModels` / `tryMatchingProviderFrom`） | 否               | 用**模型级** `enabled`，不是厂商级                                                                                                              |
+| 任务验收（`resolveGoalReviewModelConfig` 的 `initModelRuntimeFromDB` 探针）                    | 否               | 凭据初始化失败才算不可用                                                                                                                        |
+| 异构 Agent 部署目录（`getEnabledServerChatModels` / `resolveServerModel`）                     | 是               | 前者只查 `lobehub` relay 目录（本 Fork 不用）；后者只用于压缩模型的 `deploymentName` 兜底查找，查不到就退回裸模型 id（best-effort，不影响请求） |
+| 用户侧厂商列表 / 模型选择器（`getAiProviderList`）                                             | 是               | 这就是本开关要影响的那一处                                                                                                                      |
 
-`apps/server/src/modules/ModelRuntime/providerDefaults.test.ts` 用真实初始化路径锁住：无用户行的新用户调用 Tellhow 成功；默认关闭的 openai / deepseek 在用户打开后仍能初始化；自定义厂商不受影响。
+`apps/server/src/modules/ModelRuntime/providerDefaults.test.ts` 用真实初始化路径锁住：无用户行的新用户调用 Tellhow 成功；默认关闭的 openai /deepseek 在用户打开后仍能初始化；自定义厂商不受影响。
 
 **已知取舍**：开启后内置厂商的 `ENABLED_*` 环境变量不再把该厂商在用户侧默认打开（凭据仍生效，用户打开开关即可用）；桌面端 `ollama` 也一并默认关闭（本 Fork 为 Web 部署）。需要另一个默认开启的厂商时，改 `getAiProviderSpecificConfig()` 的放行表达式，不要改 `ENABLE_BUSINESS_FEATURES`。
-
 
 ## 8. 对现有代码的侵入清单
 
@@ -506,7 +507,7 @@ src/services/adminConsole.ts
 6. 设置页列表 / Form 的 token 是否变化；
 7. `src/styles/densityScale.ts` 是否新增 token 或改动两档数值，控制台视觉规范随之更新；
 8. `ssrfSafeFetch` 的选项与默认策略是否变化（企业内网网关的白名单方式）；
-9. `SERVICE_MODEL_TIER_SLOTS` 是否仍覆盖 main / flash / verify / embedding 四档且 `fileEmbedding` 不在其中；上游增删槽位时管理员默认值映射要自动跟随（§7.1）；
+9. `SERVICE_MODEL_TIER_SLOTS` 是否仍覆盖 main /flash/verify/embedding 四档且 `fileEmbedding` 不在其中；上游增删槽位时管理员默认值映射要自动跟随（§7.1）；
 10. `getServerGlobalConfig` 仍组装 `systemAgent` / `defaultAgent`，且客户端 `#project` 仍把它们合并进 `defaultSettings`；这两处任一被上游重构，「未自选 = 跟随默认」就会失效；
 11. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）仍经过统一解析函数，不能被上游改成各写一份默认值；
 12. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并由 `invalidateCompanyProviderCache()` 在保存后失效。
@@ -854,33 +855,33 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 
 ## 17. CUST-010：管理控制台设备总览
 
-只读的**机器台账**：`/admin/devices` 回答「谁有一台什么设备、在不在线」，不是个人设置设备页的复制品。管理员不做 owner 过滤——他人个人设备、所有工作区设备（含 `private`）都在列表里；但**看不到设备在哪个目录干活**。维护要点见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) 的 CUST-010 一节，本节记录设计与偏差。
+只读的**机器台账**：`/admin/devices` 回答「谁有一台什么设备、在不在线」，不是个人设置设备页的复制品。管理员不做 owner 过滤 —— 他人个人设备、所有工作区设备（含 `private`）都在列表里；但**看不到设备在哪个目录干活**。维护要点见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) 的 CUST-010 一节，本节记录设计与偏差。
 
 ### 17.1 为什么不做写操作
 
-无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门（设备归属是用户在个人设置里的事），且 `devices` 是 upsert 语义——删掉下次连接自动回来。管理端在这里只承担「看见」。
+无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门（设备归属是用户在个人设置里的事），且 `devices` 是 upsert 语义 —— 删掉下次连接自动回来。管理端在这里只承担「看见」。
 
 ### 17.2 行身份必须用真实唯一键
 
 `devices` 的两个唯一键是 `(user_id, device_id)`（`devices_user_id_device_id_unique`）与 `(workspace_id, device_id)`。不能用 `(workspaceId, deviceId)` 一把梭：`lh connect --device-id` 可让两个 owner 用同一个 deviceId（`apps/cli/src/device/register.ts` 的 `resolveDeviceIdentity()` 在显式 id 时绕过哈希）。
 
-因此行键是 `workspace ? ${wsId}::${deviceId} : personal:${ownerId}::${deviceId}`，详情查询把 `ownerId` 一路带到 SQL，`limit(2)` 后 `rows.length !== 1` 即 `NOT_FOUND`——歧义不猜。这是 T-86 的修复点：早期实现用 `personal::${deviceId}`，导致 React duplicate key，点开还可能落在他人设备上。
+因此行键是 `workspace ? ${wsId}::${deviceId} : personal:${ownerId}::${deviceId}`，详情查询把 `ownerId` 一路带到 SQL，`limit(2)` 后 `rows.length !== 1` 即 `NOT_FOUND`—— 歧义不猜。这是 T-86 的修复点：早期实现用 `personal::${deviceId}`，导致 React duplicate key，点开还可能落在他人设备上。
 
 ### 17.3 在线三态，`unknown` 不许折叠成 `offline`
 
-| 触发 | 结果 |
-| --- | --- |
-| 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求** |
-| 探测成功且命中 deviceId | `online`，附 `channelCount` |
-| 探测成功但池中没有该 deviceId | `offline` |
-| `readDeviceList` 返回 `ok: false` | `unknown` |
-| 探测抛错 / 超过 3s 整轮预算 | `unknown`（晚到结果由 `accepting` 丢弃） |
+| 触发                                   | 结果                                     |
+| -------------------------------------- | ---------------------------------------- |
+| 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求**               |
+| 探测成功且命中 deviceId                | `online`，附 `channelCount`              |
+| 探测成功但池中没有该 deviceId          | `offline`                                |
+| `readDeviceList` 返回 `ok: false`      | `unknown`                                |
+| 探测抛错 / 超过 3s 整轮预算            | `unknown`（晚到结果由 `accepting` 丢弃） |
 
 参数：`DEVICE_PROBE_CONCURRENCY = 5`、`DEVICE_PROBE_TIMEOUT_MS = 3000`、`DEVICE_READ_ATTEMPTS = 2`、`DEVICE_READ_RETRY_DELAY_MS = 250`。
 
 ### 17.4 唯一的上游授权偏差：`deviceGateway.readDeviceList`
 
-上游 `readDevices` 在传输失败时回落 `queryDeviceList` 的 `[]`，管理端会把「网关没答」渲染成「这个人的设备全没上线」——用户明确不接受。新增的 `readDeviceList(userId, workspaceId?) → { ok: true, devices } | { ok: false, reason }` 是唯一能区分二者且不改既有调用方的接法：`queryDeviceList` 保持 `[]` 回落不变，另抽 `toDeviceAttachments()` 为纯重构。`deviceGateway` 其余文件（`routers/lambda/device/**`、`packages/device-gateway-client/**`、`packages/database/src/{models,schemas}/device.ts`、`src/features/DeviceManager/**`、`src/store/device/**`）零改动。
+上游 `readDevices` 在传输失败时回落 `queryDeviceList` 的 `[]`，管理端会把「网关没答」渲染成「这个人的设备全没上线」—— 用户明确不接受。新增的 `readDeviceList(userId, workspaceId?) → { ok: true, devices } | { ok: false, reason }` 是唯一能区分二者且不改既有调用方的接法：`queryDeviceList` 保持 `[]` 回落不变，另抽 `toDeviceAttachments()` 为纯重构。`deviceGateway` 其余文件（`routers/lambda/device/**`、`packages/device-gateway-client/**`、`packages/database/src/{models,schemas}/device.ts`、`src/features/DeviceManager/**`、`src/store/device/**`）零改动。
 
 ### 17.5 隐私白名单三层
 
@@ -899,7 +900,7 @@ SQL 显式列投影（不选 `defaultCwd` / `workingDirs` / `recentCwds`，`meta
 1. `apps/server/src/routers/lambda/adminConsole/index.ts` 的 `...adminDeviceProcedures` spread；
 2. `src/features/AdminConsole/route.tsx` 的 `devices` 子路由 + `src/routes/(main)/admin/devices/index.tsx` 一行 re-export（`desktopRouter.shared.tsx` 无需改，`/admin` 容器路由已注册）；
 3. `Layout/Body.tsx` 的 `DEVICES_PATH` / `devicesActive` / `NavItem(MonitorSmartphone)` + `adminConsole` 命名空间的 `nav.devices`；
-4. `packages/locales/src/default/index.ts` 的 `resources.adminConsole`——不注册则打包版（Electron / 无网络 SSR 首屏）拿不到该命名空间，表现为「浏览器能用、桌面首屏闪 key」；
+4. `packages/locales/src/default/index.ts` 的 `resources.adminConsole`—— 不注册则打包版（Electron / 无网络 SSR 首屏）拿不到该命名空间，表现为「浏览器能用、桌面首屏闪 key」；
 5. `deviceGateway.readDeviceList` 与 `toDeviceAttachments` 不能被上游 `readDevices` 重构吞掉；上游若改为抛错或返回哨兵值，先确认管理端仍拿得到 `ok:false` 再删本 fork 的接法，不要两边并存；
 6. 探测三参数不可调成「失败即 offline」；`resolveOnlineStates` / `tallyOnline` / `probePrincipals` 是纯函数，可被移动但语义必须保留；
 7. `adminDeviceSelection` 投影与 `ADMIN_DEVICE_DETAIL_METADATA_KEYS` 是唯一 metadata 出口，上游给 `devices.metadata` 加字段时不要顺手放开；

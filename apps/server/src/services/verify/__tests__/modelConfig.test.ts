@@ -11,8 +11,14 @@ import {
   VERIFY_FALLBACK_MODEL_CONFIG,
 } from '../modelConfig';
 
-const { appEnvMock, getAgentModelConfigMock, getUserSettingsMock } = vi.hoisted(() => ({
+const {
+  appEnvMock,
+  getCompanyServiceDefaultModelMock,
+  getAgentModelConfigMock,
+  getUserSettingsMock,
+} = vi.hoisted(() => ({
   appEnvMock: { SYSTEM_AGENT: '' as string | undefined },
+  getCompanyServiceDefaultModelMock: vi.fn(),
   getAgentModelConfigMock: vi.fn(),
   getUserSettingsMock: vi.fn(),
 }));
@@ -31,6 +37,10 @@ vi.mock('@/database/models/user', () => ({
 
 vi.mock('@/envs/app', () => ({ appEnv: appEnvMock }));
 
+vi.mock('@/business/server/adminConsole/serviceDefaults', () => ({
+  getCompanyServiceDefaultModel: getCompanyServiceDefaultModelMock,
+}));
+
 const db = {} as any;
 
 describe('resolveVerifyModelConfig', () => {
@@ -38,6 +48,8 @@ describe('resolveVerifyModelConfig', () => {
     vi.clearAllMocks();
     appEnvMock.SYSTEM_AGENT = '';
     getUserSettingsMock.mockResolvedValue({});
+    // Default: the administrator configured no verify default.
+    getCompanyServiceDefaultModelMock.mockResolvedValue(undefined);
   });
 
   it('recognizes heterogeneous providers that cannot run Verify LLM calls', () => {
@@ -100,6 +112,41 @@ describe('resolveVerifyModelConfig', () => {
     await expect(resolveVerifyModelConfig(db, 'u', {})).resolves.toEqual({
       model: 'gemini-3.8-flash',
       provider: 'google',
+    });
+
+    expect(getCompanyServiceDefaultModelMock).toHaveBeenCalledWith('verify');
+  });
+
+  /**
+   * CUST-011 §7.1: the administrator default sits between the user's pick and
+   * `SYSTEM_AGENT`, the same order the settings page renders. A user who never
+   * picked a verifier must be judged on the model the console set.
+   */
+  it('uses the administrator verify default over SYSTEM_AGENT', async () => {
+    appEnvMock.SYSTEM_AGENT = 'verify=google/gemini-3.8-flash';
+    getCompanyServiceDefaultModelMock.mockResolvedValue({
+      model: 'tellhow-vision',
+      provider: 'tellhow',
+    });
+
+    await expect(resolveVerifyModelConfig(db, 'u', {})).resolves.toEqual({
+      model: 'tellhow-vision',
+      provider: 'tellhow',
+    });
+  });
+
+  it('lets the user verify pick outrank the administrator default', async () => {
+    getCompanyServiceDefaultModelMock.mockResolvedValue({
+      model: 'tellhow-vision',
+      provider: 'tellhow',
+    });
+    getUserSettingsMock.mockResolvedValue({
+      systemAgent: { verify: { model: 'gpt-5.6', provider: 'openai' } },
+    });
+
+    await expect(resolveVerifyModelConfig(db, 'u', {})).resolves.toEqual({
+      model: 'gpt-5.6',
+      provider: 'openai',
     });
   });
 

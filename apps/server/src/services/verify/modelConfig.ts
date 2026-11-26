@@ -12,6 +12,7 @@ import {
   REMOTE_HETEROGENEOUS_AGENT_CONFIGS,
 } from '@lobechat/types';
 
+import { getCompanyServiceDefaultModel } from '@/business/server/adminConsole/serviceDefaults';
 import { AgentModel } from '@/database/models/agent';
 import { UserModel } from '@/database/models/user';
 import type { LobeChatDatabase } from '@/database/type';
@@ -98,8 +99,13 @@ export const VERIFY_FALLBACK_MODEL_CONFIG: VerifyModelConfig = {
 
 /**
  * The `verify` service model: the user's pick in Settings → Service Model,
- * then the deployment's `SYSTEM_AGENT` (`verify=` or `default=`). Undefined
- * when neither set one, so callers fall through to their own floor.
+ * then the administrator default from the console, then the deployment's
+ * `SYSTEM_AGENT` (`verify=` or `default=`). Undefined when none of them set
+ * one, so callers fall through to their own floor.
+ *
+ * The administrator layer sits above `SYSTEM_AGENT` to match the client chain
+ * (CUST-011 §7.1): the settings page shows the administrator default, and a
+ * background check must judge on the model the user was shown.
  */
 export const resolveVerifyServiceModel = async (
   db: LobeChatDatabase,
@@ -109,6 +115,7 @@ export const resolveVerifyServiceModel = async (
   const systemAgent = settings?.systemAgent as Partial<UserSystemAgentConfig> | undefined;
   const candidates: (Partial<SystemAgentItem> | undefined)[] = [
     systemAgent?.verify,
+    await getCompanyServiceDefaultModel('verify'),
     parseSystemAgent(appEnv.SYSTEM_AGENT).verify,
   ];
   for (const candidate of candidates) {

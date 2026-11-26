@@ -6,6 +6,10 @@ import { ModelRuntime } from '@lobechat/model-runtime';
 import type { AiProviderRuntimeState, UserServiceModelConfig } from '@lobechat/types';
 import debug from 'debug';
 
+import {
+  COMPANY_PROVIDER_ID,
+  resolveCompanyProviderParams,
+} from '@/business/server/companyProvider';
 import { getBusinessModelRuntimeHooks } from '@/business/server/model-runtime';
 import { AiInfraRepos } from '@/database/repositories/aiInfra';
 import type { MemoryAgentConfig } from '@/server/globalConfig/parseMemoryExtractionConfig';
@@ -70,6 +74,21 @@ export const resolveRuntimeAgentConfig = (
   options?: RuntimeResolveOptions,
   hooks?: ModelRuntimeHooks,
 ) => {
+  // CUST-011: a slot that follows the administrator default resolves to
+  // tellhow, whose endpoint and key live on the server (admin console
+  // settings), never in a user vault. Resolve them the same way a chat request
+  // does instead of building a keyless runtime that fails on every call.
+  if (normalizeProvider(agent.provider || '') === COMPANY_PROVIDER_ID) {
+    const params = resolveCompanyProviderParams({});
+    if (params) {
+      return ModelRuntime.initializeWithProvider(
+        COMPANY_PROVIDER_ID,
+        { ...params, userId: options?.userId },
+        hooks,
+      );
+    }
+  }
+
   const normalizedPreferredProviders = (options?.preferred?.providerIds || [])
     .map(normalizeProvider)
     .filter(Boolean);
@@ -187,6 +206,36 @@ export async function withoutRetiredLobeHubMemoryModels(
     result = rest;
   }
   return result;
+}
+
+/** Memory slots that may follow a deployment default (CUST-011 §7.1). */
+const MEMORY_SERVICE_SLOTS = ['memoryAnalysisAgentConfig', 'userMemoryEmbedding'] as const;
+
+/**
+ * Layer the user's own memory picks over the deployment defaults.
+ *
+ * `deploymentSystemAgent` is `serverConfig.systemAgent`, which already merges
+ * the administrator console defaults above `SYSTEM_AGENT` (CUST-011), so this
+ * is the same chain the client shows: user pick → administrator → env → the
+ * memory env / code default that `privateConfig` already provides.
+ *
+ * Only the slots memory extraction actually runs are copied: `fileEmbedding`
+ * belongs to `DEFAULT_FILES_CONFIG`, and the chat slots belong to other
+ * callers. A user row always wins, including an explicit `enabled: false`.
+ */
+export function withMemoryDeploymentDefaults(
+  userSystemAgent: Partial<UserServiceModelConfig> | undefined,
+  deploymentSystemAgent: Partial<UserServiceModelConfig> | undefined,
+): Partial<UserServiceModelConfig> | undefined {
+  if (!deploymentSystemAgent) return userSystemAgent;
+
+  const merged: Partial<UserServiceModelConfig> = { ...userSystemAgent };
+
+  for (const slot of MEMORY_SERVICE_SLOTS) {
+    if (!merged[slot] && deploymentSystemAgent[slot]) merged[slot] = deploymentSystemAgent[slot];
+  }
+
+  return merged;
 }
 
 export function resolveUserMemoryAgent(

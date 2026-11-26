@@ -19,6 +19,7 @@ import type { LayersEnum, MemorySourceType } from '@/types/userMemory';
 
 import type { MemoryExtractionExecutorContext } from './context';
 import { serializeError } from './errors';
+import { withMemoryDeploymentDefaults } from './runtime';
 
 export async function extractBenchmarkSource(
   ctx: MemoryExtractionExecutorContext,
@@ -55,7 +56,10 @@ export async function extractBenchmarkSource(
           ctx.getAiProviderRuntimeState(params.userId),
         ]);
         const memoryServiceConfig = ctx.resolveUserMemoryServiceConfig(
-          userState.settings?.systemAgent as Partial<UserServiceModelConfig> | undefined,
+          withMemoryDeploymentDefaults(
+            userState.settings?.systemAgent as Partial<UserServiceModelConfig> | undefined,
+            ctx.deploymentSystemAgent,
+          ),
         );
         const keyVaults = await ctx.resolveRuntimeKeyVaults(
           aiProviderRuntimeState,
