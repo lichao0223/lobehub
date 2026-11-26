@@ -324,6 +324,20 @@ const getServerDatabase = async (): Promise<LobeChatDatabase | undefined> => {
 };
 
 /**
+ * Runtime read for callers that have no database handle of their own (the
+ * global config). Goes through `getCompanyProviderRuntime`, so it shares the
+ * one 5 s cache instead of adding a second settings read. A missing server pool
+ * reads as "not configured" instead of throwing.
+ */
+export const getCompanyProviderRuntimeFromServer = async (
+  options: CompanyProviderOptions & { db?: LobeChatDatabase } = {},
+): Promise<CompanyProviderRuntime | null> => {
+  const db = options.db ?? (await getServerDatabase());
+
+  return db ? getCompanyProviderRuntime(db, options) : null;
+};
+
+/**
  * Merge the console catalog into the server provider config (§5.3 / §5.4).
  *
  * The client derives provider visibility from `aiProvider[id].enabled` and the
@@ -335,8 +349,7 @@ export const withCompanyProviderCatalog = async <T extends Record<string, Provid
   providerConfigs: T,
   options: CompanyProviderOptions & { db?: LobeChatDatabase } = {},
 ): Promise<T> => {
-  const db = options.db ?? (await getServerDatabase());
-  const runtime = db ? await getCompanyProviderRuntime(db, options) : null;
+  const runtime = await getCompanyProviderRuntimeFromServer(options);
   const current = providerConfigs[COMPANY_PROVIDER_ID];
 
   const companyConfig: ProviderConfig = runtime

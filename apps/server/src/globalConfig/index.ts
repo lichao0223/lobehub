@@ -4,6 +4,7 @@ import { ModelProvider } from 'model-bank';
 import urlJoin from 'url-join';
 
 import { loadModels } from '@/business/client/model-bank/loadModels';
+import { getCompanyServiceDefaults } from '@/business/server/adminConsole/serviceDefaults';
 import { withCompanyProviderCatalog } from '@/business/server/companyProvider';
 import { composioEnv } from '@/config/composio';
 import { isDesktop } from '@/const/version';
@@ -168,6 +169,11 @@ const getDeploymentFileEmbeddingModel = () => {
 export const getServerGlobalConfig = async () => {
   const { DEFAULT_AGENT_CONFIG } = getAppConfig();
 
+  // CUST-011 §7.1: an administrator's console defaults outrank `SYSTEM_AGENT` /
+  // `DEFAULT_AGENT_CONFIG` and the code defaults. Read first so the provider
+  // catalog below hits the same 5 s cache instead of reading settings twice.
+  const companyDefaults = await getCompanyServiceDefaults();
+
   const enableGatewayMode =
     ENABLE_BUSINESS_FEATURES || (!!appEnv.ENABLE_AGENT_GATEWAY && !!appEnv.AGENT_GATEWAY_URL);
 
@@ -186,7 +192,10 @@ export const getServerGlobalConfig = async () => {
       await genServerAiProvidersConfig(getAiProviderSpecificConfig()),
     ),
     defaultAgent: {
-      config: parseAgentConfig(DEFAULT_AGENT_CONFIG),
+      config: {
+        ...parseAgentConfig(DEFAULT_AGENT_CONFIG),
+        ...companyDefaults.defaultAgent?.config,
+      },
     },
     deviceGatewayConfigured: !!gatewayEnv.DEVICE_GATEWAY_URL,
     // Never fall back to the server-internal DEVICE_GATEWAY_URL.
@@ -237,6 +246,7 @@ export const getServerGlobalConfig = async () => {
     sandbox: getSandboxDeployment(),
     systemAgent: {
       ...parseSystemAgent(appEnv.SYSTEM_AGENT),
+      ...companyDefaults.systemAgent,
       fileEmbedding: getDeploymentFileEmbeddingModel(),
     },
     telemetry: {

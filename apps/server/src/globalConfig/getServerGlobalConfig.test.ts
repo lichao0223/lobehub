@@ -19,10 +19,17 @@ interface MockGlobalConfigOptions {
   agentGatewayProtocol?: number;
   agentGatewayUrl?: string;
   appUrl?: string;
+  /** Administrator defaults returned by the CUST-011 resolver. */
+  companyServiceDefaults?: {
+    defaultAgent?: { config: { model: string; provider: string } };
+    systemAgent?: Record<string, { model: string; provider: string }>;
+  };
   enableAgentGateway?: boolean;
   enablePageCollab?: boolean;
   enableWorkspacePageCollab?: boolean;
   filesConfigEnv?: string;
+  /** What `SYSTEM_AGENT` parses into. */
+  systemAgentEnv?: Record<string, { model: string; provider: string }>;
   toolNameMaxLengthEnv?: string;
 }
 
@@ -100,8 +107,22 @@ const mockGlobalConfigDependencies = (
     parseSSOProviders: vi.fn(() => []),
   }));
 
+  vi.doMock('@/business/server/adminConsole/serviceDefaults', () => ({
+    getCompanyServiceDefaults: vi.fn(async () => ({
+      systemAgent: {},
+      tiers: {},
+      ...options.companyServiceDefaults,
+    })),
+  }));
+
+  // The catalog merge owns its own DB read; this suite tests the config shape,
+  // not the Tellhow console, so it stays out of the database entirely.
+  vi.doMock('@/business/server/companyProvider', () => ({
+    withCompanyProviderCatalog: vi.fn(async (configs: Record<string, unknown>) => configs),
+  }));
+
   vi.doMock('@/server/globalConfig/parseSystemAgent', () => ({
-    parseSystemAgent: vi.fn(() => undefined),
+    parseSystemAgent: vi.fn(() => options.systemAgentEnv),
   }));
 
   vi.doMock('@/utils/object', () => ({
@@ -328,6 +349,42 @@ describe('getServerGlobalConfig', () => {
     const config = await loadServerConfig(false, { filesConfigEnv: 'invalid' });
 
     expect(config.systemAgent?.fileEmbedding).toBeUndefined();
+  });
+
+  // CUST-011 §7.1: administrator defaults > SYSTEM_AGENT / DEFAULT_AGENT_CONFIG
+  // > code default, per slot. A tier the administrator left empty keeps the env.
+  it('should put administrator model defaults above SYSTEM_AGENT env', async () => {
+    const config = await loadServerConfig(false, {
+      companyServiceDefaults: {
+        defaultAgent: { config: { model: 'tellhow-chat', provider: 'tellhow' } },
+        systemAgent: { agentMeta: { model: 'tellhow-chat', provider: 'tellhow' } },
+      },
+      systemAgentEnv: {
+        agentMeta: { model: 'env-main', provider: 'env-provider' },
+        translation: { model: 'env-flash', provider: 'env-provider' },
+      },
+    });
+
+    expect(config.systemAgent).toMatchObject({
+      // The administrator wins where both layers have a value.
+      agentMeta: { model: 'tellhow-chat', provider: 'tellhow' },
+      // An unset administrator tier still follows the deployment env.
+      translation: { model: 'env-flash', provider: 'env-provider' },
+    });
+    expect(config.defaultAgent).toEqual({
+      config: { model: 'tellhow-chat', provider: 'tellhow' },
+    });
+  });
+
+  it('should keep the deployment env when the administrator configured nothing', async () => {
+    const config = await loadServerConfig(false, {
+      systemAgentEnv: { agentMeta: { model: 'env-main', provider: 'env-provider' } },
+    });
+
+    expect(config.systemAgent?.agentMeta).toEqual({
+      model: 'env-main',
+      provider: 'env-provider',
+    });
   });
 
   it('should omit the OIDC issuer when APP_URL is not configured', async () => {
