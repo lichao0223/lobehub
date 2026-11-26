@@ -16,6 +16,8 @@ const mocks = vi.hoisted(() => ({
 }));
 
 interface MockGlobalConfigOptions {
+  /** What `DEFAULT_AGENT_CONFIG` parses into. */
+  agentConfigParse?: Record<string, unknown>;
   agentGatewayProtocol?: number;
   agentGatewayUrl?: string;
   appUrl?: string;
@@ -144,7 +146,7 @@ const mockGlobalConfigDependencies = (
   }));
 
   vi.doMock('./parseDefaultAgent', () => ({
-    parseAgentConfig: vi.fn(() => ({})),
+    parseAgentConfig: vi.fn(() => options.agentConfigParse ?? {}),
   }));
 
   vi.doMock('./parseFilesConfig', () => ({
@@ -187,6 +189,45 @@ const loadServerConfig = async (
   const { getServerGlobalConfig } = await import('./index');
   return getServerGlobalConfig();
 };
+
+const loadDeploymentDefaultAgentConfig = async (options: MockGlobalConfigOptions = {}) => {
+  vi.resetModules();
+  mockGlobalConfigDependencies(false, options);
+
+  const { getDeploymentDefaultAgentConfig } = await import('./index');
+  return getDeploymentDefaultAgentConfig();
+};
+
+describe('getDeploymentDefaultAgentConfig', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  // CUST-011-F: this is the layer every conversation below a user pick reads.
+  it('should put the administrator main model above DEFAULT_AGENT_CONFIG', async () => {
+    await expect(
+      loadDeploymentDefaultAgentConfig({
+        agentConfigParse: { model: 'env-model', provider: 'env-provider' },
+        companyServiceDefaults: {
+          defaultAgent: { config: { model: 'deepseek-flash-latest', provider: 'tellhow' } },
+        },
+      }),
+    ).resolves.toEqual({ model: 'deepseek-flash-latest', provider: 'tellhow' });
+  });
+
+  it('should keep the deployment env when the administrator configured nothing', async () => {
+    await expect(
+      loadDeploymentDefaultAgentConfig({
+        agentConfigParse: { model: 'env-model', provider: 'env-provider' },
+      }),
+    ).resolves.toEqual({ model: 'env-model', provider: 'env-provider' });
+  });
+
+  it('should be empty when neither layer is configured', async () => {
+    await expect(loadDeploymentDefaultAgentConfig()).resolves.toEqual({});
+  });
+});
 
 describe('getServerGlobalConfig', () => {
   afterEach(() => {

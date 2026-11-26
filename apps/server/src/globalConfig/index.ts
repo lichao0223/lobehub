@@ -8,7 +8,10 @@ import { ModelProvider } from 'model-bank';
 import urlJoin from 'url-join';
 
 import { loadModels } from '@/business/client/model-bank/loadModels';
-import { getCompanyServiceDefaults } from '@/business/server/adminConsole/serviceDefaults';
+import {
+  type CompanyServiceDefaults,
+  getCompanyServiceDefaults,
+} from '@/business/server/adminConsole/serviceDefaults';
 import { COMPANY_PROVIDER_ID, withCompanyProviderCatalog } from '@/business/server/companyProvider';
 import { composioEnv } from '@/config/composio';
 import { isDesktop } from '@/const/version';
@@ -187,9 +190,28 @@ const getDeploymentFileEmbeddingModel = () => {
   }
 };
 
-export const getServerGlobalConfig = async () => {
-  const { DEFAULT_AGENT_CONFIG } = getAppConfig();
+/**
+ * The deployment default agent config: environment `DEFAULT_AGENT_CONFIG` with
+ * the administrator console defaults above it.
+ *
+ * This is the layer every caller below a user pick reads. New conversations,
+ * agent config reads and background claims all start here, so an administrator
+ * who sets the main model reaches users who never chose one. It is deliberately
+ * not written to any user row: following happens on read, which is what lets a
+ * later administrator change reach existing users.
+ *
+ * A caller that already resolved the administrator layer passes it in via
+ * {@link resolveDeploymentDefaultAgentConfig} instead of reading it twice.
+ */
+const resolveDeploymentDefaultAgentConfig = (companyDefaults: CompanyServiceDefaults) => ({
+  ...parseAgentConfig(getAppConfig().DEFAULT_AGENT_CONFIG),
+  ...companyDefaults.defaultAgent?.config,
+});
 
+export const getDeploymentDefaultAgentConfig = async () =>
+  resolveDeploymentDefaultAgentConfig(await getCompanyServiceDefaults());
+
+export const getServerGlobalConfig = async () => {
   // CUST-011 §7.1: an administrator's console defaults outrank `SYSTEM_AGENT` /
   // `DEFAULT_AGENT_CONFIG` and the code defaults. Read first so the provider
   // catalog below hits the same 5 s cache instead of reading settings twice.
@@ -216,10 +238,7 @@ export const getServerGlobalConfig = async () => {
     // set, so it names the fallback 「管理员默认」 only where that is true.
     companyDefaultTiers: Object.keys(companyDefaults.tiers) as ServiceModelTier[],
     defaultAgent: {
-      config: {
-        ...parseAgentConfig(DEFAULT_AGENT_CONFIG),
-        ...companyDefaults.defaultAgent?.config,
-      },
+      config: resolveDeploymentDefaultAgentConfig(companyDefaults),
     },
     deviceGatewayConfigured: !!gatewayEnv.DEVICE_GATEWAY_URL,
     // Never fall back to the server-internal DEVICE_GATEWAY_URL.
@@ -287,6 +306,13 @@ export const getServerGlobalConfig = async () => {
   return config;
 };
 
+/**
+ * The environment layer only: `DEFAULT_AGENT_CONFIG`, without the
+ * administrator defaults. Anything that resolves a run or a conversation reads
+ * {@link getDeploymentDefaultAgentConfig} instead, so the administrator layer
+ * is not silently skipped; this stays for callers that need the raw deployment
+ * variable (diagnostics, config endpoints keyed to the env).
+ */
 export const getServerDefaultAgentConfig = () => {
   const { DEFAULT_AGENT_CONFIG } = getAppConfig();
 
