@@ -58,6 +58,20 @@ export const devices = pgTable(
     sharedFromDeviceId: varchar('shared_from_device_id', { length: 64 }),
 
     /**
+     * Who created this workspace row:
+     *   - NULL / 'user' → enrolled by the member themselves (personal share or
+     *     `lh connect --workspace`).
+     *   - 'admin'       → shared from the admin console. Admin shares are
+     *     public-only and cannot be removed, hidden or re-enrolled into a
+     *     member row by anyone on the member side (including the workspace
+     *     owner); only the console may revoke them.
+     */
+    shareOrigin: text('share_origin', { enum: ['user', 'admin'] }),
+
+    /** Admin who created an `admin` share; NULL for member-enrolled rows. */
+    sharedByUserId: text('shared_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+
+    /**
      * Machine-derived id (sha256 truncated to 32 chars; 64 leaves room for
      * fallback randomUUID). For a managed cloud device it is the id the
      * managed device provider assigned.

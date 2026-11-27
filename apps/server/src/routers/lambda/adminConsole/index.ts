@@ -4,6 +4,7 @@ import { serverDatabase } from '@/libs/trpc/lambda/middleware';
 
 import { adminDeviceDetailProcedures } from './deviceDetail';
 import { adminDeviceProcedures } from './devices';
+import { adminDeviceShareProcedures } from './deviceShare';
 import { adminLabsProcedures } from './labs';
 import { adminModelServiceProcedures } from './modelService';
 import { adminUserProcedures } from './users';
@@ -24,6 +25,7 @@ export const adminConsoleRouter = router({
   // Detail reads run as the device OWNER, so they live beside the inventory
   // procedures but keep their own file (see `deviceDetail.ts`).
   ...adminDeviceDetailProcedures,
+  ...adminDeviceShareProcedures,
   ...adminWorkspaceProcedures,
 
   whoami: authedProcedure

@@ -24,6 +24,19 @@ import {
 import { reportManagedDevicesRemoved } from './managedDeviceRemoval';
 
 /**
+ * Console-created shares are public-only and revocable only from the console;
+ * the member side (including the workspace owner) must not remove or hide them.
+ */
+const assertNotAdminShare = (row: { shareOrigin?: string | null }, action: string) => {
+  if (row.shareOrigin === 'admin') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: `This device is shared by an administrator and cannot be ${action} here.`,
+    });
+  }
+};
+
+/**
  * Fixed workspace agents promise every member the same execution device. Keep
  * that promise intact until an editor changes the agent back to member choice
  * (or binds a different public device) before hiding/removing this row.
@@ -182,6 +195,7 @@ export const workspaceRouter = router({
       // rejected above, so an undefined here really means "no row yet".
       const existing = await model.findWorkspaceDeviceById(probe.identity.deviceId);
       if (existing) {
+        assertNotAdminShare(existing, 'overwritten');
         assertNotManagedDevice(
           existing,
           'This workspace device is a managed cloud device and cannot be overwritten.',
@@ -295,6 +309,7 @@ export const workspaceRouter = router({
       if (!row) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Workspace device not found.' });
       }
+      assertNotAdminShare(row, 'hidden');
       if (row.visibility === input.visibility) return { success: true };
       if (row.userId !== ctx.userId) {
         throw new TRPCError({
@@ -351,6 +366,7 @@ export const workspaceRouter = router({
       if (!row) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Workspace device not found.' });
       }
+      assertNotAdminShare(row, 'removed');
       const role = (ctx as { workspaceRole?: WorkspaceRole }).workspaceRole;
       if (!canEditWorkspaceDevice(role, ctx.userId, row.userId)) {
         throw new TRPCError({

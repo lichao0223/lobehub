@@ -206,6 +206,8 @@ export class DeviceModel {
 
   registerWorkspaceDevice = async (
     params: RegisterDeviceParams & {
+      shareOrigin?: 'admin' | 'user';
+      sharedByUserId?: string;
       sharedFromDeviceId?: string;
       visibility?: DeviceVisibility;
       workspaceId: string;
@@ -228,6 +230,10 @@ export class DeviceModel {
         // links this workspace row back to its personal twin (see the schema
         // comment on `devices.sharedFromDeviceId`).
         sharedFromDeviceId: params.sharedFromDeviceId,
+        // 'admin' marks a console-created share: public-only and revocable only
+        // from the console (see the schema comment on `devices.shareOrigin`).
+        shareOrigin: params.shareOrigin,
+        sharedByUserId: params.sharedByUserId,
         userId: this.userId,
         // 'public' shares the device with the whole workspace; defaults to
         // 'private' (enroller-only) — see the schema comment on

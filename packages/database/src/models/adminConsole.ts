@@ -891,6 +891,40 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
     return row;
   };
 
+  // ── Admin device shares ───────────────────────────────────────────────
+
+  /** The workspace row for one machine, if it has already been shared there. */
+  findWorkspaceDeviceRow = async (workspaceId: string, deviceId: string) => {
+    return this.db.query.devices.findFirst({
+      where: and(eq(devices.workspaceId, workspaceId), eq(devices.deviceId, deviceId)),
+    });
+  };
+
+  /** Shares created from the console for one owner's personal device. */
+  listAdminDeviceShares = async (ownerId: string, personalDeviceId: string) => {
+    return this.db
+      .select({
+        deviceId: devices.deviceId,
+        workspaceId: workspaces.id,
+        workspaceName: workspaces.name,
+      })
+      .from(devices)
+      .innerJoin(workspaces, eq(workspaces.id, devices.workspaceId))
+      .where(
+        and(
+          eq(devices.userId, ownerId),
+          eq(devices.sharedFromDeviceId, personalDeviceId),
+          eq(devices.shareOrigin, 'admin'),
+        ),
+      );
+  };
+
+  deleteWorkspaceDeviceRow = async (workspaceId: string, deviceId: string) => {
+    await this.db
+      .delete(devices)
+      .where(and(eq(devices.workspaceId, workspaceId), eq(devices.deviceId, deviceId)));
+  };
+
   // ── helpers ───────────────────────────────────────────────────────────
 
   private lockLastAdmin = async (tx: Transaction) => {

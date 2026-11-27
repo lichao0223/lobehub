@@ -1631,6 +1631,13 @@
       "when": 1795541757596,
       "tag": "9001_admin_console_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 9002,
+      "version": "7",
+      "when": 1795765955380,
+      "tag": "9002_device_admin_share",
+      "breakpoints": true
     }
   ],
   "version": "6"
