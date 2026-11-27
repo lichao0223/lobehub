@@ -404,10 +404,19 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 - **会话默认模型（T-100 补齐）**：新会话 / 助手的默认模型不止走 `defaultSettings`，还要经 agent 配置读取。服务端 `getDeploymentDefaultAgentConfig()`（管理员默认 > 环境变量）是 agent 配置合并、分组 agent、频道认领的部署默认层；客户端 `resolveAgentConfig` 与 `snapshotAgentModel` 在 agent 行没有 model（或配置尚未加载）时回落 `settingsSelectors.defaultAgentConfig`。agent 行与用户自选仍优先；inbox 行不写入该默认值，管理员后续修改才能继续跟随。
 - **不写用户行**：默认值只在解析时兜底；写进 `user_settings` 等于固化，管理员之后再改就不跟随。`initNewUserForBusiness` 在本仓库是空实现，新用户本来没有设置行。
 - **后台任务**：标题生成 / 记忆抽取 / 任务验收等无标签页的调用走同一顺序。现状偏差要一并修正：`apps/server/src/services/systemAgent/modelConfig.ts` 的 `resolveSystemAgentModelConfig` 连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
-- **不可用模型回退**：`enabled !== true` / 缺 `baseURL` / 缺密钥 → 整块默认值视为未配置；某项模型 `open === false` 或带 `removedAt` → 该项视为未配置；两种情况都回退下一级，不产生指向不可用模型的默认值。管理端校验仍只要求 id 在目录里（允许「先选默认值、后开放模型」），UI 需提示「默认值暂不生效」。
+- **不可用模型回退**：`enabled !== true` / 缺 `baseURL` / 缺密钥 → 整块默认值视为未配置；某项模型 `open === false` 或带 `removedAt` → 该项视为未配置；两种情况都回退下一级，不产生指向不可用模型的默认值。写入校验仍只要求 id 在目录里（不因目录状态阻断保存）；可感知性由 UI 负责 —— 选择器只列可生效的模型，已存值失效时标注原因并在字段下提示（CUST-011-H）。
 - **provider**：默认值的模型 id 属于 Tellhow 目录，provider 固定 `tellhow`；不提供「默认值指向其他厂商」的能力。
-- **用户侧呈现**：`serverConfig.companyDefaultTiers` 只列出管理员真的设过的档位；个人设置 → 模型只在这些档位把兜底项写成「管理员默认」（否则仍是「系统推荐」）。部署里只要有任意一个管理员默认档，四档标题下就补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」；一个都没有（纯上游部署）时不显示这句话。管理端四个默认值与个人四档同名同序（主模型 / Flash 模型 / 验收模型 / 记忆向量化模型），不再说「只影响新用户」；验收模型下拉按 `capabilities.includes('vision')` 过滤，已存的不合规值仍留在下拉里标为「不可用」并给出提示，不静默保存。
+- **用户侧呈现**：`serverConfig.companyDefaultTiers` 只列出管理员真的设过的档位；个人设置 → 模型只在这些档位把兜底项写成「管理员默认」（否则仍是「系统推荐」）。部署里只要有任意一个管理员默认档，四档标题下就补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」；一个都没有（纯上游部署）时不显示这句话。管理端四个默认值与个人四档同名同序（主模型 / Flash 模型 / 验收模型 / 记忆向量化模型），不再说「只影响新用户」；验收模型下拉按 `capabilities.includes('vision')` 过滤；四项都只列 `open` 且未 `removedAt` 的模型，已存的不合规值仍留在下拉里标为「未对用户开放 / 上游已移除 / 不可用」并给出提示，不静默保存（CUST-011-H）。
 - **备选口径（本次不实施，待用户确认可切换）**：强制覆盖所有用户自选（含 pin 与档位选择）。启用时的建议形态是 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` 即本次口径），`force` 也只做解析覆盖、不改用户行，否则切回 `follow` 时用户原选择已丢失。
+
+### CUST-011-H：默认值选择器只列可生效模型（T-102）
+
+来源：T-94 验收观察 —— 默认值选择器列出全部目录模型（如 `glm-latest`、`GPT-5.6 Sol`），保存成功后该档被 `resolveCompanyServiceDefaults` 静默忽略：用户侧无变化，界面也没有提示。
+
+- **规则**：四项默认值统一按解析器的可见集过滤 —— `open === true` 且无 `removedAt`；验收模型再加 `capabilities.includes('vision')`。判定集中在 `src/features/AdminConsole/ModelService/utils.ts` 的 `defaultModelIssue`（`closed` / `removed` / `missing` / `type` / `vision`），`acceptsDefaultModel` 与 `isDefaultModelCompliant` 都由它派生，选择器与提示不会各说一套。
+- **已存值失效**：仍留在下拉里，标注「未对用户开放 / 上游已移除 / 不可用」，字段下按原因给出 `modelService.defaults.closed` / `removed` / `invalid` / `verifyInvalid`。
+- **写入校验不变**：`validateDefaults` 仍只要求 id 在目录里，不阻断保存；关闭某个模型不会连带让保存失败，管理员下次打开页面即可看到该默认值失效的原因。
+- **测试**：`src/features/AdminConsole/ModelService/utils.test.ts` —— 四档都不接受未开放 / 已移除模型；`defaultModelIssue` 给出原因；`defaultModelMessageKey` / `defaultModelTagKey` 把原因映射到「未对用户开放」「上游已移除」等具体文案（组件测试按仓库规范不新增，卡片只负责渲染这两个 key）。
 
 ### CUST-011-C：新用户默认只开 TellhowAI（默认关闭 ≠ 禁止）
 
@@ -428,7 +437,7 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 | 语义（唯一事实源） | `ADMIN_CONSOLE_DESIGN.md` §7.1（映射与生效规则）、§5.5（产品面），槽位清单来自 `packages/const/src/settings/systemAgent.ts` 的 `SERVICE_MODEL_TIER_SLOTS`                                                                                                                                                                                                                            |
 | 写入与校验         | `packages/business-server/src/adminConsole/modelService.ts`（`validateDefaults` / `toConfigView`，P2-2 已交付）                                                                                                                                                                                                                                                                      |
 | 读取与缓存         | `packages/business-server/src/companyProvider.ts`（`CompanyProviderRuntime.defaults`，5 s 缓存 + `invalidateCompanyProviderCache()`）                                                                                                                                                                                                                                                |
-| 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx`、`locales/{en-US,zh-CN}/adminConsole.json` 的 `modelService.defaults.*`                                                                                                                                                                                                                                                    |
+| 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx` 与同目录 `utils.ts`（`defaultModelIssue` 可见性判定）、`packages/locales/src/default/adminConsole.ts` 的 `modelService.defaults.*`（本 Fork 只有 default 一份语言包）                                                                                                                                                      |
 | 解析消费           | `packages/business-server/src/adminConsole/serviceDefaults.ts`（`resolveCompanyServiceDefaults` / `getCompanyServiceDefaultModel`）；`serverConfig` 注入在 `apps/server/src/globalConfig/index.ts`（含 `companyDefaultTiers` 来源标记），后台任务读取点见 `services/systemAgent`、`services/verify`、`services/memory/userMemory/extract`                                            |
 | 用户侧跟随链路     | `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`；`src/store/user/slices/settings/selectors/settings.ts` 的 `currentSettings`                                                                                                                                                                                                                              |
 | 会话侧跟随链路     | 服务端 `apps/server/src/globalConfig/index.ts` 的 `getDeploymentDefaultAgentConfig()`（消费点：`services/agent` 的 `mergeDefaultConfig`、`services/agentGroup` 的 `mergeAgentsDefaultConfig`、`services/channel/ChannelCoordinator`）；客户端 `src/services/chat/mecha/agentConfigResolver.ts`（`collectSnapshot`）与 `src/store/chat/utils/snapshotAgentModel.ts`（新话题模型快照） |

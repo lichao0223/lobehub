@@ -9,7 +9,13 @@ import { sx } from '@/styles/sx';
 
 import FieldRow from './FieldRow';
 import { styles } from './style';
-import { acceptsDefaultModel, type DefaultModelKey, isDefaultModelCompliant } from './utils';
+import {
+  acceptsDefaultModel,
+  defaultModelIssue,
+  type DefaultModelKey,
+  defaultModelMessageKey,
+  defaultModelTagKey,
+} from './utils';
 
 interface DefaultsCardProps {
   defaults: AdminConsoleAiDefaults;
@@ -40,10 +46,12 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
       const rows = models.filter((model) => acceptsDefaultModel(model, key));
       // A stored value that no longer qualifies stays in the list, marked, so
       // the picker keeps showing what is actually saved and the warning below
-      // is attached to something the admin can see.
+      // is attached to something the admin can see. A closed or removed model
+      // lands here too: it is exactly the case that used to save silently.
       const storedId = defaults[key];
+      const storedIssue = defaultModelIssue(models, key, storedId);
       const stale =
-        storedId && !isDefaultModelCompliant(models, key, storedId)
+        storedIssue && storedIssue !== 'missing'
           ? models.find((model) => model.id === storedId)
           : undefined;
 
@@ -56,10 +64,10 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
           label: `${model.name} · ${model.id}`,
           value: model.id,
         })),
-        ...(stale
+        ...(stale && storedIssue
           ? [
               {
-                label: `${stale.name} · ${stale.id} · ${t('modelService.defaults.unsupported')}`,
+                label: `${stale.name} · ${stale.id} · ${t(defaultModelTagKey(storedIssue))}`,
                 value: stale.id,
               },
             ]
@@ -92,7 +100,7 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
         {FIELDS.map((row, index) => {
           // Nothing is blocked here, but saving a model that cannot do the job
           // must not pass without the admin seeing why.
-          const invalid = !isDefaultModelCompliant(models, row.key, defaults[row.key]);
+          const issue = defaultModelIssue(models, row.key, defaults[row.key]);
 
           return (
             <FieldRow
@@ -114,13 +122,9 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
                     update(row.key, typeof value === 'string' ? value : '');
                   }}
                 />
-                {invalid && (
+                {issue && (
                   <Text fontSize={12} lineHeight={1.6} type={'warning'}>
-                    {t(
-                      row.key === 'verify'
-                        ? 'modelService.defaults.verifyInvalid'
-                        : 'modelService.defaults.invalid',
-                    )}
+                    {t(defaultModelMessageKey(issue))}
                   </Text>
                 )}
               </Flexbox>

@@ -208,7 +208,7 @@ export default {
   'modelService.capability.reasoning': 'Reasoning',
   'modelService.defaults.sectionTitle': 'Default models',
   'modelService.defaults.desc':
-    'Applies to every user who has not picked a model themselves, and to background tasks. Anyone who picks a model always keeps their own choice.',
+    'Applies to every user who has not picked a model themselves, and to background tasks. Anyone who picks a model always keeps their own choice. Only models open to users can serve as a default.',
   'modelService.defaults.optional': 'Optional',
   'modelService.defaults.chat': 'Main model',
   'modelService.defaults.chatDesc':
@@ -224,8 +224,14 @@ export default {
     'Task and goal acceptance reads screenshot evidence, so only vision models are listed.',
   'modelService.defaults.inherit': 'Not set (deployment default)',
   'modelService.defaults.unsupported': 'not usable',
+  'modelService.defaults.closedTag': 'not open to users',
+  'modelService.defaults.removedTag': 'removed upstream',
   'modelService.defaults.invalid':
     'The saved model can no longer serve this default. Pick one from the list.',
+  'modelService.defaults.closed':
+    'This model is not open to users, so it is not used as a default. Open the model or pick another one.',
+  'modelService.defaults.removed':
+    'This model was removed from the upstream catalog, so it is not used as a default. Pick another one.',
   'modelService.defaults.verifyInvalid':
     'The saved model cannot read screenshots. Acceptance needs a vision model — pick one from the list.',
   'modelService.sync.title': 'Fetch model catalog',

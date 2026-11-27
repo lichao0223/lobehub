@@ -39,14 +39,43 @@ export const DEFAULT_MODEL_TYPES: Record<DefaultModelKey, AiModelType[]> = {
 };
 
 /**
- * Whether a catalog model may be used as this default. Acceptance reads
- * screenshot evidence, so only a vision model can serve `verify`; a text-only
- * one would fail at verification time, long after the admin saved it.
+ * Why a catalog model cannot back this default; `undefined` when it can.
+ *
+ * `resolveCompanyServiceDefaults` only honours a model users can see
+ * (`getVisibleCompanyModels`: open and not removed upstream). A default that
+ * points anywhere else saves fine and is then dropped silently, so the picker
+ * must not offer such a model and a stored one must be reported with the
+ * reason — "not usable" without a reason is what let admins save `glm-latest`
+ * and see nothing change.
+ *
+ * Acceptance reads screenshot evidence, so only a vision model can serve
+ * `verify`; a text-only one would fail at verification time, long after the
+ * admin saved it.
  */
+export type DefaultModelIssue = 'closed' | 'missing' | 'removed' | 'type' | 'vision';
+
+const issueOfModel = (model: CompanyModel, key: DefaultModelKey): DefaultModelIssue | undefined => {
+  if (!DEFAULT_MODEL_TYPES[key].includes(model.type)) return 'type';
+  if (model.removedAt) return 'removed';
+  if (model.open !== true) return 'closed';
+  if (key === 'verify' && !(model.capabilities ?? []).includes('vision')) return 'vision';
+  return undefined;
+};
+
+/** Why the stored id cannot serve this default; `undefined` for unset or fine. */
+export const defaultModelIssue = (
+  models: CompanyModel[],
+  key: DefaultModelKey,
+  id?: string,
+): DefaultModelIssue | undefined => {
+  if (!id) return undefined;
+  const model = models.find((item) => item.id === id);
+  return model ? issueOfModel(model, key) : 'missing';
+};
+
+/** Whether a catalog model may be offered as this default. */
 export const acceptsDefaultModel = (model: CompanyModel, key: DefaultModelKey) =>
-  DEFAULT_MODEL_TYPES[key].includes(model.type) &&
-  (key === 'chat' ? !!model.open : true) &&
-  (key === 'verify' ? (model.capabilities ?? []).includes('vision') : true);
+  issueOfModel(model, key) === undefined;
 
 /**
  * Whether a stored default still points at a model that can serve it. An unset
@@ -58,11 +87,33 @@ export const isDefaultModelCompliant = (
   models: CompanyModel[],
   key: DefaultModelKey,
   id?: string,
-) => {
-  if (!id) return true;
-  const model = models.find((item) => item.id === id);
-  return !!model && acceptsDefaultModel(model, key);
-};
+) => defaultModelIssue(models, key, id) === undefined;
+
+/**
+ * The warning under a field whose stored default cannot take effect, one per
+ * reason. "Not usable" alone left the admin unable to tell that the model is
+ * simply not open to users, so the closed / removed cases get their own copy.
+ */
+const ISSUE_MESSAGE_KEY = {
+  closed: 'modelService.defaults.closed',
+  missing: 'modelService.defaults.invalid',
+  removed: 'modelService.defaults.removed',
+  type: 'modelService.defaults.invalid',
+  vision: 'modelService.defaults.verifyInvalid',
+} as const satisfies Record<DefaultModelIssue, string>;
+
+/** Short tag on the stale option, where a full sentence would not fit. */
+const ISSUE_TAG_KEY = {
+  closed: 'modelService.defaults.closedTag',
+  missing: 'modelService.defaults.unsupported',
+  removed: 'modelService.defaults.removedTag',
+  type: 'modelService.defaults.unsupported',
+  vision: 'modelService.defaults.unsupported',
+} as const satisfies Record<DefaultModelIssue, string>;
+
+export const defaultModelMessageKey = (issue: DefaultModelIssue) => ISSUE_MESSAGE_KEY[issue];
+
+export const defaultModelTagKey = (issue: DefaultModelIssue) => ISSUE_TAG_KEY[issue];
 
 /** The form draft: server config plus the plaintext key the admin is typing. */
 export interface ModelServiceForm {
