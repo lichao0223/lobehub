@@ -34,7 +34,10 @@ vi.mock('@/database/models/message', () => ({
 }));
 vi.mock('@/server/services/aiAgent', () => ({ AiAgentService: class {} }));
 vi.mock('@/server/services/deviceGateway', () => ({ deviceGateway: {} }));
-vi.mock('@/server/globalConfig', () => ({ getServerDefaultAgentConfig: vi.fn() }));
+vi.mock('@/server/globalConfig', () => ({
+  getDeploymentDefaultAgentConfig: vi.fn(async () => ({})),
+  getServerDefaultAgentConfig: vi.fn(),
+}));
 vi.mock('@/server/services/deviceGateway/scopedDevices', () => ({
   getScopedOnlineDevices: vi.fn(),
 }));

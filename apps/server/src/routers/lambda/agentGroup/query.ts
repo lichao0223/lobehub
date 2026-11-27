@@ -135,7 +135,10 @@ export const queryRouter = router({
       const defaultAgentConfig = await ctx.userModel.getUserSettingsDefaultAgentConfig();
       return protectGroupMemberConfigs(ctx, {
         ...detail,
-        agents: ctx.agentGroupService.mergeAgentsDefaultConfig(defaultAgentConfig, detail.agents),
+        agents: await ctx.agentGroupService.mergeAgentsDefaultConfig(
+          defaultAgentConfig,
+          detail.agents,
+        ),
       });
     }),
   getGroups: agentGroupProcedure.query(async ({ ctx }) => {
@@ -158,7 +161,10 @@ export const queryRouter = router({
 
         return protectGroupMemberConfigs(ctx, {
           ...group,
-          agents: ctx.agentGroupService.mergeAgentsDefaultConfig(defaultAgentConfig, group.agents),
+          agents: await ctx.agentGroupService.mergeAgentsDefaultConfig(
+            defaultAgentConfig,
+            group.agents,
+          ),
         });
       },
       { concurrency: CONFIG_ACCESS_LOOKUP_CONCURRENCY },

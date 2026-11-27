@@ -15,10 +15,45 @@ import {
 import { getChatGroupStoreState } from '@/store/agentGroup';
 import { agentGroupByIdSelectors, agentGroupSelectors } from '@/store/agentGroup/selectors';
 import { useUserStore } from '@/store/user';
-import { userGeneralSettingsSelectors, userProfileSelectors } from '@/store/user/selectors';
+import {
+  settingsSelectors,
+  userGeneralSettingsSelectors,
+  userProfileSelectors,
+} from '@/store/user/selectors';
 import { isDev } from '@/utils/env';
 
 export type { AgentConfigResolverContext, ResolvedAgentConfig };
+
+/**
+ * Seed an agent's stored config with the deployment default chain.
+ *
+ * `settingsSelectors.defaultAgentConfig` is that chain already:
+ * `DEFAULT_AGENT_CONFIG` → administrator default (`serverConfig.defaultAgent`,
+ * which the user's own `defaultAgent.config` overrides field by field).
+ *
+ * A conversation can start before the agent row is hydrated, and a row that
+ * never picked a model carries only code defaults. Reading the chain here is
+ * what keeps such a run on the deployment's main model instead of sending the
+ * first message to the built-in provider while the settings page shows the
+ * administrator's model. Anything the agent row does carry still wins.
+ */
+const withDeploymentAgentDefaults = (
+  agentConfig: AgentConfigSnapshot['agentConfig'] | undefined,
+  userState: ReturnType<typeof useUserStore.getState>,
+): AgentConfigSnapshot['agentConfig'] => {
+  const deploymentDefault = settingsSelectors.defaultAgentConfig(userState);
+
+  if (!agentConfig) return deploymentDefault;
+
+  // Only the model lives on this chain. Params, chatConfig and the rest keep
+  // the agent's own shape: seeding them from the deployment default would
+  // silently turn "unset, let the model decide" into the code defaults.
+  return {
+    ...agentConfig,
+    model: agentConfig.model || deploymentDefault.model,
+    provider: agentConfig.provider || deploymentDefault.provider,
+  };
+};
 
 /**
  * Read everything the resolution rules need out of the client stores.
@@ -46,7 +81,10 @@ const collectSnapshot = (ctx: AgentConfigResolverContext): AgentConfigSnapshot =
 
   return {
     agent,
-    agentConfig: agentSelectors.getAgentConfigById(agentId)(agentStoreState),
+    agentConfig: withDeploymentAgentDefaults(
+      agentSelectors.getAgentConfigById(agentId)(agentStoreState),
+      userState,
+    ),
     // Author-or-admin, mirroring the picker (`useAgentManagementAccess`) and the
     // server (`isResourceAuthorOrAdmin`) — an admin reads the shared row like
     // the author does, so client and gateway execution resolve the same config.

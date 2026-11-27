@@ -48,7 +48,10 @@ vi.mock('@/server/services/aiAgent', () => ({
   },
 }));
 vi.mock('@/server/services/deviceGateway', () => ({ deviceGateway: { executeToolCall } }));
-vi.mock('@/server/globalConfig', () => ({ getServerDefaultAgentConfig: vi.fn() }));
+vi.mock('@/server/globalConfig', () => ({
+  getDeploymentDefaultAgentConfig: vi.fn(async () => ({})),
+  getServerDefaultAgentConfig: vi.fn(),
+}));
 vi.mock('@/server/services/deviceGateway/scopedDevices', () => ({
   getScopedOnlineDevices: vi.fn(),
 }));

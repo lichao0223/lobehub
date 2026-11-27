@@ -1,10 +1,18 @@
-import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
+import {
+  DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED,
+  ENABLE_BUSINESS_FEATURES,
+} from '@lobechat/business-const';
 import { parseToolNameMaxLength } from '@lobechat/const/plugin';
+import { type ServiceModelTier } from '@lobechat/types';
 import { ModelProvider } from 'model-bank';
 import urlJoin from 'url-join';
 
 import { loadModels } from '@/business/client/model-bank/loadModels';
-import { withCompanyProviderCatalog } from '@/business/server/companyProvider';
+import {
+  type CompanyServiceDefaults,
+  getCompanyServiceDefaults,
+} from '@/business/server/adminConsole/serviceDefaults';
+import { COMPANY_PROVIDER_ID, withCompanyProviderCatalog } from '@/business/server/companyProvider';
 import { composioEnv } from '@/config/composio';
 import { isDesktop } from '@/const/version';
 import { agentIdentityEnv } from '@/envs/agentIdentity';
@@ -130,6 +138,23 @@ const getAiProviderSpecificConfig = () => {
         enabled: provider === ModelProvider.LobeHub,
       };
     }
+  } else if (DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED) {
+    // CUST-011-C: a user who has not chosen otherwise sees only the enterprise
+    // built-in provider (Tellhow AI) enabled. This is a *default*, not a ban —
+    // `AiInfraRepos.getAiProviderList()` ORs the user's own `ai_provider.enabled`
+    // row over this value, and custom providers never read it. The explicit
+    // boolean also overrides the `ENABLED_*` env switches (see
+    // `DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED`): an operator that wants another
+    // provider on by default should edit this branch, not those env vars.
+    //
+    // `withCompanyProviderCatalog()` still owns the real Tellhow switch below:
+    // an unconfigured / disabled console service overwrites this to `false`.
+    for (const provider of Object.values(ModelProvider)) {
+      aiProviderSpecificConfig[provider] = {
+        ...aiProviderSpecificConfig[provider],
+        enabled: provider === COMPANY_PROVIDER_ID,
+      };
+    }
   }
 
   return aiProviderSpecificConfig;
@@ -165,8 +190,32 @@ const getDeploymentFileEmbeddingModel = () => {
   }
 };
 
+/**
+ * The deployment default agent config: environment `DEFAULT_AGENT_CONFIG` with
+ * the administrator console defaults above it.
+ *
+ * This is the layer every caller below a user pick reads. New conversations,
+ * agent config reads and background claims all start here, so an administrator
+ * who sets the main model reaches users who never chose one. It is deliberately
+ * not written to any user row: following happens on read, which is what lets a
+ * later administrator change reach existing users.
+ *
+ * A caller that already resolved the administrator layer passes it in via
+ * {@link resolveDeploymentDefaultAgentConfig} instead of reading it twice.
+ */
+const resolveDeploymentDefaultAgentConfig = (companyDefaults: CompanyServiceDefaults) => ({
+  ...parseAgentConfig(getAppConfig().DEFAULT_AGENT_CONFIG),
+  ...companyDefaults.defaultAgent?.config,
+});
+
+export const getDeploymentDefaultAgentConfig = async () =>
+  resolveDeploymentDefaultAgentConfig(await getCompanyServiceDefaults());
+
 export const getServerGlobalConfig = async () => {
-  const { DEFAULT_AGENT_CONFIG } = getAppConfig();
+  // CUST-011 §7.1: an administrator's console defaults outrank `SYSTEM_AGENT` /
+  // `DEFAULT_AGENT_CONFIG` and the code defaults. Read first so the provider
+  // catalog below hits the same 5 s cache instead of reading settings twice.
+  const companyDefaults = await getCompanyServiceDefaults();
 
   const enableGatewayMode =
     ENABLE_BUSINESS_FEATURES || (!!appEnv.ENABLE_AGENT_GATEWAY && !!appEnv.AGENT_GATEWAY_URL);
@@ -185,8 +234,11 @@ export const getServerGlobalConfig = async () => {
     aiProvider: await withCompanyProviderCatalog(
       await genServerAiProvidersConfig(getAiProviderSpecificConfig()),
     ),
+    // CUST-011: tell the personal page which tiers the administrator actually
+    // set, so it names the fallback 「管理员默认」 only where that is true.
+    companyDefaultTiers: Object.keys(companyDefaults.tiers) as ServiceModelTier[],
     defaultAgent: {
-      config: parseAgentConfig(DEFAULT_AGENT_CONFIG),
+      config: resolveDeploymentDefaultAgentConfig(companyDefaults),
     },
     deviceGatewayConfigured: !!gatewayEnv.DEVICE_GATEWAY_URL,
     // Never fall back to the server-internal DEVICE_GATEWAY_URL.
@@ -237,6 +289,7 @@ export const getServerGlobalConfig = async () => {
     sandbox: getSandboxDeployment(),
     systemAgent: {
       ...parseSystemAgent(appEnv.SYSTEM_AGENT),
+      ...companyDefaults.systemAgent,
       fileEmbedding: getDeploymentFileEmbeddingModel(),
     },
     telemetry: {
@@ -253,6 +306,13 @@ export const getServerGlobalConfig = async () => {
   return config;
 };
 
+/**
+ * The environment layer only: `DEFAULT_AGENT_CONFIG`, without the
+ * administrator defaults. Anything that resolves a run or a conversation reads
+ * {@link getDeploymentDefaultAgentConfig} instead, so the administrator layer
+ * is not silently skipped; this stays for callers that need the raw deployment
+ * variable (diagnostics, config endpoints keyed to the env).
+ */
 export const getServerDefaultAgentConfig = () => {
   const { DEFAULT_AGENT_CONFIG } = getAppConfig();
 

@@ -25,6 +25,45 @@ export const MODEL_TYPES: AiModelType[] = [
   'decision',
 ];
 
+/** The four administrator defaults, in the order the personal page shows its tiers. */
+export const DEFAULT_MODEL_KEYS = ['chat', 'title', 'verify', 'embedding'] as const;
+
+export type DefaultModelKey = (typeof DEFAULT_MODEL_KEYS)[number];
+
+/** Which catalog types may back each default. */
+export const DEFAULT_MODEL_TYPES: Record<DefaultModelKey, AiModelType[]> = {
+  chat: ['chat'],
+  embedding: ['embedding'],
+  title: ['chat'],
+  verify: ['chat'],
+};
+
+/**
+ * Whether a catalog model may be used as this default. Acceptance reads
+ * screenshot evidence, so only a vision model can serve `verify`; a text-only
+ * one would fail at verification time, long after the admin saved it.
+ */
+export const acceptsDefaultModel = (model: CompanyModel, key: DefaultModelKey) =>
+  DEFAULT_MODEL_TYPES[key].includes(model.type) &&
+  (key === 'chat' ? !!model.open : true) &&
+  (key === 'verify' ? (model.capabilities ?? []).includes('vision') : true);
+
+/**
+ * Whether a stored default still points at a model that can serve it. An unset
+ * value is always fine (it inherits). A value that no longer qualifies — saved
+ * before the rule existed, or a model edited afterwards — is reported so the
+ * card can ask for a new pick instead of saving it silently.
+ */
+export const isDefaultModelCompliant = (
+  models: CompanyModel[],
+  key: DefaultModelKey,
+  id?: string,
+) => {
+  if (!id) return true;
+  const model = models.find((item) => item.id === id);
+  return !!model && acceptsDefaultModel(model, key);
+};
+
 /** The form draft: server config plus the plaintext key the admin is typing. */
 export interface ModelServiceForm {
   /** Empty once saved; the stored key is only shown as `last4`. */
@@ -45,7 +84,7 @@ export const toForm = (config: AdminConsoleAiConfigView): ModelServiceForm => ({
 
 export const toDefaults = (defaults: AdminConsoleAiDefaults): AdminConsoleAiDefaults => {
   const next: AdminConsoleAiDefaults = {};
-  for (const key of ['chat', 'embedding', 'title', 'verify'] as const) {
+  for (const key of DEFAULT_MODEL_KEYS) {
     const value = defaults[key]?.trim();
     if (value) next[key] = value;
   }
