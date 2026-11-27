@@ -12,6 +12,11 @@ const devicesElement = dynamicElement(
   'Desktop > Admin > Devices',
 );
 
+const workspacesElement = dynamicElement(
+  () => import('@/routes/(main)/admin/workspaces'),
+  'Desktop > Admin > Workspaces',
+);
+
 const modelServiceElement = dynamicElement(
   () => import('@/routes/(main)/admin/model-service'),
   'Desktop > Admin > Model service',
@@ -35,6 +40,7 @@ export const adminConsoleRoute: RouteObject = {
     { element: userManagementElement, index: true },
     { element: userManagementElement, path: 'users' },
     { element: devicesElement, path: 'devices' },
+    { element: workspacesElement, path: 'workspaces' },
     { element: modelServiceElement, path: 'model-service' },
     { element: labsElement, path: 'labs' },
   ],

@@ -6,6 +6,7 @@ import { adminDeviceProcedures } from './devices';
 import { adminLabsProcedures } from './labs';
 import { adminModelServiceProcedures } from './modelService';
 import { adminUserProcedures } from './users';
+import { adminWorkspaceProcedures } from './workspaces';
 
 /**
  * Admin console (CUST-008).
@@ -19,6 +20,7 @@ export const adminConsoleRouter = router({
   ...adminModelServiceProcedures,
   ...adminLabsProcedures,
   ...adminDeviceProcedures,
+  ...adminWorkspaceProcedures,
 
   whoami: authedProcedure
     .use(serverDatabase)
