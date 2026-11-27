@@ -27,7 +27,7 @@ import { reportManagedDevicesRemoved } from './managedDeviceRemoval';
  * Console-created shares are public-only and revocable only from the console;
  * the member side (including the workspace owner) must not remove or hide them.
  */
-const assertNotAdminShare = (row: { shareOrigin?: string | null }, action: string) => {
+export const assertNotAdminShare = (row: { shareOrigin?: string | null }, action: string) => {
   if (row.shareOrigin === 'admin') {
     throw new TRPCError({
       code: 'FORBIDDEN',

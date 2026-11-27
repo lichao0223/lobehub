@@ -17,7 +17,7 @@
 | CUST-007 | 统一认证平台 SSO_TICKET 接入        | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                                 | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                                                        | 开发中；单测已交付，待与真实认证中心联调                                                                                                                                          |
 | CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话 / 物理删除用户）；P2 模型服务（Tellhow 内置厂商） | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                                                                   | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24）                                                                                                                     |
 | CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                                 | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)                                                  | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）                                                                                                                                   |
-| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态         | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)                                  | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补                                                                                                     |
+| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情整页 + 在线三态         | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)                                  | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补                                                                                                     |
 | CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat /title/verify/embedding 成为全站默认模型；新用户厂商开关默认只开 TellhowAI   | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、[厂商默认开关](ADMIN_CONSOLE_DESIGN.md#72-厂商默认开关cust-011-c)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/modelService.ts` | 已验收并合入 canary（2026-11-27）：存量 / 新注册 / SSO 均生效，首轮会话模型已跟随管理员主模型（T-100），管理端默认值选择器只列可生效模型（T-102）；记忆与验收的运行时证据待 T-101 |
 
 ## CUST-001：自定义镜像
@@ -212,6 +212,14 @@
 - **管理员自己**：仍可打开个人 Labs 页（`isAdmin`），但其 `preference.lab` 同样被部署开关覆盖 —— 读时覆盖对所有人生效，差别只在页面是否可见。
 - **语义**：admin 模式下未显式开启的 lab = 关，**不回落个人偏好**；保留 `mode: 'user'` 作为回滚阀。
 
+### 2026-11-27 增量：详情对齐 + 人群共享
+
+- **详情**：`/admin/devices/:deviceId` 整页，服务端 `adminConsole.{getDeviceOverview,getDeviceActivity,getDeviceAgents,getDeviceWorkingDirs,listProjectDirectory,statPath,getLocalFilePreview,createTerminalSession,readTerminal,writeTerminal,resizeTerminal}`，全部以设备持有人为主体；managed cloud 设备拒绝网关读取，离线返回空。
+- **人群载体**：`/admin/workspaces` 复用 `WorkspaceModel` / `WorkspaceMemberModel`，管理员创建工作区即为 owner；工作区是**单 owner**（`workspace_members_unique_active_owner_idx`），控制台只管理 `admin` / `member`，owner 只读。
+- **共享**：`adminConsole.{listDeviceShares,shareDeviceToWorkspace,revokeDeviceShare}`，写入 `share_origin='admin'` + `shared_by_user_id`；强制 `public`；以持有人主体 `enrollWorkspace`，注册失败回滚连接。
+- **成员侧守卫**：`apps/server/src/routers/lambda/device/workspace.ts` 的 `assertNotAdminShare` 拦截 `removeWorkspaceDevice` / `setWorkspaceDeviceVisibility` / 重新共享覆盖，工作区 owner 也不例外；个人端卡片与详情页只显示「由管理员共享」标签。
+- **合并注意**：`device/registry.ts` 的设备列表新增 `sharedByAdmin`，`DeviceWorkspaceShare` 新增 `adminShared`；在上游改这两个文件的 PR 上合并时保持该字段。
+
 ### 配置与数据来源
 
 - 零迁移、零新表：`admin_console_settings.config.labs = { mode: 'user' | 'admin', flags: { [flag]: boolean } }`（复用 CUST-008 的单例行）。`flags` 稀疏，只存被显式打开的项。
@@ -300,8 +308,8 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 ### 功能与入口
 
-- **管理员** `/admin/devices`（控制台侧栏「设备」，`MonitorSmartphone` 图标，正式导航项非隐藏暗门）：跨用户设备列表 + 顶部计数（总 / 个人 / 工作区 / 按平台 / 近 7 天活跃 / 工作区数）+ 筛选（范围 personal/workspace、平台、可见性 private/public、在线三态）+ 搜索（`q`，匹配 hostname / 用户名）+ 分页；行点击开详情抽屉（连接通道与连接时间、平台、版本、托管阶段、工作区、所有者、最近出现）。
-- **只读**：无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门，且 `devices` 是 upsert 语义（删掉下次连接自动回来）。
+- **管理员** `/admin/devices`（控制台侧栏「设备」，`MonitorSmartphone` 图标，正式导航项非隐藏暗门）：跨用户设备列表 + 顶部计数（总 / 个人 / 工作区 / 按平台 / 近 7 天活跃 / 工作区数）+ 筛选（范围 personal/workspace、平台、可见性 private/public、在线三态）+ 搜索（`q`，匹配 hostname / 用户名）+ 分页；行点击进入详情整页（概览 / 文件目录 / Agent 运行时，见下）。
+- **写操作仅限「共享」**：管理员可把在线个人设备共享到工作区（`public`）、撤销共享；不提供删除、改可见性、改别名。跨用户删除仍被拒绝，且 `devices` 是 upsert 语义（删掉下次连接自动回来）。
 - **普通用户**：无侧栏入口；三个 procedure 全部走 `adminProcedure`，非管理员返回 `FORBIDDEN ADMIN_REQUIRED`，无会话 401。
 
 ### 共享文件接点（上游文件，逐文件行数）
@@ -320,9 +328,17 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 Fork 自有新增（21 个文件，不产生合并冲突面）：`packages/types/src/adminConsole.device.test.ts`、`packages/locales/src/default/adminConsole.ts`、`locales/{en-US,zh-CN}/adminConsole.json`、`packages/database/src/models/__tests__/adminConsole.devices.test.ts`、`apps/server/src/routers/lambda/adminConsole/{devices.ts,devices.test.ts}`、`src/features/AdminConsole/Devices/{index,DeviceRow,DeviceDetailDrawer,PresenceBadge,platform,style}.tsx`+`{detail,utils,useDeviceFilters}.ts`+3 个测试、`src/features/AdminConsole/hooks/useAdminDevices.ts`、`src/routes/(main)/admin/devices/index.tsx`。Fork 自有修改（18 个，其中 16 个是 i18n 命名空间迁移的净零 / 负行改动）：`packages/types/src/adminConsole.ts`(+170)、`packages/database/src/models/adminConsole.ts`(+317/−3)、`src/services/adminConsole.ts`(+23)、`apps/server/src/routers/lambda/adminConsole/index.ts`(+2)、`src/features/AdminConsole/{route.tsx,Layout/Body.tsx,Layout/Header.tsx,Labs/index.tsx}`、`ModelService/*`(7)、`UserManagement/*`(3)。
 
+### 2026-11-27 增量：详情对齐 + 人群共享
+
+- **详情**：`/admin/devices/:deviceId` 整页，服务端 `adminConsole.{getDeviceOverview,getDeviceActivity,getDeviceAgents,getDeviceWorkingDirs,listProjectDirectory,statPath,getLocalFilePreview,createTerminalSession,readTerminal,writeTerminal,resizeTerminal}`，全部以设备持有人为主体；managed cloud 设备拒绝网关读取，离线返回空。
+- **人群载体**：`/admin/workspaces` 复用 `WorkspaceModel` / `WorkspaceMemberModel`，管理员创建工作区即为 owner；工作区是**单 owner**（`workspace_members_unique_active_owner_idx`），控制台只管理 `admin` / `member`，owner 只读。
+- **共享**：`adminConsole.{listDeviceShares,shareDeviceToWorkspace,revokeDeviceShare}`，写入 `share_origin='admin'` + `shared_by_user_id`；强制 `public`；以持有人主体 `enrollWorkspace`，注册失败回滚连接。
+- **成员侧守卫**：`apps/server/src/routers/lambda/device/workspace.ts` 的 `assertNotAdminShare` 拦截 `removeWorkspaceDevice` / `setWorkspaceDeviceVisibility` / 重新共享覆盖，工作区 owner 也不例外；个人端卡片与详情页只显示「由管理员共享」标签。
+- **合并注意**：`device/registry.ts` 的设备列表新增 `sharedByAdmin`，`DeviceWorkspaceShare` 新增 `adminShared`；在上游改这两个文件的 PR 上合并时保持该字段。
+
 ### 配置与数据来源
 
-- **零数据库迁移、零新表、零新索引**。读的是既有 `devices` 表，经 CUST-008 自有的 `AdminConsoleModel`（`packages/database/src/models/adminConsole.ts`）新增 `listDevices` / `getDevice` / `getDeviceStats`。
+- **一次增量迁移**：`9002_device_admin_share.sql` 为 `devices` 增加 `share_origin` / `shared_by_user_id`（幂等 `ADD COLUMN IF NOT EXISTS`）。其余仍读既有表，经 `AdminConsoleModel`（`packages/database/src/models/adminConsole.ts`）新增 `listDevices` / `getDevice` / `getDeviceStats` / `listWorkspaces` / `listWorkspaceMembers` / `listAdminDeviceShares`。
 - **行身份 = 表真实唯一键**：personal 池是 `(user_id, device_id)`（`devices_user_id_device_id_unique`），workspace 池是 `(workspace_id, device_id)`。不能用 `(workspaceId, deviceId)` 一把梭 ——`lh connect --device-id` 可让两个 owner 用同一个 deviceId（`apps/cli/src/device/register.ts` 的 `resolveDeviceIdentity()` 在显式 id 时绕过哈希）。实现：`deviceRowKey` = `workspace ? wsId::deviceId : personal:${ownerId}::${deviceId}`；详情查询带 `ownerId`，`limit(2)` 后 `rows.length !== 1` 即 `NOT_FOUND`（歧义不猜）。
 - i18n 用独立命名空间 `adminConsole`（新增 `packages/locales/src/default/adminConsole.ts` + 两个语言包 JSON）。`NS` 类型由 `typeof resources` 推导，`resources.ts` / `create.ts` / `loadI18nNamespaceModule*.ts` / `protectedPatterns.ts` / `i18next.d.ts` **均无需改**。
 - **不跑 `bun run i18n`**：fork 不自动产生其余 15 语翻译，缺失语种回落 en-US，属可接受降级。

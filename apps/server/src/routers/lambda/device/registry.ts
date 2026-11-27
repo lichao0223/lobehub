@@ -229,6 +229,7 @@ export const registryRouter = router({
       if (!s.sharedFromDeviceId || !s.workspaceId) continue;
       const list = sharesByPersonalId.get(s.sharedFromDeviceId) ?? [];
       list.push({
+        adminShared: s.shareOrigin === 'admin',
         deviceId: s.deviceId,
         visibility: s.visibility,
         workspaceId: s.workspaceId,
@@ -328,6 +329,7 @@ export const registryRouter = router({
           scope,
           // Workspace rows only: member-shared (via the personal share flow)
           // vs directly enrolled — drives the "Shared by {name}" tag.
+          sharedByAdmin: scope === 'workspace' ? d.shareOrigin === 'admin' : undefined,
           sharedFromPersonal: scope === 'workspace' ? !!d.sharedFromDeviceId : undefined,
           // Personal rows only: the workspaces this machine was shared into
           // from the personal list (undefined for workspace rows and machines

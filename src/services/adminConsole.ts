@@ -133,6 +133,20 @@ class AdminConsoleService {
 
   removeWorkspaceMember = (input: { userId: string; workspaceId: string }) =>
     lambdaClient.adminConsole.removeWorkspaceMember.mutate(input);
+
+  // ── Device shares (admin → workspace) ────────────────────────────────────
+
+  listDeviceShares = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.listDeviceShares.query({
+      deviceId: target.deviceId,
+      ownerId: target.ownerId!,
+    });
+
+  shareDeviceToWorkspace = (target: { deviceId: string; ownerId: string; workspaceId: string }) =>
+    lambdaClient.adminConsole.shareDeviceToWorkspace.mutate(target);
+
+  revokeDeviceShare = (target: { deviceId: string; ownerId: string; workspaceId: string }) =>
+    lambdaClient.adminConsole.revokeDeviceShare.mutate(target);
 }
 
 export const adminConsoleService = new AdminConsoleService();

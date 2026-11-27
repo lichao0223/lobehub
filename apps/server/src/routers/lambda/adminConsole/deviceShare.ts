@@ -10,9 +10,12 @@ import { deviceGateway } from '@/server/services/deviceGateway';
 
 import { parseReportedIdentitySource } from '../device/guards';
 
-const targetInput = z.object({
+const personalInput = z.object({
   deviceId: z.string().trim().min(1).max(64),
   ownerId: z.string().trim().min(1).max(200),
+});
+
+const targetInput = personalInput.extend({
   workspaceId: z.string().trim().min(1).max(64),
 });
 
@@ -27,8 +30,11 @@ const targetInput = z.object({
  */
 export const adminDeviceShareProcedures = {
   /** Shares created from the console for this personal device. */
-  listDeviceShares: adminProcedure.input(targetInput).query(async ({ ctx, input }) => {
-    const device = await ctx.adminModel.getDevice(input.deviceId, { ownerId: input.ownerId });
+  listDeviceShares: adminProcedure.input(personalInput).query(async ({ ctx, input }) => {
+    const device = await ctx.adminModel.getDevice(input.deviceId, {
+      ownerId: input.ownerId,
+      workspaceId: null,
+    });
     if (!device) throw new TRPCError({ code: 'NOT_FOUND', message: 'DEVICE_NOT_FOUND' });
     const shares = await ctx.adminModel.listAdminDeviceShares(input.ownerId, device.deviceId);
     return shares.map((share) => ({
@@ -39,7 +45,10 @@ export const adminDeviceShareProcedures = {
   }),
 
   shareDeviceToWorkspace: adminProcedure.input(targetInput).mutation(async ({ ctx, input }) => {
-    const device = await ctx.adminModel.getDevice(input.deviceId, { ownerId: input.ownerId });
+    const device = await ctx.adminModel.getDevice(input.deviceId, {
+      ownerId: input.ownerId,
+      workspaceId: null,
+    });
     if (!device || device.scope !== 'personal') {
       throw new TRPCError({ code: 'NOT_FOUND', message: 'DEVICE_NOT_FOUND' });
     }
@@ -52,6 +61,12 @@ export const adminDeviceShareProcedures = {
         message: 'MANAGED_DEVICE_UNSUPPORTED',
       });
     }
+
+    // Short-circuit before touching the device: re-enrolling an already shared
+    // machine would open a second workspace connection for nothing.
+    const knownShares = await ctx.adminModel.listAdminDeviceShares(input.ownerId, device.deviceId);
+    const known = knownShares.find((share) => share.workspaceId === input.workspaceId);
+    if (known) return { alreadyShared: true as const, deviceId: known.deviceId };
 
     const workspace = await new WorkspaceModel(ctx.serverDB, ctx.adminUserId).findById(
       input.workspaceId,
@@ -82,6 +97,13 @@ export const adminDeviceShareProcedures = {
       if (existing.shareOrigin === 'admin') {
         return { alreadyShared: true as const, deviceId: existing.deviceId };
       }
+      // The member-side row wins; drop the connection we just opened so the
+      // machine is not left holding a workspace socket without a share row.
+      await deviceGateway.unenrollWorkspace({
+        deviceId: result.identity.deviceId,
+        userId: input.ownerId,
+        workspaceId: input.workspaceId,
+      });
       throw new TRPCError({ code: 'CONFLICT', message: 'WORKSPACE_DEVICE_EXISTS' });
     }
 
@@ -90,7 +112,10 @@ export const adminDeviceShareProcedures = {
       await model.registerWorkspaceDevice({
         deviceId: result.identity.deviceId,
         hostname: device.hostname ?? undefined,
-        identitySource: parseReportedIdentitySource(result.identity.identitySource),
+        identitySource:
+          device.identitySource === 'machine-id'
+            ? parseReportedIdentitySource('machine-id')
+            : parseReportedIdentitySource('fallback'),
         platform: device.platform ?? undefined,
         shareOrigin: 'admin',
         sharedByUserId: ctx.adminUserId,
@@ -113,7 +138,10 @@ export const adminDeviceShareProcedures = {
   }),
 
   revokeDeviceShare: adminProcedure.input(targetInput).mutation(async ({ ctx, input }) => {
-    const device = await ctx.adminModel.getDevice(input.deviceId, { ownerId: input.ownerId });
+    const device = await ctx.adminModel.getDevice(input.deviceId, {
+      ownerId: input.ownerId,
+      workspaceId: null,
+    });
     if (!device || device.scope !== 'personal') {
       throw new TRPCError({ code: 'NOT_FOUND', message: 'DEVICE_NOT_FOUND' });
     }

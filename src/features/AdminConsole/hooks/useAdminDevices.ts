@@ -16,6 +16,7 @@ export const ADMIN_CONSOLE_DEVICE_OVERVIEW_KEY = 'admin-console-device-overview'
 export const ADMIN_CONSOLE_DEVICE_ACTIVITY_KEY = 'admin-console-device-activity';
 export const ADMIN_CONSOLE_DEVICE_AGENTS_KEY = 'admin-console-device-agents';
 export const ADMIN_CONSOLE_DEVICE_FILES_KEY = 'admin-console-device-files';
+export const ADMIN_CONSOLE_DEVICE_SHARES_KEY = 'admin-console-device-shares';
 
 export const useAdminDevices = (params: AdminDeviceListParams) =>
   useClientDataSWR<AdminDeviceListResult>([ADMIN_CONSOLE_DEVICES_KEY, params], () =>
@@ -83,4 +84,10 @@ export const useAdminProjectDirectory = (
       ? [...targetKey(ADMIN_CONSOLE_DEVICE_FILES_KEY, target), target.root, target.relativePath]
       : null,
     () => adminConsoleService.listProjectDirectory(target!),
+  );
+
+/** Workspaces this personal device is shared into from the console. */
+export const useAdminDeviceShares = (target: AdminDeviceTarget | null) =>
+  useClientDataSWR(target ? targetKey(ADMIN_CONSOLE_DEVICE_SHARES_KEY, target) : null, () =>
+    adminConsoleService.listDeviceShares(target!),
   );

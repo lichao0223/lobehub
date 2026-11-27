@@ -207,6 +207,8 @@ export type DeviceVisibility = 'private' | 'public';
  * workspace's scope.
  */
 export interface DeviceWorkspaceShare {
+  /** Created by the admin console: public-only, revocable only from there. */
+  adminShared?: boolean;
   deviceId: string;
   visibility: DeviceVisibility;
   workspaceId: string;
@@ -296,6 +298,11 @@ export interface DeviceListItem {
   registered: boolean;
   /** Personal (own) vs. workspace-enrolled device — drives picker grouping. */
   scope: DeviceScope;
+  /**
+   * Workspace-scope rows only: the row was created by the admin console, so
+   * members (including the workspace owner) cannot remove or hide it.
+   */
+  sharedByAdmin?: boolean;
   /**
    * Workspace rows only: true when this enrollment was shared from a member's
    * personal device (`shared_from_device_id` set) rather than enrolled directly

@@ -13,21 +13,34 @@ import {
   Tabs,
   Tag,
   Text,
+  toast,
 } from '@lobehub/ui';
 import { cssVar } from '@lobehub/ui/stylex/cssVar.stylex';
 import * as stylex from '@stylexjs/stylex';
-import { ArrowLeftIcon, BotIcon, FolderIcon, InfoIcon, RefreshCwIcon } from 'lucide-react';
+import {
+  ArrowLeftIcon,
+  BotIcon,
+  FolderIcon,
+  InfoIcon,
+  RefreshCwIcon,
+  Share2Icon,
+  TrashIcon,
+} from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
+
+import { adminConsoleService } from '@/services/adminConsole';
 
 import {
   useAdminDevice,
   useAdminDeviceActivity,
   useAdminDeviceAgents,
   useAdminDeviceOverview,
+  useAdminDeviceShares,
   useAdminProjectDirectory,
 } from '../hooks/useAdminDevices';
+import { useAdminWorkspaces } from '../hooks/useAdminWorkspaces';
 import PresenceBadge from './PresenceBadge';
 
 const styles = stylex.create({
@@ -202,11 +215,113 @@ const OverviewTab = memo<OverviewProps>(({ device, target }) => {
           </Card>
         </Flexbox>
       </Flexbox>
+
+      <ShareCard device={device} target={target} />
     </Flexbox>
   );
 });
 
 OverviewTab.displayName = 'AdminDeviceOverviewTab';
+
+const ShareCard = memo<{ device: AdminDeviceDetail; target: AdminDeviceTarget }>(
+  ({ device, target }) => {
+    const { t } = useTranslation(['adminConsole', 'common']);
+    const { data: shares, mutate } = useAdminDeviceShares(target);
+    const { data: workspaces } = useAdminWorkspaces({ page: 1 });
+    const [workspaceId, setWorkspaceId] = useState<string>();
+    const [busy, setBusy] = useState(false);
+
+    const options =
+      workspaces?.items
+        .filter((workspace) => !shares?.some((share) => share.workspaceId === workspace.id))
+        .map((workspace) => ({ label: workspace.name, value: workspace.id })) ?? [];
+
+    const run = async (action: () => Promise<unknown>) => {
+      setBusy(true);
+      try {
+        await action();
+        await mutate();
+      } catch (error) {
+        toast.error((error as Error).message);
+      } finally {
+        setBusy(false);
+      }
+    };
+
+    return (
+      <Card icon={Share2Icon} title={t('devices.detail.shares')}>
+        {device.scope !== 'personal' ? (
+          <Text type={'secondary'}>{t('devices.detail.sharesPersonalOnly')}</Text>
+        ) : (
+          <>
+            <Flexbox horizontal gap={8}>
+              <Select
+                options={options}
+                placeholder={t('devices.detail.sharePlaceholder')}
+                style={{ flex: 1 }}
+                value={workspaceId}
+                onChange={(value) => setWorkspaceId(value as string)}
+              />
+              <Button
+                disabled={!workspaceId}
+                loading={busy}
+                onClick={() =>
+                  run(async () => {
+                    await adminConsoleService.shareDeviceToWorkspace({
+                      deviceId: target.deviceId,
+                      ownerId: target.ownerId!,
+                      workspaceId: workspaceId!,
+                    });
+                    setWorkspaceId(undefined);
+                  })
+                }
+              >
+                {t('devices.detail.shareAction')}
+              </Button>
+            </Flexbox>
+
+            <Text type={'secondary'}>{t('devices.detail.shareHint')}</Text>
+
+            {!shares?.length ? (
+              <Text type={'secondary'}>{t('devices.detail.sharesEmpty')}</Text>
+            ) : (
+              shares.map((share) => (
+                <Flexbox
+                  horizontal
+                  align={'center'}
+                  justify={'space-between'}
+                  key={share.workspaceId}
+                >
+                  <Text>{share.workspaceName ?? share.workspaceId}</Text>
+                  <Flexbox horizontal align={'center'} gap={8}>
+                    <Tag color={'gold'}>{t('devices.detail.sharedByAdminTag')}</Tag>
+                    <Button
+                      icon={<Icon icon={TrashIcon} />}
+                      loading={busy}
+                      size={'small'}
+                      type={'text'}
+                      onClick={() =>
+                        run(() =>
+                          adminConsoleService.revokeDeviceShare({
+                            deviceId: target.deviceId,
+                            ownerId: target.ownerId!,
+                            workspaceId: share.workspaceId,
+                          }),
+                        )
+                      }
+                    />
+                  </Flexbox>
+                </Flexbox>
+              ))
+            )}
+          </>
+        )}
+      </Card>
+    );
+  },
+);
+
+ShareCard.displayName = 'AdminDeviceShareCard';
 
 const FilesTab = memo<{ device: AdminDeviceDetail; target: AdminDeviceTarget }>(
   ({ device, target }) => {

@@ -568,6 +568,7 @@ export class DeviceModel {
     return this.db
       .select({
         deviceId: devices.deviceId,
+        shareOrigin: devices.shareOrigin,
         sharedFromDeviceId: devices.sharedFromDeviceId,
         visibility: devices.visibility,
         workspaceId: devices.workspaceId,

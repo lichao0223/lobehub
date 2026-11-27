@@ -1066,6 +1066,7 @@ export default {
     "This includes the device you're using right now — removing it disconnects your current session.",
   'devices.share.alreadyShared': 'Shared',
   'devices.share.badge': 'Shared to {{count}} workspaces',
+  'devices.share.adminShared': 'Shared by admin',
   'devices.share.confirm': 'Share',
   'devices.share.detailLabel': 'Shared to workspaces',
   'devices.share.done': 'Done',

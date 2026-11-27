@@ -977,3 +977,13 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 2. `AGENT_TRANSFER_PENDING_OWNER_DELETE` 常量与守卫不能被吞掉，管理端靠它给出可读错误。
 3. `global_files.creator` 的 `ON DELETE SET NULL` 与 schema 里的 `notNull()` 漂移（实际库可空）—— 若上游补上 NOT NULL，必须先删 / 转移共享 `global_files` 行，否则删除曾上传过共享文件的账号会失败。
 4. 删除后不得新增墓碑或唯一约束，否则「重新注册 / SSO 重建」失效。
+
+### 17.9 管理员共享设备（2026-11-27）
+
+人群载体是**工作区**：控制台 `/admin/workspaces` 建工作区、加成员；共享弹窗把在线个人设备以 `public` 写入该工作区。不引入按人 ACL。
+
+- **写路径**：`adminConsole.shareDeviceToWorkspace` / `revokeDeviceShare`。以**设备持有人**主体调网关 `enrollWorkspace`（设备连接属于持有人），工作区 token 由 `signWorkspaceDeviceToken` 签发；注册失败或成员行冲突时立即 `unenrollWorkspace` 回滚，避免幽灵连接。
+- **行标记**：`devices.share_origin = 'admin'` + `shared_by_user_id`，迁移 `9002_device_admin_share.sql`。`public` 由服务端强制，前端不参与决定。
+- **撤销权**：成员侧（含工作区 owner、登记人）对 admin 共享行的 `removeWorkspaceDevice`、`setWorkspaceDeviceVisibility`、重新共享覆盖一律 `FORBIDDEN`；只有控制台能撤销。
+- **幂等与错误**：已共享直接返回 `alreadyShared`（不再触碰设备）；成员已登记同机器 → `CONFLICT WORKSPACE_DEVICE_EXISTS`；离线 → `PRECONDITION_FAILED`；managed cloud 设备拒绝。
+- **成员体验**：工作区成员可派发 Agent 任务、浏览文件、开终端，与个人设备一致；个人端设备卡片与详情只展示「由管理员共享」，不提供移除 / 可见性入口。
