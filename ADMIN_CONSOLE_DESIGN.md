@@ -864,11 +864,17 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 
 ## 17. CUST-010：管理控制台设备总览
 
-只读的**机器台账**：`/admin/devices` 回答「谁有一台什么设备、在不在线」，不是个人设置设备页的复制品。管理员不做 owner 过滤 —— 他人个人设备、所有工作区设备（含 `private`）都在列表里；但**看不到设备在哪个目录干活**。维护要点见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) 的 CUST-010 一节，本节记录设计与偏差。
+`/admin/devices` 是**机器台账**：回答「谁有一台什么设备、在不在线」。管理员不做 owner 过滤 —— 他人个人设备、所有工作区设备（含 `private`）都在列表里。列表仍不带任何文件系统路径。
 
-### 17.1 为什么不做写操作
+点进任一设备后是**与个人端同构的整页详情**（`/admin/devices/:deviceId`）：概览 / 文件目录 / Agent 运行时 三个 Tab，数据一律以**设备持有人**为主体读取（见 17.7）。这是对原「只读台账、路径永不出库」边界的产品级调整：管理员可见该设备的目录、运行话题、绑定 Agent、文件与终端，但文件目录只读。
 
-无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门（设备归属是用户在个人设置里的事），且 `devices` 是 upsert 语义 —— 删掉下次连接自动回来。管理端在这里只承担「看见」。
+维护要点见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) 的 CUST-010 一节，本节记录设计与偏差。
+
+### 17.1 写操作边界
+
+本阶段（详情页）不做任何跨用户写：无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门（设备归属是用户在个人设置里的事），且 `devices` 是 upsert 语义 —— 删掉下次连接自动回来。
+
+例外是后续的「管理员共享到工作区」能力（独立任务）：写入只允许新增 / 撤销工作区行，并记录 `share_origin` 与操作者；个人侧（含工作区 owner）不得移除管理员共享的设备。
 
 ### 17.2 行身份必须用真实唯一键
 
@@ -892,11 +898,28 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 
 上游 `readDevices` 在传输失败时回落 `queryDeviceList` 的 `[]`，管理端会把「网关没答」渲染成「这个人的设备全没上线」—— 用户明确不接受。新增的 `readDeviceList(userId, workspaceId?) → { ok: true, devices } | { ok: false, reason }` 是唯一能区分二者且不改既有调用方的接法：`queryDeviceList` 保持 `[]` 回落不变，另抽 `toDeviceAttachments()` 为纯重构。`deviceGateway` 其余文件（`routers/lambda/device/**`、`packages/device-gateway-client/**`、`packages/database/src/{models,schemas}/device.ts`、`src/features/DeviceManager/**`、`src/store/device/**`）零改动。
 
-### 17.5 隐私白名单三层
+### 17.5 隐私边界：列表与详情不对称
 
-SQL 显式列投影（不选 `defaultCwd` / `workingDirs` / `recentCwds`，`metadata` 只取 `->> 'appVersion'` 与 `->> 'cliVersion'`）→ 类型层 `ADMIN_DEVICE_DETAIL_METADATA_KEYS = ['appVersion','cliVersion']` 用 `expectTypeOf` 编译期锁死 → 渲染层 `projectDeviceDetail()` 白名单视图，抽屉只认该视图。任一层单独失效仍有兜底。
+- **列表** `AdminDeviceSummary`：SQL 显式列投影，不选 `defaultCwd` / `workingDirs` / `recentCwds`；`metadata` 只取 `appVersion` 与 `cliVersion`。浏览整个部署不能把所有人的路径扫进一个响应。
+- **详情** `AdminDeviceDetail`：额外携带 `defaultCwd` / `workingDirs`，与个人端 `settings/devices/:id` 保持一致；`metadata` 仍只投影已知键（`ADMIN_DEVICE_DETAIL_METADATA_KEYS`，`expectTypeOf` 编译期锁死），未知键无字段可漏。
+- **渲染层**：详情页只使用 `deviceDetail` 过程返回的字段，不再拼原始行。
 
-### 17.6 已知限制（不修）
+### 17.6 详情读取主体：持有人，不是管理员
+
+`deviceTargetInput = { deviceId, ownerId?, workspaceId? }` 只用于**定位行**（与 17.2 的唯一键一致）。服务端解析出该行后，网关调用使用 `row.owner.userId` / `row.workspace.workspaceId`；客户端传错 owner 只会 `NOT_FOUND`，不会读到别的持有人。
+
+- 网关类读取（系统信息、指标、目录、文件、终端）：`resolveAdminDevice(..., { live: true })`，managed cloud 设备返回 `MANAGED_DEVICE_UNSUPPORTED`。
+- 纯 DB 读取（运行话题、绑定 Agent、工作目录）：不要求设备在线。
+- 降级与个人端一致：系统信息 `null`、指标空序列、文件 `null`；终端错误转 `BAD_GATEWAY`，不抛 500。
+- 终端包含 `createTerminalSession`（开新会话）与 `read/write/resizeTerminal`。
+
+### 17.7 详情页入口与只读文件
+
+- 路由：`/admin/devices/:deviceId?ownerId=&workspaceId=&tab=`，列表行点击进入；`tab` 可取 `overview | files | agents`。
+- 文件目录：只浏览与进入子目录，不提供写 / 删除 / 移动；根目录来自该设备的工作目录。
+- Agent 运行时：经设备连接扫描，支持重扫。
+
+### 17.8 已知限制（不修）
 
 - **`online` 筛选在 SQL 分页之后**：在线是活状态，SQL 表达不了。命中页可能短于 `pageSize`、`total` 仍是全量，UI 以 `isDevicePagePartial` 提示，不伪造补页。
 - **`onlineStats` 只统计返回行**，非全库在线数。
