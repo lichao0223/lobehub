@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { adminProcedure } from '@/business/server/adminConsole/permissions';
+import { deleteUserAccount } from '@/server/services/adminConsole/userDeletion';
 
 const userId = z.string().min(1);
 
@@ -52,4 +53,14 @@ export const adminUserProcedures = {
   revokeUserSessions: adminProcedure.input(targetInput).mutation(async ({ ctx, input }) => ({
     count: await ctx.adminModel.revokeSessions(input.userId),
   })),
+
+  /**
+   * Physical delete (CUST-008). The account row and everything that cascades
+   * from it are removed, so the same email / SSO subject can register again.
+   * The model refuses self and any admin target (`SELF_LOCKOUT`,
+   * `ADMIN_PROTECTED`).
+   */
+  deleteUser: adminProcedure
+    .input(targetInput)
+    .mutation(({ ctx, input }) => deleteUserAccount(ctx.serverDB, ctx.adminUserId, input.userId)),
 };

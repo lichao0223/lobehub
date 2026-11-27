@@ -260,6 +260,14 @@ export interface AdminUserListResult {
   total: number;
 }
 
+/** Outcome of a physical account deletion (CUST-008 P1). */
+export interface AdminUserDeleteResult {
+  /** `files` rows the account owned when it was deleted. */
+  deletedFiles: number;
+  /** Stored objects reclaimed from the file storage backend. */
+  removedObjects: number;
+}
+
 export interface AdminWhoamiResult {
   /** Whether the env allow-list could promote this account at all. */
   bootstrapConfigured: boolean;
@@ -272,6 +280,10 @@ export interface AdminWhoamiResult {
 /** Error messages the frontend matches on instead of parsing localized text. */
 export const ADMIN_CONSOLE_ERROR = {
   adminRequired: 'ADMIN_REQUIRED',
+  /** A deletion target still carries the admin role (demote it first). */
+  adminProtected: 'ADMIN_PROTECTED',
+  /** A pending agent transfer must drain before the account can be deleted. */
+  agentTransferPending: 'AGENT_TRANSFER_PENDING',
   configConflict: 'CONFIG_CONFLICT',
   duplicateModelId: 'DUPLICATE_MODEL_ID',
   invalidApiKey: 'INVALID_API_KEY',

@@ -10,6 +10,7 @@ import type {
   AdminDeviceListResult,
   AdminDeviceStats,
   AdminRole,
+  AdminUserDeleteResult,
   AdminUserDetail,
   AdminUserListParams,
   AdminUserListResult,
@@ -37,6 +38,10 @@ class AdminConsoleService {
 
   revokeUserSessions = async (userId: string) =>
     lambdaClient.adminConsole.revokeUserSessions.mutate({ userId });
+
+  /** Physical delete: the account and all of its data are gone for good. */
+  deleteUser = async (userId: string): Promise<AdminUserDeleteResult> =>
+    lambdaClient.adminConsole.deleteUser.mutate({ userId });
 
   // ── Model service (CUST-008 §7) ───────────────────────────────────────────
 

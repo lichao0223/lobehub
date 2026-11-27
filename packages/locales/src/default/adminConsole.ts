@@ -57,6 +57,20 @@ export default {
   'users.error.lastAdmin': 'At least one enabled admin must remain.',
   'users.error.selfLockout': 'You cannot change your own role or ban yourself.',
   'users.error.generic': 'The operation failed. Try again.',
+  'users.delete.section': 'Danger zone',
+  'users.delete.hint':
+    'This permanently deletes the account and every row that belongs to it. Type {{account}} to confirm.',
+  'users.delete.button': 'Delete user permanently',
+  'users.delete.confirmTitle': 'Delete this user permanently?',
+  'users.delete.confirmContent':
+    '{{name}} and all of their data will be removed. This cannot be undone; the person has to register again to come back.',
+  'users.delete.confirmOk': 'Delete permanently',
+  'users.delete.success': 'User deleted permanently ({{files}} files removed)',
+  'users.delete.selfHint': 'You cannot delete your own account.',
+  'users.delete.adminHint': 'Admin accounts cannot be deleted. Revoke admin access first.',
+  'users.delete.error.admin': 'Admin accounts cannot be deleted. Revoke admin access first.',
+  'users.delete.error.transferPending':
+    'This account still has a running agent transfer. Try again after it finishes.',
   'nav.devices': 'Devices',
   'devices.title': 'Devices',
   'devices.searchPlaceholder': 'Search device, hostname or owner',

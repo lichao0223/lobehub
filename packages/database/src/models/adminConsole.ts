@@ -28,6 +28,8 @@ import {
   workspaces,
 } from '../schemas';
 import type { LobeChatDatabase, Transaction } from '../type';
+import { AGENT_TRANSFER_PENDING_OWNER_DELETE } from './agentTransferJob';
+import { UserModel } from './user';
 
 /** Better Auth stores `role` as free text; anything but `admin` is a normal user. */
 export const normalizeAdminRole = (role: string | null | undefined): AdminRole =>
@@ -592,6 +594,44 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
       .returning({ id: session.id });
 
     return removed.length;
+  };
+
+  /**
+   * Permanently delete a normal account (CUST-008 P1, user deletion).
+   *
+   * Rules:
+   * - the acting admin can never delete themselves (`SELF_LOCKOUT`);
+   * - an account with the `admin` role is never deletable (`ADMIN_PROTECTED`),
+   *   banned or not — demote it first, which already enforces the last-admin
+   *   invariant;
+   * - every row that belongs to the account goes with it. `UserModel.deleteUser`
+   *   owns that cascade (users FK cascade plus the tables it must handle
+   *   explicitly, e.g. share-visitor topics and personal channels), and the
+   *   guards re-run inside its transaction under the row lock, so a concurrent
+   *   promotion cannot turn this into an admin delete.
+   *
+   * No tombstone is written: the email / SSO subject is free again, so the
+   * person can register or sign in through SSO and get a brand-new account.
+   */
+  deleteUser = async (userId: string): Promise<{ id: string }> => {
+    if (userId === this.actingUserId) throw conflict('SELF_LOCKOUT');
+
+    try {
+      await UserModel.deleteUser(this.db, userId, {
+        assertDeletable: async (tx) => {
+          await this.lockLastAdmin(tx);
+          const target = await this.loadTarget(tx, userId);
+          if (normalizeAdminRole(target.role) === 'admin') throw conflict('ADMIN_PROTECTED');
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === AGENT_TRANSFER_PENDING_OWNER_DELETE) {
+        throw conflict('AGENT_TRANSFER_PENDING', error);
+      }
+      throw error;
+    }
+
+    return { id: userId };
   };
 
   // ── devices (CUST-010, read-only cross-user inventory) ────────────────

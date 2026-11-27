@@ -40,7 +40,7 @@ import {
   users,
   userSettings,
 } from '../schemas';
-import type { LobeChatDatabase } from '../type';
+import type { LobeChatDatabase, Transaction } from '../type';
 import { notTrashed } from '../utils/softDelete';
 import { hasLiveParentTopic } from '../utils/topicVisibility';
 import { AGENT_TRANSFER_PENDING_OWNER_DELETE, AgentTransferJobModel } from './agentTransferJob';
@@ -681,7 +681,17 @@ export class UserModel {
   static deleteUser = async (
     db: LobeChatDatabase,
     id: string,
-    options: { statementTimeoutMs?: number; transactionTimeoutMs?: number } = {},
+    options: {
+      statementTimeoutMs?: number;
+      transactionTimeoutMs?: number;
+      /**
+       * Re-checked inside the deletion transaction, after the account row is
+       * locked. A caller with extra invariants (the admin console refuses to
+       * delete admins and the acting admin) throws from here, so a concurrent
+       * role change cannot slip in between its own check and the delete.
+       */
+      assertDeletable?: (tx: Transaction) => Promise<void>;
+    } = {},
   ) => {
     const timeoutMs = options.statementTimeoutMs;
     validateDeletionStatementTimeout(timeoutMs);
@@ -718,6 +728,7 @@ export class UserModel {
       // then fails its FK — none can slip in between a cleanup and the final
       // delete, where a SET NULL FK would orphan it.
       await tx.select({ id: users.id }).from(users).where(eq(users.id, id)).for('update');
+      await options.assertDeletable?.(tx);
       await applyRemainingTimeout();
       // A goal decision can reference the same user that owns its parent goal.
       // Delete the graph first so its CASCADE completes before the user delete

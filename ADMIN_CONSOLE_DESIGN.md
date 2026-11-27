@@ -725,33 +725,33 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 
 ## 17. CUST-010：管理控制台设备总览
 
-只读的**机器台账**：`/admin/devices` 回答「谁有一台什么设备、在不在线」，不是个人设置设备页的复制品。管理员不做 owner 过滤——他人个人设备、所有工作区设备（含 `private`）都在列表里；但**看不到设备在哪个目录干活**。维护要点见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) 的 CUST-010 一节，本节记录设计与偏差。
+只读的**机器台账**：`/admin/devices` 回答「谁有一台什么设备、在不在线」，不是个人设置设备页的复制品。管理员不做 owner 过滤 —— 他人个人设备、所有工作区设备（含 `private`）都在列表里；但**看不到设备在哪个目录干活**。维护要点见 [CUSTOMIZATIONS.md](CUSTOMIZATIONS.md) 的 CUST-010 一节，本节记录设计与偏差。
 
 ### 17.1 为什么不做写操作
 
-无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门（设备归属是用户在个人设置里的事），且 `devices` 是 upsert 语义——删掉下次连接自动回来。管理端在这里只承担「看见」。
+无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门（设备归属是用户在个人设置里的事），且 `devices` 是 upsert 语义 —— 删掉下次连接自动回来。管理端在这里只承担「看见」。
 
 ### 17.2 行身份必须用真实唯一键
 
 `devices` 的两个唯一键是 `(user_id, device_id)`（`devices_user_id_device_id_unique`）与 `(workspace_id, device_id)`。不能用 `(workspaceId, deviceId)` 一把梭：`lh connect --device-id` 可让两个 owner 用同一个 deviceId（`apps/cli/src/device/register.ts` 的 `resolveDeviceIdentity()` 在显式 id 时绕过哈希）。
 
-因此行键是 `workspace ? ${wsId}::${deviceId} : personal:${ownerId}::${deviceId}`，详情查询把 `ownerId` 一路带到 SQL，`limit(2)` 后 `rows.length !== 1` 即 `NOT_FOUND`——歧义不猜。这是 T-86 的修复点：早期实现用 `personal::${deviceId}`，导致 React duplicate key，点开还可能落在他人设备上。
+因此行键是 `workspace ? ${wsId}::${deviceId} : personal:${ownerId}::${deviceId}`，详情查询把 `ownerId` 一路带到 SQL，`limit(2)` 后 `rows.length !== 1` 即 `NOT_FOUND`—— 歧义不猜。这是 T-86 的修复点：早期实现用 `personal::${deviceId}`，导致 React duplicate key，点开还可能落在他人设备上。
 
 ### 17.3 在线三态，`unknown` 不许折叠成 `offline`
 
-| 触发 | 结果 |
-| --- | --- |
-| 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求** |
-| 探测成功且命中 deviceId | `online`，附 `channelCount` |
-| 探测成功但池中没有该 deviceId | `offline` |
-| `readDeviceList` 返回 `ok: false` | `unknown` |
-| 探测抛错 / 超过 3s 整轮预算 | `unknown`（晚到结果由 `accepting` 丢弃） |
+| 触发                                   | 结果                                     |
+| -------------------------------------- | ---------------------------------------- |
+| 网关未配置（`isConfigured === false`） | 全部 `unknown`，**零请求**               |
+| 探测成功且命中 deviceId                | `online`，附 `channelCount`              |
+| 探测成功但池中没有该 deviceId          | `offline`                                |
+| `readDeviceList` 返回 `ok: false`      | `unknown`                                |
+| 探测抛错 / 超过 3s 整轮预算            | `unknown`（晚到结果由 `accepting` 丢弃） |
 
 参数：`DEVICE_PROBE_CONCURRENCY = 5`、`DEVICE_PROBE_TIMEOUT_MS = 3000`、`DEVICE_READ_ATTEMPTS = 2`、`DEVICE_READ_RETRY_DELAY_MS = 250`。
 
 ### 17.4 唯一的上游授权偏差：`deviceGateway.readDeviceList`
 
-上游 `readDevices` 在传输失败时回落 `queryDeviceList` 的 `[]`，管理端会把「网关没答」渲染成「这个人的设备全没上线」——用户明确不接受。新增的 `readDeviceList(userId, workspaceId?) → { ok: true, devices } | { ok: false, reason }` 是唯一能区分二者且不改既有调用方的接法：`queryDeviceList` 保持 `[]` 回落不变，另抽 `toDeviceAttachments()` 为纯重构。`deviceGateway` 其余文件（`routers/lambda/device/**`、`packages/device-gateway-client/**`、`packages/database/src/{models,schemas}/device.ts`、`src/features/DeviceManager/**`、`src/store/device/**`）零改动。
+上游 `readDevices` 在传输失败时回落 `queryDeviceList` 的 `[]`，管理端会把「网关没答」渲染成「这个人的设备全没上线」—— 用户明确不接受。新增的 `readDeviceList(userId, workspaceId?) → { ok: true, devices } | { ok: false, reason }` 是唯一能区分二者且不改既有调用方的接法：`queryDeviceList` 保持 `[]` 回落不变，另抽 `toDeviceAttachments()` 为纯重构。`deviceGateway` 其余文件（`routers/lambda/device/**`、`packages/device-gateway-client/**`、`packages/database/src/{models,schemas}/device.ts`、`src/features/DeviceManager/**`、`src/store/device/**`）零改动。
 
 ### 17.5 隐私白名单三层
 
@@ -770,8 +770,48 @@ SQL 显式列投影（不选 `defaultCwd` / `workingDirs` / `recentCwds`，`meta
 1. `apps/server/src/routers/lambda/adminConsole/index.ts` 的 `...adminDeviceProcedures` spread；
 2. `src/features/AdminConsole/route.tsx` 的 `devices` 子路由 + `src/routes/(main)/admin/devices/index.tsx` 一行 re-export（`desktopRouter.shared.tsx` 无需改，`/admin` 容器路由已注册）；
 3. `Layout/Body.tsx` 的 `DEVICES_PATH` / `devicesActive` / `NavItem(MonitorSmartphone)` + `adminConsole` 命名空间的 `nav.devices`；
-4. `packages/locales/src/default/index.ts` 的 `resources.adminConsole`——不注册则打包版（Electron / 无网络 SSR 首屏）拿不到该命名空间，表现为「浏览器能用、桌面首屏闪 key」；
+4. `packages/locales/src/default/index.ts` 的 `resources.adminConsole`—— 不注册则打包版（Electron / 无网络 SSR 首屏）拿不到该命名空间，表现为「浏览器能用、桌面首屏闪 key」；
 5. `deviceGateway.readDeviceList` 与 `toDeviceAttachments` 不能被上游 `readDevices` 重构吞掉；上游若改为抛错或返回哨兵值，先确认管理端仍拿得到 `ok:false` 再删本 fork 的接法，不要两边并存；
 6. 探测三参数不可调成「失败即 offline」；`resolveOnlineStates` / `tallyOnline` / `probePrincipals` 是纯函数，可被移动但语义必须保留；
 7. `adminDeviceSelection` 投影与 `ADMIN_DEVICE_DETAIL_METADATA_KEYS` 是唯一 metadata 出口，上游给 `devices.metadata` 加字段时不要顺手放开；
 8. 行身份必须仍是 `(user_id, device_id)` / `(workspace_id, device_id)`，上游改唯一键或 upsert 语义时重跑 `adminConsole.devices.test.ts` 的「双池互斥」与「他人 private 可见」。
+
+## 18. CUST-008 P1 追加：物理删除用户（2026-11-26）
+
+用户管理的最后一块写操作：管理员可以**永久删除**普通账号，账号及其全部数据一起消失；`admin` 角色与操作者自己不可删除。删除后邮箱 / SSO 身份不再被占用，对方可重新注册或单点登录得到全新账号。没有软删除、没有墓碑表、没有黑名单。
+
+### 18.1 规则
+
+| 目标                                     | 结果                                                              |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| 操作者自己                               | `SELF_LOCKOUT`（保留行，不做任何清理）                            |
+| `users.role = 'admin'`（含已禁用管理员） | `ADMIN_PROTECTED`；先撤管理员，撤权本身已保证至少留一个启用管理员 |
+| 普通用户                                 | 物理删除；`users` 行、级联数据、对象存储中的独占文件全部清掉      |
+| 不存在 / 已被别人删掉                    | `USER_NOT_FOUND`                                                  |
+| 该账号仍有进行中的 agent 迁移            | `AGENT_TRANSFER_PENDING`；等迁移排空后重试                        |
+
+### 18.2 实现
+
+- **级联复用上游账号注销路径**：`AdminConsoleModel.deleteUser` 调 `UserModel.deleteUser`，不手写 `delete from users`。后者已覆盖 `users` FK cascade 到不了的表（share 访客 `topics.senderId`、个人 `channels`、个人 `task_labels`、project environments、goal 图），并自带 pending agent-transfer 守卫。
+- **守卫在事务内复核**：`UserModel.deleteUser` 新增可选 `assertDeletable(tx)`，在锁住账号行之后、级联之前执行。管理端在这里重新读角色（复用 `admin_console:last_admin` advisory lock，与改角色 / 禁用串行），所以「先查不是管理员、随后被提权、再被删」这条竞态被关掉。
+- **对象存储**：`files` 行随 cascade 消失，SQL 看不见 S3 对象。`apps/server/src/services/adminConsole/userDeletion.ts` 在删除前快照该账号的 `files`，删除后只回收「已无其他 `files` 行引用」的对象及其 `global_files` 行；`DISABLE_REMOVE_GLOBAL_FILE=0` 时保留对象，与既有删除语义一致。对象回收失败只记日志，不回滚账号删除（残留对象可回收，半删账号不可接受）。
+- **接口**：`adminConsole.deleteUser({ userId })`，`adminProcedure`，返回 `{ deletedFiles, removedObjects }`。原生 `/api/auth/admin/*` 仍返回 404，删除入口只有控制台。
+- **文案**：`adminConsole` 命名空间新增 `users.delete.*`（en-US /zh-CN 同 PR 手写）。
+
+### 18.3 页面
+
+用户详情抽屉底部新增「危险操作」区：正常情况下要求输入 `username`（缺失时用邮箱）才能点亮红色「永久删除用户」，再经 `confirmModal` 二次确认；删除成功后关闭抽屉并刷新列表，不重新拉取已删除的用户详情。`admin` 目标与操作者自己只显示原因，不显示输入框。
+
+### 18.4 验收要点
+
+1. 删除普通用户后：列表不再出现；`users` / `auth_sessions` / `api_keys` / `files` 行均无；对象存储中其独占文件被回收。
+2. 同一邮箱可再次注册；SSO 工号再次登录会创建新用户（新 `users.id`）。
+3. 对自己与任意管理员（含已禁用）不出现输入框；直接调接口返回 `SELF_LOCKOUT` / `ADMIN_PROTECTED`。
+4. 普通用户直接调 `adminConsole.deleteUser` 返回 `ADMIN_REQUIRED`。
+
+### 18.5 上游合并检查点
+
+1. `UserModel.deleteUser` 的 `assertDeletable` 钩子必须保留在行锁之后、级联之前；上游重写该方法时先迁移该钩子再合并。
+2. `AGENT_TRANSFER_PENDING_OWNER_DELETE` 常量与守卫不能被吞掉，管理端靠它给出可读错误。
+3. `global_files.creator` 的 `ON DELETE SET NULL` 与 schema 里的 `notNull()` 漂移（实际库可空）—— 若上游补上 NOT NULL，必须先删 / 转移共享 `global_files` 行，否则删除曾上传过共享文件的账号会失败。
+4. 删除后不得新增墓碑或唯一约束，否则「重新注册 / SSO 重建」失效。

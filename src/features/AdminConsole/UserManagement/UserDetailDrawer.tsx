@@ -1,5 +1,6 @@
 'use client';
 
+import { ADMIN_CONSOLE_ERROR } from '@lobechat/types';
 import {
   Button,
   Center,
@@ -7,6 +8,7 @@ import {
   cssVar,
   Drawer,
   Flexbox,
+  Input,
   Select,
   Spin,
   Tag,
@@ -63,6 +65,7 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
   const [reason, setReason] = useState('');
   const [banDays, setBanDays] = useState(0);
   const [pending, setPending] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const refresh = async () => {
     await mutate();
@@ -148,6 +151,47 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
         ),
       t('users.action.saved'),
     );
+  };
+
+  /** What the admin has to retype: the login account, else the email. */
+  const deleteAccountLabel = user.username ?? user.email ?? user.id;
+  const canDelete = !isSelf && user.role !== 'admin';
+  const deleteConfirmed = deleteConfirmText.trim() === deleteAccountLabel;
+
+  const deleteErrorText = (error: unknown) => {
+    const message = (error as Error)?.message;
+    if (message === ADMIN_CONSOLE_ERROR.adminProtected) return t('users.delete.error.admin');
+    if (message === ADMIN_CONSOLE_ERROR.selfLockout) return t('users.error.selfLockout');
+    if (message === ADMIN_CONSOLE_ERROR.agentTransferPending) {
+      return t('users.delete.error.transferPending');
+    }
+    return t('users.error.generic');
+  };
+
+  const onDelete = () => {
+    if (!canDelete || !deleteConfirmed) return;
+
+    confirmModal({
+      cancelText: t('cancel', { ns: 'common' }),
+      content: t('users.delete.confirmContent', { name }),
+      okButtonProps: { danger: true },
+      okText: t('users.delete.confirmOk'),
+      title: t('users.delete.confirmTitle'),
+      onOk: async () => {
+        setPending(true);
+        try {
+          const result = await adminConsoleService.deleteUser(user.id);
+          toast.success(t('users.delete.success', { files: result.deletedFiles }));
+          // The row is gone: refresh the list, do not re-fetch the profile.
+          onChanged();
+          onClose();
+        } catch (error) {
+          toast.error(deleteErrorText(error));
+        } finally {
+          setPending(false);
+        }
+      },
+    });
   };
 
   return (
@@ -261,6 +305,31 @@ const DetailContent = memo<DetailContentProps>(({ userId, onClose, onChanged }) 
         <Button block disabled={pending} onClick={onRevokeSessions}>
           {t('users.detail.revokeSessions')}
         </Button>
+      </Flexbox>
+
+      <Flexbox gap={8}>
+        <Text fontSize={12} type={'secondary'} weight={500}>
+          {t('users.delete.section')}
+        </Text>
+        {!canDelete ? (
+          <Text fontSize={12} type={'secondary'}>
+            {t(isSelf ? 'users.delete.selfHint' : 'users.delete.adminHint')}
+          </Text>
+        ) : (
+          <>
+            <Text fontSize={12} type={'secondary'}>
+              {t('users.delete.hint', { account: deleteAccountLabel })}
+            </Text>
+            <Input
+              placeholder={deleteAccountLabel}
+              value={deleteConfirmText}
+              onChange={(event) => setDeleteConfirmText(event.target.value)}
+            />
+            <Button block danger disabled={pending || !deleteConfirmed} onClick={onDelete}>
+              {t('users.delete.button')}
+            </Button>
+          </>
+        )}
       </Flexbox>
 
       <Button block onClick={onClose}>
