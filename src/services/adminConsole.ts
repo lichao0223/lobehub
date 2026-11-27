@@ -9,6 +9,7 @@ import type {
   AdminDeviceListParams,
   AdminDeviceListResult,
   AdminDeviceStats,
+  AdminDeviceTarget,
   AdminRole,
   AdminUserDeleteResult,
   AdminUserDetail,
@@ -92,6 +93,20 @@ class AdminConsoleService {
   /** Header counters, independent of the current filter; no gateway call. */
   getDeviceStats = async (): Promise<AdminDeviceStats> =>
     lambdaClient.adminConsole.getDeviceStats.query();
+
+  // ── Device detail (mirrors `/settings/devices/:id`, owner principal) ──────
+
+  getDeviceOverview = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.getDeviceOverview.query(target);
+
+  getDeviceActivity = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.getDeviceActivity.query(target);
+
+  getDeviceAgents = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.getDeviceAgents.query(target);
+
+  listProjectDirectory = (target: AdminDeviceTarget & { relativePath: string; root: string }) =>
+    lambdaClient.adminConsole.listProjectDirectory.query(target);
 }
 
 export const adminConsoleService = new AdminConsoleService();

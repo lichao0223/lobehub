@@ -13,8 +13,9 @@ import {
   Spin,
   Text,
 } from '@lobehub/ui';
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
 
 import NavHeader from '@/features/NavHeader';
 import SettingContainer from '@/features/Setting/SettingContainer';
@@ -22,15 +23,13 @@ import { useDensityTokens } from '@/styles/density';
 import { sx } from '@/styles/sx';
 
 import { useAdminDevices, useAdminDeviceStats } from '../hooks/useAdminDevices';
-import DeviceDetailDrawer from './DeviceDetailDrawer';
 import DeviceRow from './DeviceRow';
 import { DEVICE_LIST_COLUMNS, styles } from './style';
 import { useDeviceFilters } from './useDeviceFilters';
-import type { DeviceSelection, OnlineFilter, ScopeFilter, VisibilityFilter } from './utils';
+import type { OnlineFilter, ScopeFilter, VisibilityFilter } from './utils';
 import {
   buildDeviceListParams,
   deviceRowKey,
-  deviceSelection,
   hasActiveDeviceFilters,
   isDevicePagePartial,
   PAGE_SIZE,
@@ -48,10 +47,7 @@ StatItem.displayName = 'AdminDeviceStatItem';
 const Devices = memo(() => {
   const { t } = useTranslation('adminConsole');
   const tokens = useDensityTokens();
-
-  // The same deviceId can exist in two pools, so the open row is identified by
-  // the pair, not the id alone.
-  const [selectedDevice, setSelectedDevice] = useState<DeviceSelection | null>(null);
+  const navigate = useNavigate();
 
   const {
     filters,
@@ -80,7 +76,12 @@ const Devices = memo(() => {
   const pagePartial = isDevicePagePartial(filters, items.length, total);
 
   const handleSelect = (device: AdminDeviceSummary) => {
-    setSelectedDevice(deviceSelection(device));
+    // The same deviceId can exist in two pools, so the row is addressed by the
+    // pair as well; the detail page reads both from the query string.
+    const params = new URLSearchParams();
+    params.set('ownerId', device.owner.userId);
+    if (device.workspace?.workspaceId) params.set('workspaceId', device.workspace.workspaceId);
+    navigate(`/admin/devices/${encodeURIComponent(device.deviceId)}?${params.toString()}`);
   };
 
   return (
@@ -219,12 +220,6 @@ const Devices = memo(() => {
           )}
         </Flexbox>
       </SettingContainer>
-      <DeviceDetailDrawer
-        selected={selectedDevice}
-        onClose={() => {
-          setSelectedDevice(null);
-        }}
-      />
     </>
   );
 });

@@ -321,6 +321,18 @@ export const ADMIN_CONSOLE_ERROR = {
 export type AdminDeviceScope = 'personal' | 'workspace';
 
 /**
+ * Row address of one device, used by every admin detail read.
+ *
+ * `ownerId` / `workspaceId` only disambiguate WHICH row is addressed — the read
+ * principal is derived from that row on the server, never from this input.
+ */
+export interface AdminDeviceTarget {
+  deviceId: string;
+  ownerId?: string | null;
+  workspaceId?: string | null;
+}
+
+/**
  * Three-state presence. `unknown` is a first-class answer, not a synonym for
  * `offline`: it means the gateway was not configured or the probe failed, and
  * the page must render it as "unknown" rather than inventing an offline state.
