@@ -145,6 +145,9 @@ export default {
   'devices.detail.cpuUsage': 'CPU usage',
   'devices.detail.memoryUsage': 'Memory usage',
   'devices.detail.diskUsage': 'Disk usage',
+  'devices.detail.loadUsage': 'Load average',
+  'devices.detail.metricsUnavailable':
+    'No live metrics: the device is offline, or it is a managed cloud device that cannot be read live.',
   'devices.detail.runningTopics': 'Running topics',
   'devices.detail.boundAgents': 'Bound agents',
   'devices.detail.emptyTopics': 'No topic is running on this device.',

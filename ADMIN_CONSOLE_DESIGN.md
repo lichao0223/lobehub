@@ -987,3 +987,15 @@ P1 只交付用户管理：`/admin` 用户列表、搜索、详情、禁用 / �
 - **撤销权**：成员侧（含工作区 owner、登记人）对 admin 共享行的 `removeWorkspaceDevice`、`setWorkspaceDeviceVisibility`、重新共享覆盖一律 `FORBIDDEN`；只有控制台能撤销。
 - **幂等与错误**：已共享直接返回 `alreadyShared`（不再触碰设备）；成员已登记同机器 → `CONFLICT WORKSPACE_DEVICE_EXISTS`；离线 → `PRECONDITION_FAILED`；managed cloud 设备拒绝。
 - **成员体验**：工作区成员可派发 Agent 任务、浏览文件、开终端，与个人设备一致；个人端设备卡片与详情只展示「由管理员共享」，不提供移除 / 可见性入口。
+
+### 17.10 详情概览与个人端对齐（2026-11-27）
+
+首版概览只做了「字段罗列」：CPU / 内存 / 磁盘直接打印网关浮点（`26.87555344066099%`），没有趋势图，卡片样式也与个人端 `/settings/devices/:id` 差一截。现在概览按个人端的结构与读数重做：
+
+- **读数取整**：`Overview/format.ts` 的 `formatPercent` 统一 `Math.round`（与个人端一致），阈值 80% / 95% 决定正常 / 偏高 / 过高配色；负载按核数折算、单独用 100% / 200% 阈值。
+- **卡片**：`Overview/cards.tsx` 提供 `DetailCard`（浅底标题栏）/ `InfoRow`（带图标行）/ `StatCard`（大号读数 + 绝对用量 + 分段进度条），运行信息、规格信息、CPU / 内存 / 负载 / 磁盘与运行话题、绑定 Agent 全部改用同一套卡片。
+- **趋势图**：`Overview/Health.tsx` 用 `@lobehub/charts` 的 `Tracker` + `AreaChart` 画出 12 小时状态条与 CPU / 内存 / 负载曲线，图例、空态、加载、失败（离线 /managed cloud）各有明确文案。
+- **边界不变**：CUST-010 仍不 import `@/features/DeviceManager`。`Overview/timeline.ts` 是 `DeviceHealth/buildHealthTimeline.ts` 的**移植副本**（纯逻辑，带单测）；上游改个人端时间线时把改动搬过来，不要改成跨 feature 引用。
+- **数据来源**：全部来自 `adminConsole.getDeviceOverview`（以持有人为主体）。设备离线或 managed cloud 时概览显示「暂无实时指标」，而不是整页报错；已有缓存数据时刷新失败继续显示旧图。
+- **文案**：管理台自己的标签仍走 `adminConsole` 命名空间；运行状况图例 / 状态 / 单位（`devices.health.*`、`devices.detail.cores`）借用上游 `setting` 命名空间的既有键，与 `CHANNEL_LABEL_KEYS` 同理，不新增翻译。
+- **已知待补**：概览的真机截图证据仍需在部署环境补（见 CUSTOMIZATIONS.md CUST-010 状态）。
