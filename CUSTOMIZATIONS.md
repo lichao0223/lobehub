@@ -14,7 +14,7 @@
 | CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                                | 下方列出的五个 `.github/workflows/` 文件                                                                                                                                                                                                       | 历史已有                                                                                                                                                                          |
 | CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览         | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md)                                                                                                                                              | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                                                                                                                        |
 | CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                                    | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                                                                   | 本次新增；需要 Fork 自己的 npm Token                                                                                                                                              |
-| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                                 | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                                                        | 开发中；单测已交付，待与真实认证中心联调                                                                                                                                          |
+| CUST-007 | 统一认证平台 SSO_TICKET 接入        | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                                 | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                                                        | 开发中；单测已交付，待与真实认证中心联调                                                                                                                                          |
 | CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话 / 物理删除用户）；P2 模型服务（Tellhow 内置厂商） | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                                                                   | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24）                                                                                                                     |
 | CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                                 | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)                                                  | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）                                                                                                                                   |
 | CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态         | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)                                  | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补                                                                                                     |
@@ -74,7 +74,7 @@
 
 ## CUST-005：TFS
 
-完整功能、文件、配置、安全边界及实测记录见 [TFS\_CUSTOMIZATION.md](TFS_CUSTOMIZATION.md)。合并时至少保持：
+完整功能、文件、配置、安全边界及实测记录见 [TFS_CUSTOMIZATION.md](TFS_CUSTOMIZATION.md)。合并时至少保持：
 
 1. 独立服务、RPC、前端 service /store/ UI 模块与共享类型；既有项目 / 环境表单中的接点和 en-US /zh-CN 文案。
 2. 每位用户一个个人 TFS 身份，同一外部身份也只能绑定一位用户；身份由服务端确认并经既有 KeyVault 加密，不复用他人凭据。
@@ -111,7 +111,7 @@
 
 ## CUST-008：管理员控制台（P1 已交付，P2 进行中）
 
-完整方案、数据模型、侵入清单与实施偏差见 [ADMIN\_CONSOLE\_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。P1 分支：`feat/admin-console-p1`（2026-11-23）。验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8/8 passed）。
+完整方案、数据模型、侵入清单与实施偏差见 [ADMIN_CONSOLE_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。P1 分支：`feat/admin-console-p1`（2026-11-23）。验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8/8 passed）。
 
 ### P1 交付内容
 
@@ -127,7 +127,7 @@
 
 - 详情抽屉的「危险操作」区可永久删除普通账号：输入账号名确认 + 二次确认；自己与 `admin` 角色不可删除（`SELF_LOCKOUT` / `ADMIN_PROTECTED`）。
 - 删除走 `UserModel.deleteUser` 的上游级联（含 share 访客话题、个人频道、项目环境等），新增的 `assertDeletable` 钩子在行锁后复核角色；对象存储由 `apps/server/src/services/adminConsole/userDeletion.ts` 回收独占文件。
-- 无墓碑、无软删除：邮箱 / SSO 身份释放，可重新注册或单点登录重建账号。细节与合并检查点见 [ADMIN\_CONSOLE\_DESIGN.md §18](ADMIN_CONSOLE_DESIGN.md#18-cust-008-p1-追加物理删除用户2026-11-26)。
+- 无墓碑、无软删除：邮箱 / SSO 身份释放，可重新注册或单点登录重建账号。细节与合并检查点见 [ADMIN_CONSOLE_DESIGN.md §18](ADMIN_CONSOLE_DESIGN.md#18-cust-008-p1-追加物理删除用户2026-11-26)。
 
 ### 共享文件改动（§8.2）
 
@@ -203,7 +203,7 @@
 
 ## CUST-009：管理员统一实验室（Labs）开关
 
-设计与三道闸门见 [ADMIN\_CONSOLE\_DESIGN.md §16](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)。核心约束：**实验室开关必须挂在 `users.preference.lab` 链上，不能另建 feature flags 清单**，否则上游新增 lab 时本 Fork 需要维护第二份列表，自动跟随就断了。
+设计与三道闸门见 [ADMIN_CONSOLE_DESIGN.md §16](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)。核心约束：**实验室开关必须挂在 `users.preference.lab` 链上，不能另建 feature flags 清单**，否则上游新增 lab 时本 Fork 需要维护第二份列表，自动跟随就断了。
 
 ### 功能与入口
 
@@ -294,7 +294,7 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 ## CUST-010：管理控制台设备总览（只读，跨用户）
 
-设计与偏差见 [ADMIN\_CONSOLE\_DESIGN.md §17](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)。核心语义：这是**机器台账 + 详情复刻**。列表仍是机器台账（谁有一台什么设备、在不在线），**不做 owner 过滤**，管理员能看到全库所有行（含他人个人设备、所有工作区设备含 `private`）；**列表不返回任何文件系统路径**。
+设计与偏差见 [ADMIN_CONSOLE_DESIGN.md §17](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)。核心语义：这是**机器台账 + 详情复刻**。列表仍是机器台账（谁有一台什么设备、在不在线），**不做 owner 过滤**，管理员能看到全库所有行（含他人个人设备、所有工作区设备含 `private`）；**列表不返回任何文件系统路径**。
 
 详情页（`/admin/devices/:deviceId`，2026-11-27 起）改为对齐个人端 `/settings/devices/:id`：整页、Tabs「概览 / 文件目录 / Agent 运行时」，读操作一律**以设备持有人为主体**在服务端解析（客户端传入的 `ownerId` 只用于定位行，不构成越权依据），因此管理员能看到该设备的工作目录、运行中的话题、绑定的 Agent、目录与文件预览、Agent 运行时与终端。这推翻了原先「管理员看不到设备在哪个目录干活」的边界；`devices.metadata` 仍逐键投影，`recent_cwds` 仍不读。
 
@@ -402,7 +402,7 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 
 一句话：管理员在 `/admin` 模型服务里设的 `defaults`（chat /title/verify/embedding）是**全站默认模型**—— 存量用户、新注册、SSO 首次登录，以及标题生成 / 记忆向量 / 任务验收等后台任务，只要用户没自选，都按它解析；用户自选过则保留自选。
 
-完整语义（映射表、自选判定、逐槽位兜底顺序、不可用模型回退、备选口径）见 [ADMIN\_CONSOLE\_DESIGN.md §7.1](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)；产品面描述见同文档 §5.5。
+完整语义（映射表、自选判定、逐槽位兜底顺序、不可用模型回退、备选口径）见 [ADMIN_CONSOLE_DESIGN.md §7.1](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)；产品面描述见同文档 §5.5。
 
 ### 功能与语义
 

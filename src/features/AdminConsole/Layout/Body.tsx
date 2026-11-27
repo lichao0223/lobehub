@@ -1,7 +1,7 @@
 'use client';
 
 import { Flexbox } from '@lobehub/ui';
-import { FlaskConical, MonitorSmartphone, Server, Users } from 'lucide-react';
+import { Building2, FlaskConical, MonitorSmartphone, Server, Users } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -12,6 +12,7 @@ import { useActiveLocation } from '@/hooks/useActiveLocation';
 
 const USERS_PATH = '/admin';
 const DEVICES_PATH = '/admin/devices';
+const WORKSPACES_PATH = '/admin/workspaces';
 const MODEL_SERVICE_PATH = '/admin/model-service';
 const LABS_PATH = '/admin/labs';
 
@@ -21,6 +22,7 @@ const Body = memo(() => {
 
   const usersActive = pathname === USERS_PATH || pathname.startsWith(`${USERS_PATH}/users`);
   const devicesActive = pathname.startsWith(DEVICES_PATH);
+  const workspacesActive = pathname.startsWith(WORKSPACES_PATH);
   const modelServiceActive = pathname.startsWith(MODEL_SERVICE_PATH);
   const labsActive = pathname.startsWith(LABS_PATH);
 
@@ -33,6 +35,9 @@ const Body = memo(() => {
         </Link>
         <Link to={DEVICES_PATH}>
           <NavItem active={devicesActive} icon={MonitorSmartphone} title={t('nav.devices')} />
+        </Link>
+        <Link to={WORKSPACES_PATH}>
+          <NavItem active={workspacesActive} icon={Building2} title={t('nav.workspaces')} />
         </Link>
         <Link to={MODEL_SERVICE_PATH}>
           <NavItem active={modelServiceActive} icon={Server} title={t('nav.modelService')} />

@@ -248,6 +248,34 @@ export interface AdminUserDetail extends AdminUserSummary {
   emailVerified: boolean;
 }
 
+export interface AdminWorkspaceListItem {
+  createdAt: Date;
+  deviceCount: number;
+  id: string;
+  memberCount: number;
+  name: string;
+  ownerEmail: string | null;
+  ownerId: string;
+  ownerUsername: string | null;
+  slug: string;
+}
+
+export interface AdminWorkspaceListResult {
+  items: AdminWorkspaceListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface AdminWorkspaceMember {
+  email: string | null;
+  fullName: string | null;
+  joinedAt: Date | null;
+  role: 'admin' | 'member' | 'owner';
+  userId: string;
+  username: string | null;
+}
+
 export interface AdminUserListParams {
   page?: number;
   pageSize?: number;

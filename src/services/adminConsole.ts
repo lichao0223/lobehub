@@ -107,6 +107,32 @@ class AdminConsoleService {
 
   listProjectDirectory = (target: AdminDeviceTarget & { relativePath: string; root: string }) =>
     lambdaClient.adminConsole.listProjectDirectory.query(target);
+
+  // ── Workspaces (the "people group" carrier for device sharing) ────────────
+
+  listWorkspaces = (params: { page?: number; pageSize?: number; q?: string } = {}) =>
+    lambdaClient.adminConsole.listWorkspaces.query(params);
+
+  listWorkspaceMembers = (workspaceId: string) =>
+    lambdaClient.adminConsole.listWorkspaceMembers.query({ workspaceId });
+
+  createWorkspace = (input: { name: string; slug?: string }) =>
+    lambdaClient.adminConsole.createWorkspace.mutate(input);
+
+  addWorkspaceMember = (input: {
+    identity: string;
+    role: 'admin' | 'member';
+    workspaceId: string;
+  }) => lambdaClient.adminConsole.addWorkspaceMember.mutate(input);
+
+  updateWorkspaceMemberRole = (input: {
+    role: 'admin' | 'member';
+    userId: string;
+    workspaceId: string;
+  }) => lambdaClient.adminConsole.updateWorkspaceMemberRole.mutate(input);
+
+  removeWorkspaceMember = (input: { userId: string; workspaceId: string }) =>
+    lambdaClient.adminConsole.removeWorkspaceMember.mutate(input);
 }
 
 export const adminConsoleService = new AdminConsoleService();

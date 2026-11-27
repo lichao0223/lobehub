@@ -7,6 +7,7 @@ import { adminDeviceProcedures } from './devices';
 import { adminLabsProcedures } from './labs';
 import { adminModelServiceProcedures } from './modelService';
 import { adminUserProcedures } from './users';
+import { adminWorkspaceProcedures } from './workspaces';
 
 /**
  * Admin console (CUST-008).
@@ -23,6 +24,7 @@ export const adminConsoleRouter = router({
   // Detail reads run as the device OWNER, so they live beside the inventory
   // procedures but keep their own file (see `deviceDetail.ts`).
   ...adminDeviceDetailProcedures,
+  ...adminWorkspaceProcedures,
 
   whoami: authedProcedure
     .use(serverDatabase)
