@@ -219,7 +219,7 @@
 - **共享**：`adminConsole.{listDeviceShares,shareDeviceToWorkspace,revokeDeviceShare}`，写入 `share_origin='admin'` + `shared_by_user_id`；强制 `public`；以持有人主体 `enrollWorkspace`，注册失败回滚连接。
 - **成员侧守卫**：`apps/server/src/routers/lambda/device/workspace.ts` 的 `assertNotAdminShare` 拦截 `removeWorkspaceDevice` / `setWorkspaceDeviceVisibility` / 重新共享覆盖，工作区 owner 也不例外；个人端卡片与详情页只显示「由管理员共享」标签。
 - **合并注意**：`device/registry.ts` 的设备列表新增 `sharedByAdmin`，`DeviceWorkspaceShare` 新增 `adminShared`；在上游改这两个文件的 PR 上合并时保持该字段。
-- **迁移合并注意**：`9002_device_admin_share.sql` 是 fork 对**上游表** `devices` 的 ALTER。`db:fork:reconcile` 只把 `FORK_TABLES` 当作 fork 资产，会用「上游最新快照 + fork 表」重建 9002 快照，从而丢掉这两列。合并上游后如需跑 `db:fork:reconcile`，跑完必须把 `share_origin` / `shared_by_user_id` 及其外键补回 `meta/9002_snapshot.json`；运行时以 SQL 文件为准。
+- **迁移合并注意**：`9002_device_admin_share.sql` 是 fork 对**上游表** `devices` 的 ALTER。`scripts/fork/reconcileMigrations.ts` 的 `FORK_TABLE_DELTAS` 已记录这两列与外键，重建 9002 快照时会叠加，`bun run db:fork:reconcile --check` 可通过。若以后 fork 再改上游表，必须在该常量里补同样的结构增量；运行时仍以 SQL 文件为准。
 
 ### 配置与数据来源
 
@@ -336,7 +336,7 @@ Fork 自有新增（21 个文件，不产生合并冲突面）：`packages/types
 - **共享**：`adminConsole.{listDeviceShares,shareDeviceToWorkspace,revokeDeviceShare}`，写入 `share_origin='admin'` + `shared_by_user_id`；强制 `public`；以持有人主体 `enrollWorkspace`，注册失败回滚连接。
 - **成员侧守卫**：`apps/server/src/routers/lambda/device/workspace.ts` 的 `assertNotAdminShare` 拦截 `removeWorkspaceDevice` / `setWorkspaceDeviceVisibility` / 重新共享覆盖，工作区 owner 也不例外；个人端卡片与详情页只显示「由管理员共享」标签。
 - **合并注意**：`device/registry.ts` 的设备列表新增 `sharedByAdmin`，`DeviceWorkspaceShare` 新增 `adminShared`；在上游改这两个文件的 PR 上合并时保持该字段。
-- **迁移合并注意**：`9002_device_admin_share.sql` 是 fork 对**上游表** `devices` 的 ALTER。`db:fork:reconcile` 只把 `FORK_TABLES` 当作 fork 资产，会用「上游最新快照 + fork 表」重建 9002 快照，从而丢掉这两列。合并上游后如需跑 `db:fork:reconcile`，跑完必须把 `share_origin` / `shared_by_user_id` 及其外键补回 `meta/9002_snapshot.json`；运行时以 SQL 文件为准。
+- **迁移合并注意**：`9002_device_admin_share.sql` 是 fork 对**上游表** `devices` 的 ALTER。`scripts/fork/reconcileMigrations.ts` 的 `FORK_TABLE_DELTAS` 已记录这两列与外键，重建 9002 快照时会叠加，`bun run db:fork:reconcile --check` 可通过。若以后 fork 再改上游表，必须在该常量里补同样的结构增量；运行时仍以 SQL 文件为准。
 
 ### 配置与数据来源
 

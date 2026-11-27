@@ -29,6 +29,41 @@ const FORK_TABLES = ['public.deploy_resume_queue', 'public.admin_console_setting
 
 const SNAPSHOT_FILE = /^(\d+)_snapshot\.json$/;
 
+/**
+ * Fork 迁移对**上游表**的结构增量。`FORK_TABLES` 只能覆盖 fork 自有的整表，
+ * 但 CUST-010 的 `9002_device_admin_share.sql` 给 `devices` 加了两列，重建快照时
+ * 必须把这份增量叠回去，否则 `db:generate` 会把它们当成“未同步的变更”。
+ *
+ * 这里只描述结构（列/外键），SQL 仍以 `migrations/9002_*.sql` 为准。
+ */
+const FORK_TABLE_DELTAS: Record<
+  string,
+  { columns?: Record<string, unknown>; foreignKeys?: Record<string, unknown> }
+> = {
+  'public.devices': {
+    columns: {
+      share_origin: { name: 'share_origin', type: 'text', primaryKey: false, notNull: false },
+      shared_by_user_id: {
+        name: 'shared_by_user_id',
+        type: 'text',
+        primaryKey: false,
+        notNull: false,
+      },
+    },
+    foreignKeys: {
+      devices_shared_by_user_id_users_id_fk: {
+        name: 'devices_shared_by_user_id_users_id_fk',
+        tableFrom: 'devices',
+        tableTo: 'users',
+        columnsFrom: ['shared_by_user_id'],
+        columnsTo: ['id'],
+        onDelete: 'set null',
+        onUpdate: 'no action',
+      },
+    },
+  },
+};
+
 interface JournalEntry {
   breakpoints: boolean;
   idx: number;
@@ -137,6 +172,14 @@ const buildSnapshot = (upstream: Snapshot, fork: Snapshot): Snapshot => {
 
   for (const table of FORK_TABLES) {
     tables[table] = fork.tables[table];
+  }
+
+  for (const [table, delta] of Object.entries(FORK_TABLE_DELTAS)) {
+    const target = tables[table] as
+      { columns?: Record<string, unknown>; foreignKeys?: Record<string, unknown> } | undefined;
+    if (!target) continue;
+    target.columns = { ...target.columns, ...delta.columns };
+    target.foreignKeys = { ...target.foreignKeys, ...delta.foreignKeys };
   }
 
   if (forkMeta.tables) meta.tables = { ...meta.tables, ...pick(forkMeta.tables, FORK_TABLES) };
