@@ -1071,6 +1071,8 @@ export default {
   'devices.share.detailLabel': 'Shared to workspaces',
   'devices.share.done': 'Done',
   'devices.share.empty': "You haven't joined any workspace yet.",
+  'devices.share.emptyHint':
+    'Ask an administrator to create a workspace in Admin Console → Workspaces and add you to it.',
   'devices.share.goToTarget': 'Go to {{name}}',
   'devices.share.menu': 'Share to Workspace…',
   'devices.share.modalDesc':

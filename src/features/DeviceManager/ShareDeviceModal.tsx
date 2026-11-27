@@ -242,9 +242,12 @@ const ShareDeviceContent = memo<ShareDeviceContentProps>(({ device }) => {
         </Text>
 
         {workspaces.length === 0 ? (
-          <Flexbox align={'center'} justify={'center'} paddingBlock={24}>
+          <Flexbox align={'center'} gap={4} justify={'center'} paddingBlock={24}>
             <Text fontSize={12} type={'secondary'}>
               {tSetting('devices.share.empty')}
+            </Text>
+            <Text fontSize={12} style={{ textAlign: 'center' }} type={'secondary'}>
+              {tSetting('devices.share.emptyHint')}
             </Text>
           </Flexbox>
         ) : (

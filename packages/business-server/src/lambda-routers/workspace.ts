@@ -12,6 +12,8 @@ import {
   wsCompatProcedure,
   wsProcedure,
 } from '@/business/server/trpc-middlewares/workspaceAuth';
+import { getServerDB } from '@/database/core/db-adaptor';
+import { WorkspaceModel } from '@/database/models/workspace';
 import { authedProcedure, router } from '@/libs/trpc/lambda';
 
 /**
@@ -97,7 +99,17 @@ export const workspaceRouter = router({
     .input(workspaceStatisticsInput)
     .query((): WorkspaceStatistics | null => null),
 
-  list: authedProcedure.query(async (): Promise<WorkspaceMembershipSummary[]> => []),
+  /**
+   * Workspaces the caller holds a live membership in. Self-hosted deployments
+   * create real workspace/member rows through the admin console, so this reads
+   * them back for the device-share picker and workspace-aware navigation. It is
+   * deliberately membership-scoped, not admin-scoped: a plain member sees the
+   * workspaces they were added to, and a removed member stops seeing them.
+   */
+  list: authedProcedure.query(async ({ ctx }): Promise<WorkspaceMembershipSummary[]> => {
+    const db = await getServerDB();
+    return new WorkspaceModel(db, ctx.userId).listUserWorkspaces();
+  }),
 
   update: wsAdminProcedure
     .input(

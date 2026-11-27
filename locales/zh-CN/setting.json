@@ -758,6 +758,7 @@
   "devices.share.detailLabel": "已共享到的工作区",
   "devices.share.done": "完成",
   "devices.share.empty": "您还没有加入任何工作区。",
+  "devices.share.emptyHint": "请联系管理员在 管理控制台 → 工作区 创建并把你加入。",
   "devices.share.failedRetry": "无法将设备分享到 {{name}}，请确认设备在线后重试。",
   "devices.share.goToTarget": "前往 {{name}}",
   "devices.share.menu": "共享到工作区…",
