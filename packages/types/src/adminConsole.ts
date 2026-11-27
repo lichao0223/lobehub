@@ -1,5 +1,6 @@
 import type { AiModelType } from 'model-bank';
 
+import type { WorkingDirEntry } from './device';
 import type { ManagedDevicePhase } from './managedDevice';
 
 /**
@@ -247,6 +248,34 @@ export interface AdminUserDetail extends AdminUserSummary {
   emailVerified: boolean;
 }
 
+export interface AdminWorkspaceListItem {
+  createdAt: Date;
+  deviceCount: number;
+  id: string;
+  memberCount: number;
+  name: string;
+  ownerEmail: string | null;
+  ownerId: string;
+  ownerUsername: string | null;
+  slug: string;
+}
+
+export interface AdminWorkspaceListResult {
+  items: AdminWorkspaceListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface AdminWorkspaceMember {
+  email: string | null;
+  fullName: string | null;
+  joinedAt: Date | null;
+  role: 'admin' | 'member' | 'owner';
+  userId: string;
+  username: string | null;
+}
+
 export interface AdminUserListParams {
   page?: number;
   pageSize?: number;
@@ -318,6 +347,18 @@ export const ADMIN_CONSOLE_ERROR = {
 
 /** Which principal owns a device row (`devices.workspace_id` is null or not). */
 export type AdminDeviceScope = 'personal' | 'workspace';
+
+/**
+ * Row address of one device, used by every admin detail read.
+ *
+ * `ownerId` / `workspaceId` only disambiguate WHICH row is addressed — the read
+ * principal is derived from that row on the server, never from this input.
+ */
+export interface AdminDeviceTarget {
+  deviceId: string;
+  ownerId?: string | null;
+  workspaceId?: string | null;
+}
 
 /**
  * Three-state presence. `unknown` is a first-class answer, not a synonym for
@@ -396,17 +437,22 @@ export interface AdminDeviceSummary {
 }
 
 /**
- * Device detail, with the admin privacy whitelist fixed at the type level.
+ * Device detail, with the admin privacy boundary fixed at the type level.
  *
- * This shape deliberately has NO `defaultCwd`, `workingDirs` or `recentCwds`:
- * filesystem paths from another user's machine are not an administrator's
- * business, and a field that is absent from the type cannot leak through a
- * later implementation that "just returns the row".
+ * The boundary is intentionally asymmetric:
+ * - The LIST (`AdminDeviceSummary`) carries no filesystem path and no raw
+ *   metadata: browsing the whole deployment must not sweep every owner's paths
+ *   into one response.
+ * - The DETAIL (`AdminDeviceDetail`) DOES carry `defaultCwd` and `workingDirs`,
+ *   because the console detail page mirrors `/settings/devices/:id`: an
+ *   administrator sees what the owner sees, including the directories work
+ *   runs in. This supersedes the original CUST-010 "read-only ledger, paths
+ *   never leave the database" rule (see CUSTOMIZATIONS.md).
  *
- * `devices.metadata` is likewise never returned wholesale. Only the known keys
- * listed in {@link ADMIN_DEVICE_DETAIL_METADATA_KEYS} are projected, each as
- * its own top-level field (`appVersion`, `cliVersion`); an unknown metadata key
- * has no field and therefore no way out.
+ * `devices.metadata` is never returned wholesale. Only the known keys listed in
+ * {@link ADMIN_DEVICE_DETAIL_METADATA_KEYS} are projected, each as its own
+ * top-level field (`appVersion`, `cliVersion`); an unknown metadata key has no
+ * field and therefore no way out.
  */
 export interface AdminDeviceDetail extends AdminDeviceSummary {
   /** `metadata.appVersion` of the last connect; absent for CLI/ghost rows. */
@@ -414,10 +460,14 @@ export interface AdminDeviceDetail extends AdminDeviceSummary {
   channels: AdminDeviceChannel[];
   /** `metadata.cliVersion` of the last connect; absent for desktop rows. */
   cliVersion?: string;
+  /** Default working directory of the machine's last connect; `null` when unset. */
+  defaultCwd: string | null;
   /** Whether the device carries a fixed agent binding (never the binding itself). */
   hasFixedAgentBinding?: boolean;
   /** Managed cloud devices only; absent for regular machines. */
   managedPhase?: ManagedDevicePhase;
+  /** Directories work may run in, most recent first (detail reads only). */
+  workingDirs: WorkingDirEntry[];
 }
 
 /** `metadata` keys the detail projection may read; nothing else is exposed. */

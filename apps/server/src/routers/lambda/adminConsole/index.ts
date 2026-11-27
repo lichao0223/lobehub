@@ -2,10 +2,13 @@ import { resolveAdminState } from '@/business/server/adminConsole/permissions';
 import { authedProcedure, router } from '@/libs/trpc/lambda';
 import { serverDatabase } from '@/libs/trpc/lambda/middleware';
 
+import { adminDeviceDetailProcedures } from './deviceDetail';
 import { adminDeviceProcedures } from './devices';
+import { adminDeviceShareProcedures } from './deviceShare';
 import { adminLabsProcedures } from './labs';
 import { adminModelServiceProcedures } from './modelService';
 import { adminUserProcedures } from './users';
+import { adminWorkspaceProcedures } from './workspaces';
 
 /**
  * Admin console (CUST-008).
@@ -19,6 +22,11 @@ export const adminConsoleRouter = router({
   ...adminModelServiceProcedures,
   ...adminLabsProcedures,
   ...adminDeviceProcedures,
+  // Detail reads run as the device OWNER, so they live beside the inventory
+  // procedures but keep their own file (see `deviceDetail.ts`).
+  ...adminDeviceDetailProcedures,
+  ...adminDeviceShareProcedures,
+  ...adminWorkspaceProcedures,
 
   whoami: authedProcedure
     .use(serverDatabase)

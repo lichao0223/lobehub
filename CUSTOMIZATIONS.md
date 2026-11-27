@@ -14,10 +14,10 @@
 | CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                                | 下方列出的五个 `.github/workflows/` 文件                                                                                                                                                                                                       | 历史已有                                                                                                                                                                          |
 | CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览         | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md)                                                                                                                                              | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                                                                                                                        |
 | CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                                    | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                                                                   | 本次新增；需要 Fork 自己的 npm Token                                                                                                                                              |
-| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                                 | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                                                        | 开发中；单测已交付，待与真实认证中心联调                                                                                                                                          |
+| CUST-007 | 统一认证平台 SSO_TICKET 接入        | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                                 | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                                                        | 开发中；单测已交付，待与真实认证中心联调                                                                                                                                          |
 | CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话 / 物理删除用户）；P2 模型服务（Tellhow 内置厂商） | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                                                                   | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24）                                                                                                                     |
 | CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                                 | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)                                                  | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）                                                                                                                                   |
-| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态         | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)                                  | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补                                                                                                     |
+| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情整页 + 在线三态         | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)                                  | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补                                                                                                     |
 | CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat /title/verify/embedding 成为全站默认模型；新用户厂商开关默认只开 TellhowAI   | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、[厂商默认开关](ADMIN_CONSOLE_DESIGN.md#72-厂商默认开关cust-011-c)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/modelService.ts` | 已验收并合入 canary（2026-11-27）：存量 / 新注册 / SSO 均生效，首轮会话模型已跟随管理员主模型（T-100），管理端默认值选择器只列可生效模型（T-102）；记忆与验收的运行时证据待 T-101 |
 
 ## CUST-001：自定义镜像
@@ -74,7 +74,7 @@
 
 ## CUST-005：TFS
 
-完整功能、文件、配置、安全边界及实测记录见 [TFS\_CUSTOMIZATION.md](TFS_CUSTOMIZATION.md)。合并时至少保持：
+完整功能、文件、配置、安全边界及实测记录见 [TFS_CUSTOMIZATION.md](TFS_CUSTOMIZATION.md)。合并时至少保持：
 
 1. 独立服务、RPC、前端 service /store/ UI 模块与共享类型；既有项目 / 环境表单中的接点和 en-US /zh-CN 文案。
 2. 每位用户一个个人 TFS 身份，同一外部身份也只能绑定一位用户；身份由服务端确认并经既有 KeyVault 加密，不复用他人凭据。
@@ -111,7 +111,7 @@
 
 ## CUST-008：管理员控制台（P1 已交付，P2 进行中）
 
-完整方案、数据模型、侵入清单与实施偏差见 [ADMIN\_CONSOLE\_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。P1 分支：`feat/admin-console-p1`（2026-11-23）。验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8/8 passed）。
+完整方案、数据模型、侵入清单与实施偏差见 [ADMIN_CONSOLE_DESIGN.md](ADMIN_CONSOLE_DESIGN.md)；可点击原型见 `prototypes/admin-console/index.html`。P1 分支：`feat/admin-console-p1`（2026-11-23）。验收报告：<http://192.168.14.51:3210/acceptance/89de762f-0f6f-4794-8b27-1eefd95cd09a> （8/8 passed）。
 
 ### P1 交付内容
 
@@ -127,7 +127,7 @@
 
 - 详情抽屉的「危险操作」区可永久删除普通账号：输入账号名确认 + 二次确认；自己与 `admin` 角色不可删除（`SELF_LOCKOUT` / `ADMIN_PROTECTED`）。
 - 删除走 `UserModel.deleteUser` 的上游级联（含 share 访客话题、个人频道、项目环境等），新增的 `assertDeletable` 钩子在行锁后复核角色；对象存储由 `apps/server/src/services/adminConsole/userDeletion.ts` 回收独占文件。
-- 无墓碑、无软删除：邮箱 / SSO 身份释放，可重新注册或单点登录重建账号。细节与合并检查点见 [ADMIN\_CONSOLE\_DESIGN.md §18](ADMIN_CONSOLE_DESIGN.md#18-cust-008-p1-追加物理删除用户2026-11-26)。
+- 无墓碑、无软删除：邮箱 / SSO 身份释放，可重新注册或单点登录重建账号。细节与合并检查点见 [ADMIN_CONSOLE_DESIGN.md §18](ADMIN_CONSOLE_DESIGN.md#18-cust-008-p1-追加物理删除用户2026-11-26)。
 
 ### 共享文件改动（§8.2）
 
@@ -203,7 +203,7 @@
 
 ## CUST-009：管理员统一实验室（Labs）开关
 
-设计与三道闸门见 [ADMIN\_CONSOLE\_DESIGN.md §16](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)。核心约束：**实验室开关必须挂在 `users.preference.lab` 链上，不能另建 feature flags 清单**，否则上游新增 lab 时本 Fork 需要维护第二份列表，自动跟随就断了。
+设计与三道闸门见 [ADMIN_CONSOLE_DESIGN.md §16](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)。核心约束：**实验室开关必须挂在 `users.preference.lab` 链上，不能另建 feature flags 清单**，否则上游新增 lab 时本 Fork 需要维护第二份列表，自动跟随就断了。
 
 ### 功能与入口
 
@@ -211,6 +211,14 @@
 - **普通用户**：`admin` 模式下设置侧栏没有「实验室」、设置搜索搜不到实验室项、直连 `/settings/labs` 回落到外观页；`user` 模式（默认，且未配置时也是它）与上游行为完全一致，个人 Labs 页可见可切。
 - **管理员自己**：仍可打开个人 Labs 页（`isAdmin`），但其 `preference.lab` 同样被部署开关覆盖 —— 读时覆盖对所有人生效，差别只在页面是否可见。
 - **语义**：admin 模式下未显式开启的 lab = 关，**不回落个人偏好**；保留 `mode: 'user'` 作为回滚阀。
+
+### 2026-11-27 增量：详情对齐 + 人群共享
+
+- **详情**：`/admin/devices/:deviceId` 整页，服务端 `adminConsole.{getDeviceOverview,getDeviceActivity,getDeviceAgents,getDeviceWorkingDirs,listProjectDirectory,statPath,getLocalFilePreview,createTerminalSession,readTerminal,writeTerminal,resizeTerminal}`，全部以设备持有人为主体；managed cloud 设备拒绝网关读取，离线返回空。
+- **人群载体**：`/admin/workspaces` 复用 `WorkspaceModel` / `WorkspaceMemberModel`，管理员创建工作区即为 owner；工作区是**单 owner**（`workspace_members_unique_active_owner_idx`），控制台只管理 `admin` / `member`，owner 只读。
+- **共享**：`adminConsole.{listDeviceShares,shareDeviceToWorkspace,revokeDeviceShare}`，写入 `share_origin='admin'` + `shared_by_user_id`；强制 `public`；以持有人主体 `enrollWorkspace`，注册失败回滚连接。
+- **成员侧守卫**：`apps/server/src/routers/lambda/device/workspace.ts` 的 `assertNotAdminShare` 拦截 `removeWorkspaceDevice` / `setWorkspaceDeviceVisibility` / 重新共享覆盖，工作区 owner 也不例外；个人端卡片与详情页只显示「由管理员共享」标签。
+- **合并注意**：`device/registry.ts` 的设备列表新增 `sharedByAdmin`，`DeviceWorkspaceShare` 新增 `adminShared`；在上游改这两个文件的 PR 上合并时保持该字段。
 
 ### 配置与数据来源
 
@@ -294,12 +302,14 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 ## CUST-010：管理控制台设备总览（只读，跨用户）
 
-设计与偏差见 [ADMIN\_CONSOLE\_DESIGN.md §17](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)。核心语义：这是**机器台账**（谁有一台什么设备、在不在线），不是个人设置设备页的复制品 ——**不做 owner 过滤**，管理员能看到全库所有行（含他人个人设备、所有工作区设备含 `private`）；但**看不到设备在哪个目录干活**。
+设计与偏差见 [ADMIN_CONSOLE_DESIGN.md §17](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)。核心语义：这是**机器台账 + 详情复刻**。列表仍是机器台账（谁有一台什么设备、在不在线），**不做 owner 过滤**，管理员能看到全库所有行（含他人个人设备、所有工作区设备含 `private`）；**列表不返回任何文件系统路径**。
+
+详情页（`/admin/devices/:deviceId`，2026-11-27 起）改为对齐个人端 `/settings/devices/:id`：整页、Tabs「概览 / 文件目录 / Agent 运行时」，读操作一律**以设备持有人为主体**在服务端解析（客户端传入的 `ownerId` 只用于定位行，不构成越权依据），因此管理员能看到该设备的工作目录、运行中的话题、绑定的 Agent、目录与文件预览、Agent 运行时与终端。这推翻了原先「管理员看不到设备在哪个目录干活」的边界；`devices.metadata` 仍逐键投影，`recent_cwds` 仍不读。
 
 ### 功能与入口
 
-- **管理员** `/admin/devices`（控制台侧栏「设备」，`MonitorSmartphone` 图标，正式导航项非隐藏暗门）：跨用户设备列表 + 顶部计数（总 / 个人 / 工作区 / 按平台 / 近 7 天活跃 / 工作区数）+ 筛选（范围 personal/workspace、平台、可见性 private/public、在线三态）+ 搜索（`q`，匹配 hostname / 用户名）+ 分页；行点击开详情抽屉（连接通道与连接时间、平台、版本、托管阶段、工作区、所有者、最近出现）。
-- **只读**：无删除、无改可见性、无改别名。跨用户写会绕过上游 `self-or-owner` 门，且 `devices` 是 upsert 语义（删掉下次连接自动回来）。
+- **管理员** `/admin/devices`（控制台侧栏「设备」，`MonitorSmartphone` 图标，正式导航项非隐藏暗门）：跨用户设备列表 + 顶部计数（总 / 个人 / 工作区 / 按平台 / 近 7 天活跃 / 工作区数）+ 筛选（范围 personal/workspace、平台、可见性 private/public、在线三态）+ 搜索（`q`，匹配 hostname / 用户名）+ 分页；行点击进入详情整页（概览 / 文件目录 / Agent 运行时，见下）。
+- **写操作仅限「共享」**：管理员可把在线个人设备共享到工作区（`public`）、撤销共享；不提供删除、改可见性、改别名。跨用户删除仍被拒绝，且 `devices` 是 upsert 语义（删掉下次连接自动回来）。
 - **普通用户**：无侧栏入口；三个 procedure 全部走 `adminProcedure`，非管理员返回 `FORBIDDEN ADMIN_REQUIRED`，无会话 401。
 
 ### 共享文件接点（上游文件，逐文件行数）
@@ -318,9 +328,17 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 Fork 自有新增（21 个文件，不产生合并冲突面）：`packages/types/src/adminConsole.device.test.ts`、`packages/locales/src/default/adminConsole.ts`、`locales/{en-US,zh-CN}/adminConsole.json`、`packages/database/src/models/__tests__/adminConsole.devices.test.ts`、`apps/server/src/routers/lambda/adminConsole/{devices.ts,devices.test.ts}`、`src/features/AdminConsole/Devices/{index,DeviceRow,DeviceDetailDrawer,PresenceBadge,platform,style}.tsx`+`{detail,utils,useDeviceFilters}.ts`+3 个测试、`src/features/AdminConsole/hooks/useAdminDevices.ts`、`src/routes/(main)/admin/devices/index.tsx`。Fork 自有修改（18 个，其中 16 个是 i18n 命名空间迁移的净零 / 负行改动）：`packages/types/src/adminConsole.ts`(+170)、`packages/database/src/models/adminConsole.ts`(+317/−3)、`src/services/adminConsole.ts`(+23)、`apps/server/src/routers/lambda/adminConsole/index.ts`(+2)、`src/features/AdminConsole/{route.tsx,Layout/Body.tsx,Layout/Header.tsx,Labs/index.tsx}`、`ModelService/*`(7)、`UserManagement/*`(3)。
 
+### 2026-11-27 增量：详情对齐 + 人群共享
+
+- **详情**：`/admin/devices/:deviceId` 整页，服务端 `adminConsole.{getDeviceOverview,getDeviceActivity,getDeviceAgents,getDeviceWorkingDirs,listProjectDirectory,statPath,getLocalFilePreview,createTerminalSession,readTerminal,writeTerminal,resizeTerminal}`，全部以设备持有人为主体；managed cloud 设备拒绝网关读取，离线返回空。
+- **人群载体**：`/admin/workspaces` 复用 `WorkspaceModel` / `WorkspaceMemberModel`，管理员创建工作区即为 owner；工作区是**单 owner**（`workspace_members_unique_active_owner_idx`），控制台只管理 `admin` / `member`，owner 只读。
+- **共享**：`adminConsole.{listDeviceShares,shareDeviceToWorkspace,revokeDeviceShare}`，写入 `share_origin='admin'` + `shared_by_user_id`；强制 `public`；以持有人主体 `enrollWorkspace`，注册失败回滚连接。
+- **成员侧守卫**：`apps/server/src/routers/lambda/device/workspace.ts` 的 `assertNotAdminShare` 拦截 `removeWorkspaceDevice` / `setWorkspaceDeviceVisibility` / 重新共享覆盖，工作区 owner 也不例外；个人端卡片与详情页只显示「由管理员共享」标签。
+- **合并注意**：`device/registry.ts` 的设备列表新增 `sharedByAdmin`，`DeviceWorkspaceShare` 新增 `adminShared`；在上游改这两个文件的 PR 上合并时保持该字段。
+
 ### 配置与数据来源
 
-- **零数据库迁移、零新表、零新索引**。读的是既有 `devices` 表，经 CUST-008 自有的 `AdminConsoleModel`（`packages/database/src/models/adminConsole.ts`）新增 `listDevices` / `getDevice` / `getDeviceStats`。
+- **一次增量迁移**：`9002_device_admin_share.sql` 为 `devices` 增加 `share_origin` / `shared_by_user_id`（幂等 `ADD COLUMN IF NOT EXISTS`）。其余仍读既有表，经 `AdminConsoleModel`（`packages/database/src/models/adminConsole.ts`）新增 `listDevices` / `getDevice` / `getDeviceStats` / `listWorkspaces` / `listWorkspaceMembers` / `listAdminDeviceShares`。
 - **行身份 = 表真实唯一键**：personal 池是 `(user_id, device_id)`（`devices_user_id_device_id_unique`），workspace 池是 `(workspace_id, device_id)`。不能用 `(workspaceId, deviceId)` 一把梭 ——`lh connect --device-id` 可让两个 owner 用同一个 deviceId（`apps/cli/src/device/register.ts` 的 `resolveDeviceIdentity()` 在显式 id 时绕过哈希）。实现：`deviceRowKey` = `workspace ? wsId::deviceId : personal:${ownerId}::${deviceId}`；详情查询带 `ownerId`，`limit(2)` 后 `rows.length !== 1` 即 `NOT_FOUND`（歧义不猜）。
 - i18n 用独立命名空间 `adminConsole`（新增 `packages/locales/src/default/adminConsole.ts` + 两个语言包 JSON）。`NS` 类型由 `typeof resources` 推导，`resources.ts` / `create.ts` / `loadI18nNamespaceModule*.ts` / `protectedPatterns.ts` / `i18next.d.ts` **均无需改**。
 - **不跑 `bun run i18n`**：fork 不自动产生其余 15 语翻译，缺失语种回落 en-US，属可接受降级。
@@ -400,7 +418,7 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 
 一句话：管理员在 `/admin` 模型服务里设的 `defaults`（chat /title/verify/embedding）是**全站默认模型**—— 存量用户、新注册、SSO 首次登录，以及标题生成 / 记忆向量 / 任务验收等后台任务，只要用户没自选，都按它解析；用户自选过则保留自选。
 
-完整语义（映射表、自选判定、逐槽位兜底顺序、不可用模型回退、备选口径）见 [ADMIN\_CONSOLE\_DESIGN.md §7.1](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)；产品面描述见同文档 §5.5。
+完整语义（映射表、自选判定、逐槽位兜底顺序、不可用模型回退、备选口径）见 [ADMIN_CONSOLE_DESIGN.md §7.1](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)；产品面描述见同文档 §5.5。
 
 ### 功能与语义
 
@@ -550,13 +568,13 @@ T-100 修复（2026-11-26，分支 `feat/cust011-f-session-default-model`，提�
 - CUST-011 文档登记（2026-11-26，分支 `feat/admin-model-defaults`）：只改 `ADMIN_CONSOLE_DESIGN.md`（§5.5 重写、新增 §7.1、§10 检查点、§14 修订说明）与本文档（功能总表 + CUST-011 章节），未动代码。`git diff --check` 通过；无代码改动，未跑测试与类型检查。
 
 - 上游同步（2026-11-27）：合并 `upstream/canary 9727e280d1`（29 个提交 / 420 个文件，含 MCP elicitation 持久化、legacy MCP 插件→connector 迁移、设备 Android/iOS 平台分类、设置分组重排「Coding Plans under Runtime」、模型切换精选模型等）。备份分支 `backup/canary-pre-upstream-20261127`（合并前 `63e2e554c3`）。Git 冲突 5 处，语义适配 2 处：
-  1. `apps/server/src/services/agent/index.ts`：上游把 `mergeDefaultConfig` 改成同步函数并引入 `DefaultAgentConfigLayers`（account / user 两层）。按上游结构保留，把 CUST-011 的管理员默认层放进 `DefaultAgentConfigLayers.serverDefault`，由 `loadDefaultAgentConfig()` 统一 `await getDeploymentDefaultAgentConfig()`（workspace 作用域也先取部署层再短路个人层）；`mergeDefaultConfig` 内 `serverDefault: defaults.serverDefault ?? getServerDefaultAgentConfig()`。调用点改回同步（4 处），`createInbox()` 仍只写环境变量层。
+  1. `apps/server/src/services/agent/index.ts`：上游把 `mergeDefaultConfig` 改成同步函数并引入 `DefaultAgentConfigLayers`（account /user 两层）。按上游结构保留，把 CUST-011 的管理员默认层放进 `DefaultAgentConfigLayers.serverDefault`，由 `loadDefaultAgentConfig()` 统一 `await getDeploymentDefaultAgentConfig()`（workspace 作用域也先取部署层再短路个人层）；`mergeDefaultConfig` 内 `serverDefault: defaults.serverDefault ?? getServerDefaultAgentConfig()`。调用点改回同步（4 处），`createInbox()` 仍只写环境变量层。
   2. `apps/server/src/services/agent/index.test.ts`：双方新增 import / `beforeEach` 复位，取并集（`getCompanyServiceDefaults` + `getPersonalAgentDefaults`）。
   3. `src/features/WorkspaceSetting/hooks/useCategory.test.tsx`：保留 CUST-009 三条 Labs 可见性用例，Coding Plans 用例改上游标题；断言体沿用上游（Resource 组顺序）。
   4. `apps/server/src/routers/lambda/index.ts`：`tfs: tfsRouter` 与上游新增 `mcpElicitation: mcpElicitationRouter` 并存（注册在 router 顶部）。
   5. `src/instrumentation.ts`：部署中断恢复块（CUST-002）与上游新增 MCP elicitation recovery worker 启动块并存，各自独立 try/catch。
-  语义适配：① `src/features/Settings/hooks/useCategory.test.tsx` 跟随上游分组顺序（Resource 在 Connection 之前）；② `src/features/AdminConsole/Devices/platform.tsx` 补 `android` / `ios` 图标与文案（上游 CLI 新增平台分类），并新增 `platform.test.tsx`；移动端 build 元数据仍不进 CUST-010 隐私白名单。
-  其它核对：`_journal.json` 上游新增 0227–0230，fork `9000/9001` 仍在队尾，`db:fork:reconcile --check` 通过（上游 0–230 / fork 9000、9001）；`device-gateway-client` 的 fork 字段 `tfsGitConfig` 经 lint 排序后保留；Dockerfile NTLM curl 块、`release-cli.yml` 的 Fork 条件、`/admin` 路由与 proxy matcher、TFS sandbox / SSO / deployResume 接点均未丢。
-  上游新增工作区包 `@lobechat/mcp-elicitation` 等，执行 `pnpm install` 后类型检查通过。质量门：`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0（首次失败仅因新包未安装）；改动范围 oxlint 0 error（19 warning 全在未改动的上游文件）；相关测试 657 项通过（agent 61、admin console / 模型 / 设置 / 设备 224、business-server 42、数据库 18、Labs 与频道 45、TFS+SSO+deployResume 184 等）。未执行：真实页面验收、Docker 镜像构建、目标服务器升级。
+     语义适配：① `src/features/Settings/hooks/useCategory.test.tsx` 跟随上游分组顺序（Resource 在 Connection 之前）；② `src/features/AdminConsole/Devices/platform.tsx` 补 `android` / `ios` 图标与文案（上游 CLI 新增平台分类），并新增 `platform.test.tsx`；移动端 build 元数据仍不进 CUST-010 隐私白名单。
+     其它核对：`_journal.json` 上游新增 0227–0230，fork `9000/9001` 仍在队尾，`db:fork:reconcile --check` 通过（上游 0–230 /fork 9000、9001）；`device-gateway-client` 的 fork 字段 `tfsGitConfig` 经 lint 排序后保留；Dockerfile NTLM curl 块、`release-cli.yml` 的 Fork 条件、`/admin` 路由与 proxy matcher、TFS sandbox / SSO /deployResume 接点均未丢。
+     上游新增工作区包 `@lobechat/mcp-elicitation` 等，执行 `pnpm install` 后类型检查通过。质量门：`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0（首次失败仅因新包未安装）；改动范围 oxlint 0 error（19 warning 全在未改动的上游文件）；相关测试 657 项通过（agent 61、admin console / 模型 / 设置 / 设备 224、business-server 42、数据库 18、Labs 与频道 45、TFS+SSO+deployResume 184 等）。未执行：真实页面验收、Docker 镜像构建、目标服务器升级。
 
-- 上游同步（2026-11-27，第二次）：合并 `upstream/canary 414a96048f`（5 个提交 / 63 个文件：Lobot 内嵌登录页、agent 文件中途发现、任务分组样式、首页与订阅文案）。备份分支 `backup/canary-pre-upstream-20261127b`（合并前 `10e4eacaa3`）。Git 冲突 1 处：`apps/server/src/services/toolExecution/serverRuntimes/localSystem.ts` —— 上游在设备调用结果后追加 `collectAgentFileScan()`（agent 文件扫描回填 `state`），Fork 在同一位置把 TFS 项目初始化的 checkout 报告前置进 `content`。两者互不覆盖（前者只改 `state`、后者只改 `content`），合并为「先扫描后前置报告」；无迁移变化（仍 0–230 + fork 9000/9001，`db:fork:reconcile --check` 通过）。质量门：`tsrs` 0 错误；改动范围 oxlint 0 error（3 warning 均为上游新增文件）；`localSystem` 四组测试 66 项、agent 默认层 / TFS / deployResume 152 项全部通过。未执行：真实页面验收、镜像构建与服务器升级。
+- 上游同步（2026-11-27，第二次）：合并 `upstream/canary 414a96048f`（5 个提交 / 63 个文件：Lobot 内嵌登录页、agent 文件中途发现、任务分组样式、首页与订阅文案）。备份分支 `backup/canary-pre-upstream-20261127b`（合并前 `10e4eacaa3`）。Git 冲突 1 处：`apps/server/src/services/toolExecution/serverRuntimes/localSystem.ts` —— 上游在设备调用结果后追加 `collectAgentFileScan()`（agent 文件扫描回填 `state`），Fork 在同一位置把 TFS 项目初始化的 checkout 报告前置进 `content`。两者互不覆盖（前者只改 `state`、后者只改 `content`），合并为「先扫描后前置报告」；无迁移变化（仍 0–230 + fork 9000/9001，`db:fork:reconcile --check` 通过）。质量门：`tsrs` 0 错误；改动范围 oxlint 0 error（3 warning 均为上游新增文件）；`localSystem` 四组测试 66 项、agent 默认层 / TFS /deployResume 152 项全部通过。未执行：真实页面验收、镜像构建与服务器升级。

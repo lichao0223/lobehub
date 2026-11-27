@@ -487,12 +487,18 @@ const DeviceOverview = ({ canOperate, device }: DeviceOverviewProps) => {
                   ? t('devices.share.visibilityTag.private')
                   : t('devices.share.visibilityTag.public')}
               </Tag>
-              <ActionIcon
-                icon={XIcon}
-                size={'small'}
-                title={t('devices.share.revoke')}
-                onClick={() => handleRevokeShare(share)}
-              />
+              {share.adminShared ? (
+                <Tag color={'gold'} size={'small'}>
+                  {t('devices.share.adminShared')}
+                </Tag>
+              ) : (
+                <ActionIcon
+                  icon={XIcon}
+                  size={'small'}
+                  title={t('devices.share.revoke')}
+                  onClick={() => handleRevokeShare(share)}
+                />
+              )}
             </Flexbox>
           ))}
         </DetailCard>

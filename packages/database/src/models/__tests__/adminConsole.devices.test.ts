@@ -266,22 +266,26 @@ describe('AdminConsoleModel.listDevices', () => {
 });
 
 describe('AdminConsoleModel.getDevice', () => {
-  it('reads a personal device with only the whitelisted metadata keys', async () => {
+  it('reads a personal device with the owner-visible paths and whitelisted metadata only', async () => {
     const device = await modelFor(ids.admin).getDevice('alice-personal', { workspaceId: null });
 
     expect(device).toMatchObject({
       appVersion: '2.0.0',
       channels: [],
       cliVersion: '1.2.3',
+      defaultCwd: '/Users/alice/secret-project',
       deviceId: 'alice-personal',
       hasFixedAgentBinding: false,
       scope: 'personal',
       visibility: null,
+      workingDirs: [{ path: '/Users/alice/work' }],
     });
-    for (const key of ['defaultCwd', 'workingDirs', 'recentCwds', 'metadata']) {
+    // The detail mirrors the owner's own device page, but the deprecated
+    // `recentCwds` column and the raw metadata blob still never leave the DB.
+    for (const key of ['recentCwds', 'metadata']) {
       expect(device).not.toHaveProperty(key);
     }
-    expect(JSON.stringify(device)).not.toContain('/Users/alice');
+    expect(JSON.stringify(device)).not.toContain('old-project');
   });
 
   it('reads another member’s private workspace device by (workspaceId, deviceId)', async () => {

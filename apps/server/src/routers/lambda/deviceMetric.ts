@@ -1,6 +1,5 @@
 import type { DeviceMetricSeries, DeviceScope } from '@lobechat/types';
 import {
-  bucketDeviceMetrics,
   DEVICE_METRIC_RETENTION_MS,
   DEVICE_METRIC_SAMPLE_INTERVAL_MS,
   DEVICE_METRIC_VIEW_WINDOW_MS,
@@ -12,10 +11,8 @@ import { wsCompatProcedure } from '@/business/server/trpc-middlewares/workspaceA
 import { DeviceModel } from '@/database/models/device';
 import { router } from '@/libs/trpc/lambda';
 import { serverDatabase } from '@/libs/trpc/lambda/middleware';
-import { deviceGateway } from '@/server/services/deviceGateway';
 
-/** Aim for about this many points per chart, whatever the window. */
-const TARGET_POINTS = 144;
+import { buildDeviceMetricSeries } from './device/metricSeries';
 
 const deviceMetricProcedure = wsCompatProcedure.use(serverDatabase).use(async (opts) => {
   const { ctx } = opts;
@@ -57,9 +54,8 @@ const deviceMetricProcedure = wsCompatProcedure.use(serverDatabase).use(async (o
 
 export const deviceMetricRouter = router({
   /**
-   * The machine's recent CPU / memory / load / disk, read from the device gateway
-   * (the only store — it keeps two days) and averaged into buckets sized so
-   * the window renders as roughly {@link TARGET_POINTS} points.
+   * The machine's recent CPU / memory / load / disk. The series builder is
+   * shared with the admin console detail page, so both render one shape.
    */
   getSeries: deviceMetricProcedure
     .input(
@@ -77,30 +73,12 @@ export const deviceMetricRouter = router({
     )
     .query(async ({ ctx, input }): Promise<DeviceMetricSeries> => {
       const workspaceId = await ctx.resolveDevicePrincipal(input.deviceId, input.scope);
-      const to = Date.now();
-      const from = to - input.windowMs;
-      const bucketMs = Math.max(
-        DEVICE_METRIC_SAMPLE_INTERVAL_MS,
-        Math.ceil(input.windowMs / TARGET_POINTS / DEVICE_METRIC_SAMPLE_INTERVAL_MS) *
-          DEVICE_METRIC_SAMPLE_INTERVAL_MS,
-      );
 
-      const samples = await deviceGateway.queryDeviceMetrics({
+      return buildDeviceMetricSeries({
         deviceId: input.deviceId,
-        since: from,
         userId: ctx.userId,
+        windowMs: input.windowMs,
         workspaceId,
       });
-      const latest = samples.at(-1);
-
-      return {
-        bucketMs,
-        cpuCount: latest?.cpuCount ?? null,
-        diskTotalBytes: samples.findLast((s) => s.diskTotalBytes)?.diskTotalBytes ?? null,
-        from,
-        memoryTotalBytes: latest?.memoryTotalBytes ?? null,
-        points: bucketDeviceMetrics(samples, { bucketMs, from, to }),
-        to,
-      };
     }),
 });

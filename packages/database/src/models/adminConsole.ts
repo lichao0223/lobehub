@@ -12,6 +12,8 @@ import type {
   AdminUserListParams,
   AdminUserListResult,
   AdminUserSummary,
+  AdminWorkspaceListResult,
+  AdminWorkspaceMember,
 } from '@lobechat/types';
 import { ADMIN_CONSOLE_SETTINGS_ID, ADMIN_DEVICE_MAX_PAGE_SIZE } from '@lobechat/types';
 import { TRPCError } from '@trpc/server';
@@ -25,6 +27,7 @@ import {
   devices,
   session,
   users,
+  workspaceMembers,
   workspaces,
 } from '../schemas';
 import type { LobeChatDatabase, Transaction } from '../type';
@@ -77,10 +80,13 @@ const toSummary = (row: {
 /**
  * Columns shared by the admin device list and detail reads.
  *
- * This is the privacy boundary at the SQL layer: `defaultCwd`, `workingDirs`,
- * `recentCwds` and the raw `metadata` column are never selected, so no later
- * mapping can accidentally forward another user's filesystem paths. Detail
- * reads project the two whitelisted metadata keys explicitly.
+ * This is the privacy boundary at the SQL layer, and it is asymmetric on
+ * purpose: the LIST never selects a filesystem path (`defaultCwd`,
+ * `workingDirs`, deprecated `recentCwds`) or the raw `metadata` column, so
+ * paging the whole deployment cannot sweep every owner's paths into one
+ * response. The DETAIL read adds exactly `defaultCwd` + `workingDirs` because
+ * the console detail page mirrors the owner's own device page; `recentCwds`
+ * stays unread (deprecated), and metadata is projected key by key.
  */
 const adminDeviceSelection = {
   architecture: devices.architecture,
@@ -705,6 +711,11 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
     const rows = await this.db
       .select({
         ...adminDeviceSelection,
+        // Detail mirrors the owner's own device page: the directories work may
+        // run in are part of what an administrator must be able to verify.
+        // `recentCwds` stays out — the column is deprecated.
+        defaultCwd: devices.defaultCwd,
+        workingDirs: devices.workingDirs,
         // Only the two whitelisted metadata keys leave the database.
         appVersion: sql<string | null>`${devices.metadata} ->> 'appVersion'`,
         cliVersion: sql<string | null>`${devices.metadata} ->> 'cliVersion'`,
@@ -735,9 +746,11 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
       appVersion: row.appVersion ?? undefined,
       channels: [],
       cliVersion: row.cliVersion ?? undefined,
+      defaultCwd: row.defaultCwd ?? null,
       hasFixedAgentBinding: scope.workspaceId
         ? await this.hasFixedAgentBinding(scope.workspaceId, deviceId)
         : false,
+      workingDirs: row.workingDirs ?? [],
     };
   };
 
@@ -778,6 +791,138 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
       workspace: Number(row?.workspace ?? 0),
       workspaceCount: Number(workspaceRow[0]?.value ?? 0),
     };
+  };
+
+  // ── Workspaces (admin console) ────────────────────────────────────────
+
+  /**
+   * Every workspace in the deployment, with the two counters the console shows.
+   * Counters are correlated subqueries rather than a GROUP BY: a workspace with
+   * no members or no devices must still appear with zeros.
+   */
+  listWorkspaces = async (
+    params: { page?: number; pageSize?: number; q?: string } = {},
+  ): Promise<AdminWorkspaceListResult> => {
+    const page = Math.max(1, params.page ?? 1);
+    const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 20));
+    const q = params.q?.trim();
+    const where = q
+      ? or(ilike(workspaces.name, `%${q}%`), ilike(workspaces.slug, `%${q}%`))
+      : undefined;
+
+    const [totalRow, rows] = await Promise.all([
+      this.db.select({ value: count() }).from(workspaces).where(where),
+      this.db
+        .select({
+          createdAt: workspaces.createdAt,
+          deviceCount: sql<number>`(
+            select count(*) from ${devices} d where d.workspace_id = ${workspaces.id}
+          )`,
+          id: workspaces.id,
+          memberCount: sql<number>`(
+            select count(*) from ${workspaceMembers} wm
+            where wm.workspace_id = ${workspaces.id} and wm.deleted_at is null
+          )`,
+          name: workspaces.name,
+          ownerEmail: users.email,
+          ownerId: workspaces.primaryOwnerId,
+          ownerUsername: users.username,
+          slug: workspaces.slug,
+        })
+        .from(workspaces)
+        .leftJoin(users, eq(users.id, workspaces.primaryOwnerId))
+        .where(where)
+        .orderBy(desc(workspaces.createdAt))
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+    ]);
+
+    return {
+      items: rows.map((row) => ({
+        createdAt: row.createdAt,
+        deviceCount: Number(row.deviceCount ?? 0),
+        id: row.id,
+        memberCount: Number(row.memberCount ?? 0),
+        name: row.name,
+        ownerEmail: row.ownerEmail,
+        ownerId: row.ownerId,
+        ownerUsername: row.ownerUsername,
+        slug: row.slug,
+      })),
+      page,
+      pageSize,
+      total: totalRow[0]?.value ?? 0,
+    };
+  };
+
+  /** Active members of one workspace, newest join last. */
+  listWorkspaceMembers = async (workspaceId: string): Promise<AdminWorkspaceMember[]> => {
+    const rows = await this.db
+      .select({
+        email: users.email,
+        fullName: users.fullName,
+        joinedAt: workspaceMembers.joinedAt,
+        role: workspaceMembers.role,
+        userId: workspaceMembers.userId,
+        username: users.username,
+      })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(users.id, workspaceMembers.userId))
+      .where(and(eq(workspaceMembers.workspaceId, workspaceId), isNull(workspaceMembers.deletedAt)))
+      .orderBy(asc(workspaceMembers.joinedAt));
+
+    return rows.map((row) => ({
+      email: row.email,
+      fullName: row.fullName,
+      joinedAt: row.joinedAt,
+      role: (row.role ?? 'member') as AdminWorkspaceMember['role'],
+      userId: row.userId,
+      username: row.username,
+    }));
+  };
+
+  /** Resolve a member picker's email / username to a real account. */
+  findUserByIdentity = async (identity: string) => {
+    const [row] = await this.db
+      .select({ email: users.email, id: users.id, username: users.username })
+      .from(users)
+      .where(or(eq(users.email, identity), eq(users.username, identity)))
+      .limit(1);
+    return row;
+  };
+
+  // ── Admin device shares ───────────────────────────────────────────────
+
+  /** The workspace row for one machine, if it has already been shared there. */
+  findWorkspaceDeviceRow = async (workspaceId: string, deviceId: string) => {
+    return this.db.query.devices.findFirst({
+      where: and(eq(devices.workspaceId, workspaceId), eq(devices.deviceId, deviceId)),
+    });
+  };
+
+  /** Shares created from the console for one owner's personal device. */
+  listAdminDeviceShares = async (ownerId: string, personalDeviceId: string) => {
+    return this.db
+      .select({
+        deviceId: devices.deviceId,
+        workspaceId: workspaces.id,
+        workspaceName: workspaces.name,
+      })
+      .from(devices)
+      .innerJoin(workspaces, eq(workspaces.id, devices.workspaceId))
+      .where(
+        and(
+          eq(devices.userId, ownerId),
+          eq(devices.sharedFromDeviceId, personalDeviceId),
+          eq(devices.shareOrigin, 'admin'),
+        ),
+      );
+  };
+
+  deleteWorkspaceDeviceRow = async (workspaceId: string, deviceId: string) => {
+    await this.db
+      .delete(devices)
+      .where(and(eq(devices.workspaceId, workspaceId), eq(devices.deviceId, deviceId)));
   };
 
   // ── helpers ───────────────────────────────────────────────────────────

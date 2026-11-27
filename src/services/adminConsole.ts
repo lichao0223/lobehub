@@ -9,6 +9,7 @@ import type {
   AdminDeviceListParams,
   AdminDeviceListResult,
   AdminDeviceStats,
+  AdminDeviceTarget,
   AdminRole,
   AdminUserDeleteResult,
   AdminUserDetail,
@@ -92,6 +93,60 @@ class AdminConsoleService {
   /** Header counters, independent of the current filter; no gateway call. */
   getDeviceStats = async (): Promise<AdminDeviceStats> =>
     lambdaClient.adminConsole.getDeviceStats.query();
+
+  // ── Device detail (mirrors `/settings/devices/:id`, owner principal) ──────
+
+  getDeviceOverview = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.getDeviceOverview.query(target);
+
+  getDeviceActivity = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.getDeviceActivity.query(target);
+
+  getDeviceAgents = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.getDeviceAgents.query(target);
+
+  listProjectDirectory = (target: AdminDeviceTarget & { relativePath: string; root: string }) =>
+    lambdaClient.adminConsole.listProjectDirectory.query(target);
+
+  // ── Workspaces (the "people group" carrier for device sharing) ────────────
+
+  listWorkspaces = (params: { page?: number; pageSize?: number; q?: string } = {}) =>
+    lambdaClient.adminConsole.listWorkspaces.query(params);
+
+  listWorkspaceMembers = (workspaceId: string) =>
+    lambdaClient.adminConsole.listWorkspaceMembers.query({ workspaceId });
+
+  createWorkspace = (input: { name: string; slug?: string }) =>
+    lambdaClient.adminConsole.createWorkspace.mutate(input);
+
+  addWorkspaceMember = (input: {
+    identity: string;
+    role: 'admin' | 'member';
+    workspaceId: string;
+  }) => lambdaClient.adminConsole.addWorkspaceMember.mutate(input);
+
+  updateWorkspaceMemberRole = (input: {
+    role: 'admin' | 'member';
+    userId: string;
+    workspaceId: string;
+  }) => lambdaClient.adminConsole.updateWorkspaceMemberRole.mutate(input);
+
+  removeWorkspaceMember = (input: { userId: string; workspaceId: string }) =>
+    lambdaClient.adminConsole.removeWorkspaceMember.mutate(input);
+
+  // ── Device shares (admin → workspace) ────────────────────────────────────
+
+  listDeviceShares = (target: AdminDeviceTarget) =>
+    lambdaClient.adminConsole.listDeviceShares.query({
+      deviceId: target.deviceId,
+      ownerId: target.ownerId!,
+    });
+
+  shareDeviceToWorkspace = (target: { deviceId: string; ownerId: string; workspaceId: string }) =>
+    lambdaClient.adminConsole.shareDeviceToWorkspace.mutate(target);
+
+  revokeDeviceShare = (target: { deviceId: string; ownerId: string; workspaceId: string }) =>
+    lambdaClient.adminConsole.revokeDeviceShare.mutate(target);
 }
 
 export const adminConsoleService = new AdminConsoleService();

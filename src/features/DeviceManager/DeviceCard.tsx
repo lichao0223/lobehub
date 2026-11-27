@@ -282,6 +282,11 @@ const DeviceCard = memo<DeviceCardProps>(({ device, isCurrent, onOpen }) => {
               )}
               {isManaged && <ManagedDeviceBadge />}
               {isCurrent && <Tag size={'small'}>{t('devices.currentBadge')}</Tag>}
+              {device.scope === 'workspace' && device.sharedByAdmin && (
+                <Tag color={'gold'} size={'small'}>
+                  {t('devices.share.adminShared')}
+                </Tag>
+              )}
               {device.scope === 'workspace' && device.sharedFromPersonal && (
                 // Member-shared machine (vs directly enrolled infra) — mirrors the
                 // "Shared by {name}" tag on workspace connectors/credentials.
@@ -322,17 +327,21 @@ const DeviceCard = memo<DeviceCardProps>(({ device, isCurrent, onOpen }) => {
             {canEdit && (
               <DropdownMenu
                 placement={'bottomRight'}
-                items={[
-                  ...visibilityItems,
-                  ...shareItems,
-                  {
-                    danger: true,
-                    icon: <Icon icon={Trash2Icon} />,
-                    key: 'remove',
-                    label: t('devices.actions.remove'),
-                    onClick: handleRemove,
-                  },
-                ]}
+                items={
+                  device.sharedByAdmin
+                    ? [] // Admin shares are public-only and console-managed.
+                    : [
+                        ...visibilityItems,
+                        ...shareItems,
+                        {
+                          danger: true,
+                          icon: <Icon icon={Trash2Icon} />,
+                          key: 'remove',
+                          label: t('devices.actions.remove'),
+                          onClick: handleRemove,
+                        },
+                      ]
+                }
               >
                 <ActionIcon icon={MoreVerticalIcon} size={'small'} title={tCommon('more')} />
               </DropdownMenu>
