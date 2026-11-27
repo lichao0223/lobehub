@@ -1619,16 +1619,23 @@
       "breakpoints": true
     },
     {
+      "idx": 231,
+      "version": "7",
+      "when": 1795708868265,
+      "tag": "0231_widen_token_totals_to_bigint",
+      "breakpoints": true
+    },
+    {
       "idx": 9000,
       "version": "7",
-      "when": 1795541757595,
+      "when": 1795708868266,
       "tag": "9000_nosy_tag",
       "breakpoints": true
     },
     {
       "idx": 9001,
       "version": "7",
-      "when": 1795541757596,
+      "when": 1795708868267,
       "tag": "9001_admin_console_settings",
       "breakpoints": true
     },

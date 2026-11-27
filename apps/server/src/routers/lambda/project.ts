@@ -221,17 +221,13 @@ export const projectRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        await validateTfsSources(
-          ctx.serverDB,
-          ctx.userId,
-          [
-            ...(input.repository ? [{ kind: 'git', url: input.repository.url }] : []),
-            ...(input.additionalRepositories ?? []).map((repository) => ({
-              kind: 'git',
-              url: repository.url,
-            })),
-          ],
-        );
+        await validateTfsSources(ctx.serverDB, ctx.userId, [
+          ...(input.repository ? [{ kind: 'git', url: input.repository.url }] : []),
+          ...(input.additionalRepositories ?? []).map((repository) => ({
+            kind: 'git',
+            url: repository.url,
+          })),
+        ]);
         if (input.coordinatorAgentId) {
           await assertResourceUsable(ctx, 'agent', input.coordinatorAgentId);
         }
@@ -273,8 +269,6 @@ export const projectRouter = router({
         ctx.projectModel,
         requireResult(await ctx.projectModel.findByReference(input.id)),
       );
-      // TODO(2026-12-31): remove with `ProjectModel.joinTopicAgents`.
-      await ctx.projectModel.joinTopicAgents(project.id);
       const [agents, completionReviews, knowledgeBases, tasks, works, coordinatorRetires] =
         await Promise.all([
           ctx.projectModel.listAgents(project.id),

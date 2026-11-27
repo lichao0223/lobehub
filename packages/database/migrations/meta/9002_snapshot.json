@@ -6,9 +6,9 @@
   },
   "dialect": "postgresql",
   "enums": {},
-  "id": "1fa74932-bb3b-4529-8458-2da5253a2929",
+  "id": "f1d9d52d-3ef3-4f2c-a596-f556b0dd3bd0",
   "policies": {},
-  "prevId": "b64d1d42-c6ec-4152-bb29-12cd4610daf7",
+  "prevId": "aceb6c35-c805-4fd6-a1d1-282f87f26927",
   "roles": {},
   "schemas": {},
   "sequences": {
@@ -2880,7 +2880,7 @@
         },
         "total_tokens": {
           "name": "total_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -8161,19 +8161,19 @@
         },
         "total_input_tokens": {
           "name": "total_input_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
         "total_output_tokens": {
           "name": "total_output_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
         "total_tokens": {
           "name": "total_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -44356,19 +44356,19 @@
         },
         "total_input_tokens": {
           "name": "total_input_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
         "total_output_tokens": {
           "name": "total_output_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
         "total_tokens": {
           "name": "total_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
@@ -44887,19 +44887,19 @@
         },
         "total_tokens": {
           "name": "total_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
         "total_input_tokens": {
           "name": "total_input_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
         "total_output_tokens": {
           "name": "total_output_tokens",
-          "type": "integer",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },
