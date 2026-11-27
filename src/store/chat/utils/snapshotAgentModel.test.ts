@@ -8,6 +8,14 @@ const agentMap: Record<string, any> = {};
 
 vi.mock('@/store/agent', () => ({ getAgentStoreState: () => ({ agentMap }) }));
 
+const userState = vi.hoisted(() => ({
+  state: { defaultSettings: {}, settings: {} } as Record<string, any>,
+}));
+vi.mock('@/store/user', () => ({
+  getUserStoreState: () => userState.state,
+  useUserStore: { getState: () => userState.state },
+}));
+
 const aiInfra = vi.hoisted(() => ({
   state: {
     loaded: false,
@@ -42,6 +50,27 @@ describe('snapshotAgentModel', () => {
     const id = seedAgent('regular', { model: 'gpt-5.5', provider: 'openai' });
 
     expect(snapshotAgentModel(id)).toEqual({ model: 'gpt-5.5', provider: 'openai' });
+  });
+
+  it('snapshots the administrator main model when a regular agent pinned nothing', () => {
+    userState.state = {
+      defaultSettings: {
+        defaultAgent: { config: { model: 'deepseek-flash-latest', provider: 'tellhow' } },
+      },
+      settings: {},
+    };
+    const id = seedAgent('regular-admin-default', {});
+
+    try {
+      // CUST-011-F: a conversation that follows the deployment default must pin
+      // the administrator's main model, not the built-in provider.
+      expect(snapshotAgentModel(id)).toEqual({
+        model: 'deepseek-flash-latest',
+        provider: 'tellhow',
+      });
+    } finally {
+      userState.state = { defaultSettings: {}, settings: {} };
+    }
   });
 
   it('snapshots the platform defaults when a regular agent pinned nothing', () => {

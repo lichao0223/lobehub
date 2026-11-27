@@ -27,11 +27,18 @@ const mocks = vi.hoisted(() => ({
    */
   activeTopicAgency: undefined as undefined | { agencyConfig: Record<string, unknown> },
   agentState: { agentMap: {} as Record<string, { workspaceId?: string }> },
-  devices: [] as { deviceId: string; scope?: string; visibility?: string }[],
+  devices: [] as {
+    deviceId: string;
+    platform?: string;
+    scope?: string;
+    visibility?: string;
+  }[],
   devicesConfirmed: true,
   devicesError: undefined as unknown,
   mutateDevices: vi.fn(),
   electron: { currentDeviceId: undefined as string | undefined, isDesktop: false },
+  fetchDirectories: vi.fn(),
+  projectDirectories: [] as any[],
 }));
 
 vi.mock('@lobechat/const', async (importOriginal) => {
@@ -84,6 +91,12 @@ vi.mock('@/store/agent/selectors', () => ({
   agentByIdSelectors: { isAgentHeterogeneousById: () => () => true },
 }));
 
+vi.mock('@/store/projectWorkingDirectory', () => ({
+  useProjectDirectories: () => mocks.projectDirectories,
+  useProjectDirectoryStore: (selector: (state: unknown) => unknown) =>
+    selector({ useFetchDirectories: mocks.fetchDirectories }),
+}));
+
 const deviceBoundAgent = {
   boundDeviceId: DEVICE_AGENT_BOUND,
   executionTarget: 'device',
@@ -95,6 +108,8 @@ beforeEach(() => {
   mocks.devicesConfirmed = true;
   mocks.devicesError = undefined;
   mocks.mutateDevices.mockReset();
+  mocks.fetchDirectories.mockReset();
+  mocks.projectDirectories = [];
   mocks.agency.agencyConfig = {};
   mocks.agency.canSelectExecutionTarget = true;
   mocks.agency.isPreferenceLoading = false;
@@ -317,6 +332,90 @@ describe('useTaskRunTarget', () => {
     expect(result.current.devices?.map((device) => device.deviceId)).toEqual([
       PERSONAL_DEVICE.deviceId,
     ]);
+  });
+});
+
+describe('the project folder is the last-resort working directory', () => {
+  const projectFolder = (overrides: Record<string, unknown> = {}) => ({
+    deviceId: DEVICE_AGENT_BOUND,
+    isPrimary: false,
+    path: '/root/th-vscode',
+    permission: 'readWrite',
+    platform: 'linux',
+    sortOrder: 0,
+    ...overrides,
+  });
+
+  it('shows the project folder on the followed machine instead of an empty directory', () => {
+    // The reported bug: the agent named no folder, the project had
+    // `/root/th-vscode` on that very device, and the task showed only the
+    // machine — so "follow the agent" looked configured while the run had no cwd.
+    mocks.agency.agencyConfig = deviceBoundAgent;
+    mocks.projectDirectories = [projectFolder()];
+
+    const { result } = renderHook(() =>
+      useTaskRunTarget('agent-1', undefined, { ...AS_CREATOR, projectId: 'prj-1' }),
+    );
+
+    expect(result.current.inheritedDirectory).toEqual({ path: '/root/th-vscode' });
+    expect(result.current.inheritedDirectorySource).toBe('project');
+  });
+
+  it('reports no directory when neither the agent nor the project names one', () => {
+    mocks.agency.agencyConfig = deviceBoundAgent;
+    mocks.projectDirectories = [projectFolder({ deviceId: 'another-machine' })];
+
+    const { result } = renderHook(() =>
+      useTaskRunTarget('agent-1', undefined, { ...AS_CREATOR, projectId: 'prj-1' }),
+    );
+
+    expect(result.current.inheritedDirectory).toBeUndefined();
+    expect(result.current.inheritedDirectorySource).toBeUndefined();
+  });
+
+  it("prefers the agent's own folder over the project's", () => {
+    mocks.agency.agencyConfig = {
+      ...deviceBoundAgent,
+      workingDirByDevice: { [DEVICE_AGENT_BOUND]: '/root/agent-pick' },
+    };
+    mocks.projectDirectories = [projectFolder()];
+
+    const { result } = renderHook(() =>
+      useTaskRunTarget('agent-1', undefined, { ...AS_CREATOR, projectId: 'prj-1' }),
+    );
+
+    expect(result.current.inheritedDirectory).toEqual({ path: '/root/agent-pick' });
+    expect(result.current.inheritedDirectorySource).toBe('agent');
+  });
+
+  it('prefers the primary folder, then the stored place', () => {
+    mocks.agency.agencyConfig = deviceBoundAgent;
+    mocks.projectDirectories = [
+      projectFolder({ path: '/root/second', sortOrder: 2 }),
+      projectFolder({ path: '/root/primary', isPrimary: true, sortOrder: 9 }),
+      projectFolder({ path: '/root/first', sortOrder: 1 }),
+    ];
+
+    const { result } = renderHook(() =>
+      useTaskRunTarget('agent-1', undefined, { ...AS_CREATOR, projectId: 'prj-1' }),
+    );
+
+    expect(result.current.inheritedDirectory).toEqual({ path: '/root/primary' });
+  });
+
+  it('ignores a read-only folder and a Windows path on a POSIX machine', () => {
+    mocks.agency.agencyConfig = deviceBoundAgent;
+    mocks.devices = [{ deviceId: DEVICE_AGENT_BOUND, platform: 'linux' }];
+    mocks.projectDirectories = [
+      projectFolder({ path: '/root/read-only', permission: 'readOnly' }),
+      projectFolder({ path: 'D:\\Sourcecode\\JuLink' }),
+    ];
+
+    const { result } = renderHook(() =>
+      useTaskRunTarget('agent-1', undefined, { ...AS_CREATOR, projectId: 'prj-1' }),
+    );
+
+    expect(result.current.inheritedDirectory).toBeUndefined();
   });
 });
 

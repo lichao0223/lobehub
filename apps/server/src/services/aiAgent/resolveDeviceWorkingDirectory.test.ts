@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveDeviceWorkingDirectory,
   resolveDeviceWorkingDirectoryConfig,
+  resolveDeviceWorkingDirectoryResolution,
 } from './resolveDeviceWorkingDirectory';
 
 describe('resolveDeviceWorkingDirectory', () => {
@@ -153,6 +154,116 @@ describe('resolveDeviceWorkingDirectory', () => {
         deviceId: 'device-1',
         topicWorkingDirectory: undefined,
         workingDirByDevice: null,
+      }),
+    ).toBeUndefined();
+  });
+});
+
+describe('the project directory on the device is the last resort', () => {
+  // The reported failure: a Task followed an agent with no folder of its own,
+  // while the project had `/root/th-vscode` registered on that very device. The
+  // run resolved NO cwd, so the TFS checkout (and the push credentials it
+  // injects) was skipped without a word and only `git push` failed.
+  const projectDirectories = [
+    { isPrimary: false, path: '/root/other', sortOrder: 1 },
+    { isPrimary: true, path: '/root/th-vscode', sortOrder: 9 },
+  ];
+
+  it('falls back to the project folder on the device when nothing else resolves', () => {
+    expect(
+      resolveDeviceWorkingDirectory({
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories,
+        workingDirByDevice: {},
+      }),
+    ).toBe('/root/th-vscode');
+  });
+
+  it('reports which source produced the cwd, so a missing one can be explained', () => {
+    expect(
+      resolveDeviceWorkingDirectoryResolution({
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories,
+      }),
+    ).toEqual({ config: { path: '/root/th-vscode' }, source: 'project' });
+    expect(
+      resolveDeviceWorkingDirectoryResolution({
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories: [],
+      }),
+    ).toEqual({});
+  });
+
+  it('prefers the primary binding, then the stored place', () => {
+    expect(
+      resolveDeviceWorkingDirectory({
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories: [
+          { path: '/root/second', sortOrder: 2 },
+          { path: '/root/first', sortOrder: 1 },
+        ],
+      }),
+    ).toBe('/root/first');
+  });
+
+  it('never outranks the agent pick or the device default', () => {
+    expect(
+      resolveDeviceWorkingDirectory({
+        deviceDefaultCwd: '/default',
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories,
+        workingDirByDevice: { 'device-1': '/agent' },
+      }),
+    ).toBe('/agent');
+    expect(
+      resolveDeviceWorkingDirectory({
+        deviceDefaultCwd: '/default',
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories,
+      }),
+    ).toBe('/default');
+  });
+
+  it('skips a relative path and a run repo identifier', () => {
+    expect(
+      resolveDeviceWorkingDirectory({
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories: [
+          { path: 'relative/folder', sortOrder: 0 },
+          { isPrimary: true, path: 'RSMP/th-vscode', sortOrder: 1 },
+          { path: '/root/th-vscode', sortOrder: 2 },
+        ],
+        repos: ['RSMP/th-vscode'],
+      }),
+    ).toBe('/root/th-vscode');
+  });
+
+  it('does not mistake a device path for a repo identifier', () => {
+    // Repo identifiers are `owner/repo`; `/root/th-vscode` starts with a slash
+    // and is a real machine path. Matching them by shape would drop it.
+    expect(
+      resolveDeviceWorkingDirectory({
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories: [{ path: '/root/th-vscode' }],
+        repos: ['th-vscode'],
+      }),
+    ).toBe('/root/th-vscode');
+  });
+
+  it('skips a Windows path on a POSIX device', () => {
+    expect(
+      resolveDeviceWorkingDirectory({
+        deviceId: 'device-1',
+        devicePlatform: 'linux',
+        projectDirectories: [{ isPrimary: true, path: 'D:\\Sourcecode\\JuLink' }],
       }),
     ).toBeUndefined();
   });

@@ -23,7 +23,7 @@ import { TopicModel } from '@/database/models/topic';
 import type { ChannelClaim, ChannelCoAddressedAgent } from '@/database/repositories/channel';
 import { ChannelExecutionRepository } from '@/database/repositories/channel';
 import { agentOperations, channelJobs, channelMembers, channels } from '@/database/schemas';
-import { getServerDefaultAgentConfig } from '@/server/globalConfig';
+import { getDeploymentDefaultAgentConfig } from '@/server/globalConfig';
 import { extractTextFromMessage } from '@/server/services/agentRuntime/CompletionLifecycle/messageContent';
 import type { AgentHook } from '@/server/services/agentRuntime/hooks/types';
 import { AiAgentService } from '@/server/services/aiAgent';
@@ -336,6 +336,10 @@ export class ChannelCoordinator {
                 ),
             });
             let accessDenied = false;
+            // One deployment-default read per job: the administrator layer above
+            // `DEFAULT_AGENT_CONFIG`, so an agent row without a model claims on
+            // the deployment's main model instead of the code default.
+            const serverDefaultAgentConfig = await getDeploymentDefaultAgentConfig();
             const claimNow = () =>
               this.executions.claim(channelId, job.id, {
                 leaseMs: LEASE_MS,
@@ -349,7 +353,7 @@ export class ChannelCoordinator {
                   pickedOffline.push(device);
                 },
                 routedDevice: (run) => resolveChannelRoutedDevice(this.db, run, routedPresence),
-                serverDefaultAgentConfig: getServerDefaultAgentConfig(),
+                serverDefaultAgentConfig,
               });
             let claim = await claimNow();
             if (

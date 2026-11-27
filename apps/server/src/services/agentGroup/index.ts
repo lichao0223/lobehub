@@ -9,7 +9,7 @@ import { ChatGroupModel } from '@/database/models/chatGroup';
 import { type UserModel } from '@/database/models/user';
 import { AgentGroupRepository } from '@/database/repositories/agentGroup';
 import { type ChatGroupConfig } from '@/database/types/chatGroup';
-import { getServerDefaultAgentConfig } from '@/server/globalConfig';
+import { getDeploymentDefaultAgentConfig } from '@/server/globalConfig';
 
 type DefaultAgentConfig = Awaited<ReturnType<UserModel['getUserSettingsDefaultAgentConfig']>>;
 
@@ -84,7 +84,8 @@ export class AgentGroupService {
    *
    * Merge order (later values override earlier):
    * 1. DEFAULT_AGENT_CONFIG - hardcoded defaults
-   * 2. serverDefaultAgentConfig - from environment variable
+   * 2. serverDefaultAgentConfig - deployment default: administrator console
+   *    default above the environment variable
    * 3. userDefaultAgentConfig - from user settings
    * 4. agent - actual agent config from database
    *
@@ -92,14 +93,14 @@ export class AgentGroupService {
    * @param agents - Array of agents to merge
    * @returns Merged agents array
    */
-  mergeAgentsDefaultConfig<T extends Record<string, any>>(
+  async mergeAgentsDefaultConfig<T extends Record<string, any>>(
     defaultAgentConfig: DefaultAgentConfig,
     agents: T[],
   ) {
     const userDefaultAgentConfig =
       (defaultAgentConfig as { config?: PartialDeep<LobeAgentConfig> })?.config || {};
 
-    const serverDefaultAgentConfig = getServerDefaultAgentConfig();
+    const serverDefaultAgentConfig = await getDeploymentDefaultAgentConfig();
     const baseConfig = merge(DEFAULT_AGENT_CONFIG, serverDefaultAgentConfig);
     const withUserConfig = merge(baseConfig, userDefaultAgentConfig);
 

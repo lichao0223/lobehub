@@ -11,6 +11,11 @@ const SYSTEM_VALUE = '__system__';
 
 interface TierRowProps {
   disabled?: boolean;
+  /**
+   * What the fallback option is called. 「管理员默认」 where the deployment's
+   * administrator set that tier's default (CUST-011); 「系统推荐」 otherwise.
+   */
+  followLabel?: string;
   modelKind: ModelKind;
   onChange: (value: ModelRef | undefined) => void;
   /** The model the system recommends for this tier right now. */
@@ -23,14 +28,22 @@ interface TierRowProps {
 
 /**
  * A top-level model picker. `Form.Field` supplies the label and the scope text;
- * this renders only the control. 「系统推荐」 is said once, next to the model it
- * currently means.
+ * this renders only the control. The follow label is said once, next to the
+ * model it currently means.
  */
-const TierRow = ({ disabled, modelKind, onChange, recommended, title, value }: TierRowProps) => {
+const TierRow = ({
+  disabled,
+  followLabel,
+  modelKind,
+  onChange,
+  recommended,
+  title,
+  value,
+}: TierRowProps) => {
   const { t } = useTranslation('setting');
   const { groups, parseValue } = useModelOptions(modelKind);
   const getModelName = useModelName();
-  const systemLabel = t('serviceModel.systemRecommended');
+  const systemLabel = followLabel ?? t('serviceModel.systemRecommended');
 
   const selected = value ? toOptionValue(value) : SYSTEM_VALUE;
   const options: SelectOptions = [

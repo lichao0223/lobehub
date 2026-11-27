@@ -6,18 +6,19 @@
 
 ## 功能总表
 
-| 编号     | 二开功能                            | 用户入口 / 行为                                                                                                | 维护位置                                                                                                                                                                                                      | 状态                                                                          |
-| -------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                                     | `.github/workflows/publish-custom-image.yml`                                                                                                                                                                  | 历史已有；本轮增加 TFS curl 构建参数                                          |
-| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈                    | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                                                                                                                                  | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话                 |
-| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                                     | 同上；`scripts/deploy-custom-image.test.py`                                                                                                                                                                   | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增                 |
-| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                                | 下方列出的五个 `.github/workflows/` 文件                                                                                                                                                                      | 历史已有                                                                      |
-| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览         | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md)                                                                                                             | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                    |
-| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                                    | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                                  | 本次新增；需要 Fork 自己的 npm Token                                          |
-| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                                 | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                       | 开发中；单测已交付，待与真实认证中心联调                                      |
-| CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话 / 物理删除用户）；P2 模型服务（Tellhow 内置厂商） | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                                  | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24）                 |
-| CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                                 | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)                 | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）                               |
-| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态         | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览) | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补 |
+| 编号     | 二开功能                            | 用户入口 / 行为                                                                                                | 维护位置                                                                                                                                                                                                                                       | 状态                                                                                                                                                                              |
+| -------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CUST-001 | 自定义 Docker 镜像发布              | main /canary 推送及手动 Actions 发布本 Fork 的 GHCR 镜像；当前 Linux amd64                                     | `.github/workflows/publish-custom-image.yml`                                                                                                                                                                                                   | 历史已有；本轮增加 TFS curl 构建参数                                                                                                                                              |
+| CUST-002 | 单文件安装 / 更新管理器             | `bash deploy-custom-image.sh`；新机安装、切换 main/canary/ 自定义镜像、更新应用或恢复完整栈                    | `scripts/deploy-custom-image.sh`、[部署说明](scripts/deploy-custom-image.md)                                                                                                                                                                   | 历史已有；本轮增加 TFS 缺省地址、更新后结算并自动重跑中断会话                                                                                                                     |
+| CUST-003 | 部署脚本接入 Onlyboxes / Market     | 菜单切换、保留配置；从一次性应用容器真实探测 Onlyboxes JIT 与 terminalExec                                     | 同上；`scripts/deploy-custom-image.test.py`                                                                                                                                                                                                    | 历史已有；仅登记脚本接入，Onlyboxes provider 本身不算本项新增                                                                                                                     |
+| CUST-004 | Fork 发布工作流隔离                 | 官方专用发布 / 同步任务在 Fork 默认跳过，防止误执行官方发布路径                                                | 下方列出的五个 `.github/workflows/` 文件                                                                                                                                                                                                       | 历史已有                                                                                                                                                                          |
+| CUST-005 | 个人 TFS / Azure DevOps Server 接入 | 设置 → TFS / Azure DevOps 绑定个人身份；从 TFS 建项目；环境 Git 来源；PR / 构建 / 发布 / TFVC 只读浏览         | 独立 `tfs` 模块；设置页 `src/features/Tfs/SettingsPage.tsx`；[详细维护说明](TFS_CUSTOMIZATION.md)                                                                                                                                              | 本次新增，REST / 本机 Git 已实测，产品页面和部署验收待完成                                                                                                                        |
+| CUST-006 | Fork CLI npm 发布                   | canary 推送或手动 Actions 发布 `@lichao0223/lobehub-cli`；本机命令仍为 `lh`                                    | `.github/workflows/release-cli.yml`、`apps/cli/package.json`                                                                                                                                                                                   | 本次新增；需要 Fork 自己的 npm Token                                                                                                                                              |
+| CUST-007 | 统一认证平台 SSO\_TICKET 接入       | 门户菜单免登：`/api/auth/sso-ticket/callback` 换票、按工号建用户并建立本地会话                                 | 独立 `sso-ticket` 插件目录；[详细维护说明](SSO_TICKET_CUSTOMIZATION.md)                                                                                                                                                                        | 开发中；单测已交付，待与真实认证中心联调                                                                                                                                          |
+| CUST-008 | 管理员控制台（P1 / P2 已交付）      | `/admin`：用户管理（列表 / 搜索 / 禁用 / 设撤管理员 / 撤会话 / 物理删除用户）；P2 模型服务（Tellhow 内置厂商） | [设计、实现清单与偏差](ADMIN_CONSOLE_DESIGN.md)、`prototypes/admin-console/`                                                                                                                                                                   | P1 已落地（2026-11-23）；P2 已验收并合入 canary（2026-11-24）                                                                                                                     |
+| CUST-009 | 管理员统一实验室（Labs）开关        | `/admin/labs` 一处设定全站 lab；普通用户看不到 Labs 设置页，启用的实验全站生效                                 | `packages/business-server/src/labs/`、`packages/business-server/src/adminConsole/labs.ts`、`src/features/AdminConsole/Labs/`、[设计](ADMIN_CONSOLE_DESIGN.md#16-cust-009管理员统一-labs-开关)                                                  | 已验收并合入 canary（2026-11-25，`2bcbbb2bfc`）                                                                                                                                   |
+| CUST-010 | 管理控制台设备总览（只读，跨用户）  | `/admin/devices`：全库设备台账（含他人 private、工作区设备），筛选 / 搜索 / 分页 + 详情抽屉 + 在线三态         | `src/features/AdminConsole/Devices/`、`apps/server/src/routers/lambda/adminConsole/devices.ts`、`packages/database/src/models/adminConsole.ts`、[设计](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)                                  | 已合入 canary（2026-11-26）；接口级验证通过，UI 截图与 `unknown` 真机证据待补                                                                                                     |
+| CUST-011 | 管理员默认值（全站模型默认）        | `/admin` 模型服务「默认值」：chat /title/verify/embedding 成为全站默认模型；新用户厂商开关默认只开 TellhowAI   | [设计与语义](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)、[厂商默认开关](ADMIN_CONSOLE_DESIGN.md#72-厂商默认开关cust-011-c)、`packages/business-server/src/companyProvider.ts`、`packages/business-server/src/adminConsole/modelService.ts` | 已验收并合入 canary（2026-11-27）：存量 / 新注册 / SSO 均生效，首轮会话模型已跟随管理员主模型（T-100），管理端默认值选择器只列可生效模型（T-102）；记忆与验收的运行时证据待 T-101 |
 
 ## CUST-001：自定义镜像
 
@@ -395,6 +396,87 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 
 代码已完成并通过本地质量门与接口级验证，已随 `feat/admin-labs` 合入 `canary`（2026-11-26，合并提交 `fb30266fd8`）。**未发布 acceptance 报告**：三态中的 `unknown` 只有单测覆盖，未在真机停网关复现；UI 侧列表 / 详情抽屉 / 普通用户被拒三张截图未归档。因此本条目状态是「代码已合入、产品验收待补」，不是「已验收」—— 补证后需回填本节与总表行。
 
+## CUST-011：管理员默认值 = 全站默认值
+
+一句话：管理员在 `/admin` 模型服务里设的 `defaults`（chat /title/verify/embedding）是**全站默认模型**—— 存量用户、新注册、SSO 首次登录，以及标题生成 / 记忆向量 / 任务验收等后台任务，只要用户没自选，都按它解析；用户自选过则保留自选。
+
+完整语义（映射表、自选判定、逐槽位兜底顺序、不可用模型回退、备选口径）见 [ADMIN\_CONSOLE\_DESIGN.md §7.1](ADMIN_CONSOLE_DESIGN.md#71-默认值解析cust-011)；产品面描述见同文档 §5.5。
+
+### 功能与语义
+
+- **映射**：`chat` → 主档全部槽位（`SERVICE_MODEL_TIER_SLOTS.main`：`agentMeta` / `expertise` / `goal` / `topicAutoSummary`）+ `defaultAgent.config`（新会话默认模型）；`title` → flash 档全部槽位；`verify` → `verify` 槽位（必须视觉模型）；`embedding` → `userMemoryEmbedding`。`fileEmbedding` 仍归 `DEFAULT_FILES_CONFIG`，`asr` / `channelRouting` /onboarding 槽位不归本项。
+- **生效规则**：有自选保留自选（`user_settings.systemAgent[slot]` 的 model+provider、`systemAgent.tiers[tier]` 的档位选择、`defaultAgent.config` 的 model+provider）；没自选一律解析为管理员默认值。自选判定必须读存储行，不能读客户端合并后的 `currentSettings`。
+- **逐槽位兜底顺序**：`用户自选 > 管理员默认值 > SYSTEM_AGENT / DEFAULT_AGENT_CONFIG 环境变量 > 代码默认`。环境变量仍生效，只是排在管理员默认值之后；管理员留空即回到环境变量。
+- **会话默认模型（T-100 补齐）**：新会话 / 助手的默认模型不止走 `defaultSettings`，还要经 agent 配置读取。服务端 `getDeploymentDefaultAgentConfig()`（管理员默认 > 环境变量）是 agent 配置合并、分组 agent、频道认领的部署默认层；客户端 `resolveAgentConfig` 与 `snapshotAgentModel` 在 agent 行没有 model（或配置尚未加载）时回落 `settingsSelectors.defaultAgentConfig`。agent 行与用户自选仍优先；inbox 行不写入该默认值，管理员后续修改才能继续跟随。
+- **不写用户行**：默认值只在解析时兜底；写进 `user_settings` 等于固化，管理员之后再改就不跟随。`initNewUserForBusiness` 在本仓库是空实现，新用户本来没有设置行。
+- **后台任务**：标题生成 / 记忆抽取 / 任务验收等无标签页的调用走同一顺序。现状偏差要一并修正：`apps/server/src/services/systemAgent/modelConfig.ts` 的 `resolveSystemAgentModelConfig` 连 `SYSTEM_AGENT` 都不读，后台任务连环境变量默认值都不生效。
+- **不可用模型回退**：`enabled !== true` / 缺 `baseURL` / 缺密钥 → 整块默认值视为未配置；某项模型 `open === false` 或带 `removedAt` → 该项视为未配置；两种情况都回退下一级，不产生指向不可用模型的默认值。写入校验仍只要求 id 在目录里（不因目录状态阻断保存）；可感知性由 UI 负责 —— 选择器只列可生效的模型，已存值失效时标注原因并在字段下提示（CUST-011-H）。
+- **provider**：默认值的模型 id 属于 Tellhow 目录，provider 固定 `tellhow`；不提供「默认值指向其他厂商」的能力。
+- **用户侧呈现**：`serverConfig.companyDefaultTiers` 只列出管理员真的设过的档位；个人设置 → 模型只在这些档位把兜底项写成「管理员默认」（否则仍是「系统推荐」）。部署里只要有任意一个管理员默认档，四档标题下就补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」；一个都没有（纯上游部署）时不显示这句话。管理端四个默认值与个人四档同名同序（主模型 / Flash 模型 / 验收模型 / 记忆向量化模型），不再说「只影响新用户」；验收模型下拉按 `capabilities.includes('vision')` 过滤；四项都只列 `open` 且未 `removedAt` 的模型，已存的不合规值仍留在下拉里标为「未对用户开放 / 上游已移除 / 不可用」并给出提示，不静默保存（CUST-011-H）。
+- **备选口径（本次不实施，待用户确认可切换）**：强制覆盖所有用户自选（含 pin 与档位选择）。启用时的建议形态是 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` 即本次口径），`force` 也只做解析覆盖、不改用户行，否则切回 `follow` 时用户原选择已丢失。
+
+### CUST-011-H：默认值选择器只列可生效模型（T-102）
+
+来源：T-94 验收观察 —— 默认值选择器列出全部目录模型（如 `glm-latest`、`GPT-5.6 Sol`），保存成功后该档被 `resolveCompanyServiceDefaults` 静默忽略：用户侧无变化，界面也没有提示。
+
+- **规则**：四项默认值统一按解析器的可见集过滤 —— `open === true` 且无 `removedAt`；验收模型再加 `capabilities.includes('vision')`。判定集中在 `src/features/AdminConsole/ModelService/utils.ts` 的 `defaultModelIssue`（`closed` / `removed` / `missing` / `type` / `vision`），`acceptsDefaultModel` 与 `isDefaultModelCompliant` 都由它派生，选择器与提示不会各说一套。
+- **已存值失效**：仍留在下拉里，标注「未对用户开放 / 上游已移除 / 不可用」，字段下按原因给出 `modelService.defaults.closed` / `removed` / `invalid` / `verifyInvalid`。
+- **写入校验不变**：`validateDefaults` 仍只要求 id 在目录里，不阻断保存；关闭某个模型不会连带让保存失败，管理员下次打开页面即可看到该默认值失效的原因。
+- **测试**：`src/features/AdminConsole/ModelService/utils.test.ts` —— 四档都不接受未开放 / 已移除模型；`defaultModelIssue` 给出原因；`defaultModelMessageKey` / `defaultModelTagKey` 把原因映射到「未对用户开放」「上游已移除」等具体文案（组件测试按仓库规范不新增，卡片只负责渲染这两个 key）。
+
+### CUST-011-C：新用户默认只开 TellhowAI（默认关闭 ≠ 禁止）
+
+需求：新用户（注册、SSO 首次登录）在「AI 服务商」里的开关只有 TellhowAI 是开的，其它内置厂商默认关闭；用户自己打开的照常可用，自定义厂商不受影响。
+
+- **开关**：`packages/business/const/src/index.ts` 的 `DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED`（本仓库为 `true`）。生效点是 `apps/server/src/globalConfig/index.ts` 的 `getAiProviderSpecificConfig()`：非业务模式下把每个内置厂商的 `enabled` 显式写成 `provider === COMPANY_PROVIDER_ID`，再随 `serverConfig.aiProvider` 下发。厂商专属元数据（`fetchOnClient` / `modelListKey` / `withDeploymentName`）用 spread 保留，不会被开关冲掉。
+- **「默认关闭」不是「禁止」**：`AiInfraRepos.getAiProviderList()`（`packages/database/src/repositories/aiInfra/index.ts:105-107`）的合并语义是「用户 `ai_provider.enabled` **或** 服务端 `aiProvider[id].enabled`」。服务端默认值只是新用户看到的初始状态；用户在设置里打开某厂商即写用户行 `enabled: true`，列表与后续请求都照常。自定义厂商（`source: 'custom'`）来自用户行，这份默认值根本不参与。
+- **Tellhow 仍由控制台决定**：`withCompanyProviderCatalog()` 在 `getServerGlobalConfig()` 里最后覆盖 `tellhow.enabled`—— 控制台未配置或关闭时为 `false`，用户侧立即不可见（沿用 CUST-008 §5.6）。本开关只决定 Tellhow 之外的厂商默认关，不接管 Tellhow 的生死。
+- **为什么另加常量而不是复用 `ENABLE_BUSINESS_FEATURES`**：`getAiProviderSpecificConfig()` 里确有一条「只开内置厂商」的现成分支（`enabled: provider === ModelProvider.LobeHub`），但它与 `ENABLE_BUSINESS_FEATURES` 绑定，而这个常量的语义是业务特性总开关（还决定 `agentGatewayProtocol`、页面协作、`isOfficialProvider` 等）。本 Fork 的 `ENABLE_BUSINESS_FEATURES = false` 必须保持；翻成 `true` 会连带打开网关 v2 与协作能力，且默认厂商会变成 `lobehub` 而不是 `tellhow`。因此复制它的**写法**、另立只表达「默认厂商集合」的常量，语义不再扩张。
+- **对服务端模型解析零影响（已用测试证明）**：`initModelRuntimeFromDB()` 只读用户 / 厂商行与控制台凭据，从不读 `aiProvider[id].enabled`——`apps/server/src/modules/ModelRuntime/providerDefaults.test.ts` 用真实初始化路径锁住三件事：没有用户行的新用户调用 Tellhow 成功、默认关闭的 openai /deepseek 在用户打开后仍能初始化、自定义厂商不受影响。其余后台链路同样不看厂商级开关：标题 / 验收等走 `resolveSystemAgentModelConfig → initModelRuntimeFromDB`；记忆抽取用 `getAiProviderRuntimeState().enabledAiModels`（模型级 `enabled`），`tryMatchingProviderFrom` 也只查模型集合；`getEnabledServerChatModels()` 只服务 `lobehub` relay 的部署目录。
+- **已知取舍**：开启本开关后，内置厂商的 `ENABLED_*` 环境变量不再把该厂商在用户侧默认打开（凭据仍然生效，用户在设置里打开即可用）；桌面端 `ollama` 也一并默认关闭（本 Fork 是 Web 部署）。需要别的默认开启厂商时，改 `getAiProviderSpecificConfig()` 的放行表达式，不要改 `ENABLE_BUSINESS_FEATURES`。
+- **验证**：`apps/server/src/globalConfig/getServerGlobalConfig.test.ts`（只有 tellhow `enabled`；开关关闭时恢复上游默认）、`packages/database/src/repositories/aiInfra/__tests__/getAiProviderList.test.ts`（新用户只有 tellhow / 用户打开 openai 后可用 / 管理员关掉 tellhow 后不可见）、`apps/server/src/modules/ModelRuntime/providerDefaults.test.ts`（运行时证明）。
+
+### 维护位置
+
+| 层                 | 位置                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 语义（唯一事实源） | `ADMIN_CONSOLE_DESIGN.md` §7.1（映射与生效规则）、§5.5（产品面），槽位清单来自 `packages/const/src/settings/systemAgent.ts` 的 `SERVICE_MODEL_TIER_SLOTS`                                                                                                                                                                                                                            |
+| 写入与校验         | `packages/business-server/src/adminConsole/modelService.ts`（`validateDefaults` / `toConfigView`，P2-2 已交付）                                                                                                                                                                                                                                                                      |
+| 读取与缓存         | `packages/business-server/src/companyProvider.ts`（`CompanyProviderRuntime.defaults`，5 s 缓存 + `invalidateCompanyProviderCache()`）                                                                                                                                                                                                                                                |
+| 管理端 UI          | `src/features/AdminConsole/ModelService/DefaultsCard.tsx` 与同目录 `utils.ts`（`defaultModelIssue` 可见性判定）、`packages/locales/src/default/adminConsole.ts` 的 `modelService.defaults.*`（本 Fork 只有 default 一份语言包）                                                                                                                                                      |
+| 解析消费           | `packages/business-server/src/adminConsole/serviceDefaults.ts`（`resolveCompanyServiceDefaults` / `getCompanyServiceDefaultModel`）；`serverConfig` 注入在 `apps/server/src/globalConfig/index.ts`（含 `companyDefaultTiers` 来源标记），后台任务读取点见 `services/systemAgent`、`services/verify`、`services/memory/userMemory/extract`                                            |
+| 用户侧跟随链路     | `src/store/user/slices/common/action.ts` 的 `#project` → `defaultSettings`；`src/store/user/slices/settings/selectors/settings.ts` 的 `currentSettings`                                                                                                                                                                                                                              |
+| 会话侧跟随链路     | 服务端 `apps/server/src/globalConfig/index.ts` 的 `getDeploymentDefaultAgentConfig()`（消费点：`services/agent` 的 `mergeDefaultConfig`、`services/agentGroup` 的 `mergeAgentsDefaultConfig`、`services/channel/ChannelCoordinator`）；客户端 `src/services/chat/mecha/agentConfigResolver.ts`（`collectSnapshot`）与 `src/store/chat/utils/snapshotAgentModel.ts`（新话题模型快照） |
+| 厂商默认开关（C）  | 常量 `packages/business/const/src/index.ts` 的 `DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED`；生效点 `apps/server/src/globalConfig/index.ts` 的 `getAiProviderSpecificConfig()`；合并语义 `packages/database/src/repositories/aiInfra/index.ts` 的 `getAiProviderList()`                                                                                                                   |
+
+### 与 CUST-008 §7 的关系
+
+CUST-008（管理员控制台）负责「配置能不能写、密钥怎么存、目录怎么同步」；CUST-011 只负责「写下来的默认值有没有人读、按什么规则读」。两者共用同一行 `admin_console_settings.config.ai`：
+
+- 不新增表、不新增迁移、不新增 procedure —— `updateModelServiceConfig` 的 `defaults` 入参与 `validateDefaults` 校验在 P2-2 已存在，CUST-011 补的是运行时消费与回退；
+- CUST-008 的 §5.1–§5.4、§5.6、§11 验收清单不变，只有 §5.5「默认值」被重写、§7 增加 §7.1 解析小节；
+- 任务书写作「§7（模型服务）」；本文档当前编号里模型服务是 §5（§5.5 默认值），§7 是「后端接口」—— 因此映射与解析规则落在 §7.1，§5.5 只保留产品面口径并指向 §7.1。
+
+### 上游合并时必须保留 / 检查接点
+
+1. `SERVICE_MODEL_TIER_SLOTS` 仍是槽位唯一事实源，`fileEmbedding` 不得进档位映射；上游新增 / 删除槽位时管理员默认值映射要自动跟随，不维护第二份清单。
+2. 客户端 `#project` 仍把 `serverConfig.systemAgent` / `serverConfig.defaultAgent` 合并进 `defaultSettings`，`currentSettings = merge(defaultSettings, settings)` 不变 ——「未自选 = 跟随默认」靠这条链路成立。
+3. 自选判定必须读 `user_settings` 存储行，不得读合并后的 `currentSettings`（否则跟随会被误判成自选，管理员默认值永远不生效）。
+4. 写盘侧 diff 基准仍是 `defaultSettings`；「选回跟随」依赖 `replaceServiceModelSettings` 删除槽位键，上游若改成合并写，要补一条删键路径。
+5. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）必须走统一解析函数，不能被上游改成各写一份默认值。
+6. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并在保存配置后失效。
+7. 管理端默认值文案 `modelService.defaults.*` 与语义同步；en-US 源文案写 `packages/locales/src/default/`，zh-CN 手写。个人页「管理员默认」的来源标记依赖 `serverConfig.companyDefaultTiers`（`packages/types/src/serverConfig.ts` 的可选字段），上游改 `GlobalServerConfig` 或 `SERVICE_MODEL_TIER_SLOTS` 时不要丢；验收模型的视觉过滤只看 `capabilities.includes('vision')`，目录同步若换了能力字段名要同步改 `acceptsDefaultModel`。
+8. 会话侧默认模型依赖「服务端部署默认层 + 客户端回落」两段，任一段被上游改写都要重跑 `agent/index.deploymentDefaults.test.ts`、`agentConfigResolver.deploymentDefaults.test.ts`、`snapshotAgentModel.test.ts`：`AgentService.mergeDefaultConfig` 的 serverDefault 必须是 `getDeploymentDefaultAgentConfig()`（不是只读环境变量的 `getServerDefaultAgentConfig()`），客户端解析器与话题快照必须回落到 `settingsSelectors.defaultAgentConfig`；`createInbox()` 保持只写环境变量层，不要把管理员默认值烘进 agent 行。
+9. 厂商默认开关（CUST-011-C）依赖三处，任一处被上游重构都要重跑 `getServerGlobalConfig` / `getAiProviderList` / `providerDefaults` 三个测试：`getAiProviderSpecificConfig()` 的显式 `enabled` 覆盖、`AiInfraRepos.getAiProviderList()` 的「用户行 OR 服务端配置」合并、`withCompanyProviderCatalog()` 对 `tellhow.enabled` 的最终覆盖（顺序必须在 `genServerAiProvidersConfig` 之后）。
+10. `ENABLE_BUSINESS_FEATURES` 语义不得被本 Fork 改成「只开 tellhow」：它同时控制 `agentGatewayProtocol`、页面协作与 `isOfficialProvider`。上游若把「只开内置厂商」逻辑抽成独立参数，可改为复用它，但要确认默认厂商仍是 `COMPANY_PROVIDER_ID` 而不是 `lobehub`。
+11. 上游给 `ProviderSpecificConfig` 新增字段时，`getAiProviderSpecificConfig()` 的覆盖循环必须是 `{ ...existing, enabled }` 的合并写法，不能整体替换对象，否则 `fetchOnClient` / `modelListKey` / `withDeploymentName` 会丢。
+
+### 当前发布状态
+
+文档与实现（2026-11-26）：语义已定稿并登记。三条分支已汇总为 `feat/cust011-e-consolidated`（T-90 注入 + T-91 后台任务兜底 + T-92 厂商默认开关 + T-93 个人页文案）。真实验收在 T-94 完成，报告见 <http://192.168.14.51:3210/acceptance/eae055bc-73f0-4020-9e7f-dc0d89b5a001>：存量、新注册、SSO 用户的默认值与厂商默认开关均通过，标题生成经记录代理证实走管理员 Flash 档；**未通过**「首轮会话模型跟随管理员主模型」（仍请求内置 deepseek 并报错），**未覆盖**记忆抽取与任务验收的运行时证据（验收环境无 Upstash Workflow）。因此本轮 partial，**尚未合入 canary**。
+
+T-100 修复（2026-11-26，分支 `feat/cust011-f-session-default-model`，提交 `bd454dd961`）：会话侧默认模型接入同一兜底链（见「会话默认模型」条）。补充轮（验收第 2 轮）在 3211 验收栈用从未自选模型的 SSO 用户重跑上次失败项：`POST /webapi/chat/tellhow` body `model=deepseek-flash-latest`、网关前代理两次调用均为该模型、助手正常回复，该检查转为通过；记忆抽取与任务验收的运行时证据仍由 T-101 跟进。**仍未合入 canary，等待确认。**
+
 ## 上游合并统一流程
 
 1. 提交或备份本地改动，记录本次上游起止提交、当前镜像 SHA，备份数据库 / 卷和 `.env` /override。不要重建加密密钥。
@@ -423,6 +505,8 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 
 - 同批修正一个既有类型错误：`apps/server/src/services/tfs/git.ts` 读取 `getUserSettings()` 返回的 `market` jsonb 时被推断为 `{}`，导致全仓 `type-check` 失败；按 `MarketAuthTokens` 收窄后再读 `accessToken`。与部署自动重跑无关，仅因阻塞类型检查门禁一并修复。
 
+- T-93（个人模型页与管理员默认值对齐）：改动文件 `bun run check --lint --test` 通过（9 个文件 lint clean，33 项测试通过，含新增 `ModelService/utils.test.ts` 与 `getServerGlobalConfig.test.ts` 的 `companyDefaultTiers` 用例）。全仓 `tsrs -p tsconfig.type-check.json` 在本工作树不可用：`node_modules` 软链到主工作树，`@lobechat/*` 解析到 `lobehub/packages`，报 305 条跨树重复类型错误（`../lobehub/apps/desktop`、`LlmStepTimeout` / `maxOutput` 等），主工作树 `76d16fc3` 同命令 0 错误。按目录定向检查（`AdminConsole/ModelService`、`ServiceModel/ServiceModelForm`、`store/serverConfig`）除缺失的 CSS /vite 环境声明外无错误，改动文件均无报错。
+
 - 尚未执行：真实造一次中断（更新时正在跑的任务 / 对话）后由新容器启动自动重跑的端到端验收、Docker 镜像构建、目标服务器升级。线上容器镜像早于本次改动，单纯重启只会跑旧代码；真实验收要先构建并推送镜像再走一次更新。库表与脚本 SQL 已在真实 PostgreSQL 上验证，但这不等于产品级恢复验收。
 
 - 尚未执行 Docker 镜像构建、真实 Compose 解析、目标服务器升级及真实页面验收；不能据此宣称已经上线或全链路通过。
@@ -446,3 +530,5 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
   6. `src/features/Projects/CreateFromGithub/Content.tsx`：以上游结构为骨架（单一 `repositories` 状态、`RepositoryField` + `AdvancedRepositories`、`useDefaultMainAgent`），只在 `provider === 'tfs'` 处把 TFS 选择器作为同一列表的入口，TFS 跳转改为 `/settings/tfs`。不要再用单仓库表单整体替换上游文件，否则每次上游改动都会重新冲突。
   7. 新增 `SettingsTabs.Tfs = 'tfs'`、`src/features/Tfs/SettingsPage.tsx`、`/settings/tfs`（复用设置 `:tab` 路由）、侧栏「TFS / Azure DevOps」入口与 `setting:tab.tfs` 文案；旧 `/settings/integrations/tfs` 由 `buildLegacyIntegrationPath` 跳到新页。
      验证：`db:fork:reconcile --check` 通过；改动文件 esbuild 语法检查通过、相关 JSON 可解析；本机无 `node_modules`，未跑 `bun run check` / 类型检查 / 测试。
+
+- CUST-011 文档登记（2026-11-26，分支 `feat/admin-model-defaults`）：只改 `ADMIN_CONSOLE_DESIGN.md`（§5.5 重写、新增 §7.1、§10 检查点、§14 修订说明）与本文档（功能总表 + CUST-011 章节），未动代码。`git diff --check` 通过；无代码改动，未跑测试与类型检查。

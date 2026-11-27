@@ -16,13 +16,30 @@ const mocks = vi.hoisted(() => ({
 }));
 
 interface MockGlobalConfigOptions {
+  /** What `DEFAULT_AGENT_CONFIG` parses into. */
+  agentConfigParse?: Record<string, unknown>;
   agentGatewayProtocol?: number;
   agentGatewayUrl?: string;
   appUrl?: string;
+  /** Administrator defaults returned by the CUST-011 resolver. */
+  companyServiceDefaults?: {
+    defaultAgent?: { config: { model: string; provider: string } };
+    systemAgent?: Record<string, { model: string; provider: string }>;
+    /** Tiers the resolver managed to fill; the client names those 「管理员默认」. */
+    tiers?: Record<string, { model: string; provider: string }>;
+  };
   enableAgentGateway?: boolean;
   enablePageCollab?: boolean;
   enableWorkspacePageCollab?: boolean;
   filesConfigEnv?: string;
+  /**
+   * CUST-011-C fork switch. Defaults to the shipped value (`true`) so the suite
+   * exercises what a deployment actually gets; pass `false` to assert the
+   * untouched upstream behaviour.
+   */
+  onlyCompanyProviderEnabled?: boolean;
+  /** What `SYSTEM_AGENT` parses into. */
+  systemAgentEnv?: Record<string, { model: string; provider: string }>;
   toolNameMaxLengthEnv?: string;
 }
 
@@ -31,6 +48,7 @@ const mockGlobalConfigDependencies = (
   options: MockGlobalConfigOptions = {},
 ) => {
   vi.doMock('@lobechat/business-const', () => ({
+    DEFAULT_ONLY_COMPANY_PROVIDER_ENABLED: options.onlyCompanyProviderEnabled ?? true,
     ENABLE_BUSINESS_FEATURES: enableBusinessFeatures,
   }));
 
@@ -100,8 +118,23 @@ const mockGlobalConfigDependencies = (
     parseSSOProviders: vi.fn(() => []),
   }));
 
+  vi.doMock('@/business/server/adminConsole/serviceDefaults', () => ({
+    getCompanyServiceDefaults: vi.fn(async () => ({
+      systemAgent: {},
+      tiers: {},
+      ...options.companyServiceDefaults,
+    })),
+  }));
+
+  // The catalog merge owns its own DB read; this suite tests the config shape,
+  // not the Tellhow console, so it stays out of the database entirely.
+  vi.doMock('@/business/server/companyProvider', () => ({
+    COMPANY_PROVIDER_ID: 'tellhow',
+    withCompanyProviderCatalog: vi.fn(async (configs: Record<string, unknown>) => configs),
+  }));
+
   vi.doMock('@/server/globalConfig/parseSystemAgent', () => ({
-    parseSystemAgent: vi.fn(() => undefined),
+    parseSystemAgent: vi.fn(() => options.systemAgentEnv),
   }));
 
   vi.doMock('@/utils/object', () => ({
@@ -113,7 +146,7 @@ const mockGlobalConfigDependencies = (
   }));
 
   vi.doMock('./parseDefaultAgent', () => ({
-    parseAgentConfig: vi.fn(() => ({})),
+    parseAgentConfig: vi.fn(() => options.agentConfigParse ?? {}),
   }));
 
   vi.doMock('./parseFilesConfig', () => ({
@@ -128,10 +161,13 @@ const mockGlobalConfigDependencies = (
   }));
 };
 
-const loadCapturedProviderConfig = async (enableBusinessFeatures: boolean) => {
+const loadCapturedProviderConfig = async (
+  enableBusinessFeatures: boolean,
+  options?: MockGlobalConfigOptions,
+) => {
   vi.resetModules();
   mocks.genServerAiProvidersConfig.mockClear();
-  mockGlobalConfigDependencies(enableBusinessFeatures);
+  mockGlobalConfigDependencies(enableBusinessFeatures, options);
 
   const { getServerGlobalConfig } = await import('./index');
   await getServerGlobalConfig();
@@ -154,6 +190,45 @@ const loadServerConfig = async (
   return getServerGlobalConfig();
 };
 
+const loadDeploymentDefaultAgentConfig = async (options: MockGlobalConfigOptions = {}) => {
+  vi.resetModules();
+  mockGlobalConfigDependencies(false, options);
+
+  const { getDeploymentDefaultAgentConfig } = await import('./index');
+  return getDeploymentDefaultAgentConfig();
+};
+
+describe('getDeploymentDefaultAgentConfig', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  // CUST-011-F: this is the layer every conversation below a user pick reads.
+  it('should put the administrator main model above DEFAULT_AGENT_CONFIG', async () => {
+    await expect(
+      loadDeploymentDefaultAgentConfig({
+        agentConfigParse: { model: 'env-model', provider: 'env-provider' },
+        companyServiceDefaults: {
+          defaultAgent: { config: { model: 'deepseek-flash-latest', provider: 'tellhow' } },
+        },
+      }),
+    ).resolves.toEqual({ model: 'deepseek-flash-latest', provider: 'tellhow' });
+  });
+
+  it('should keep the deployment env when the administrator configured nothing', async () => {
+    await expect(
+      loadDeploymentDefaultAgentConfig({
+        agentConfigParse: { model: 'env-model', provider: 'env-provider' },
+      }),
+    ).resolves.toEqual({ model: 'env-model', provider: 'env-provider' });
+  });
+
+  it('should be empty when neither layer is configured', async () => {
+    await expect(loadDeploymentDefaultAgentConfig()).resolves.toEqual({});
+  });
+});
+
 describe('getServerGlobalConfig', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -173,8 +248,29 @@ describe('getServerGlobalConfig', () => {
     }
   });
 
-  it('should keep upstream defaults outside business feature mode', async () => {
+  it('should only enable Tellhow by default for a user who has not chosen (CUST-011-C)', async () => {
     const providerConfig = await loadCapturedProviderConfig(false);
+
+    // The enterprise built-in provider is the one exception; the admin console
+    // still overwrites it in `withCompanyProviderCatalog()` when it is closed.
+    expect(providerConfig.tellhow.enabled).toBe(true);
+    expect(providerConfig.tellhow.fetchOnClient).toBeUndefined();
+
+    for (const provider of Object.values(ModelProvider)) {
+      if (provider === ModelProvider.Tellhow) continue;
+
+      expect(providerConfig[provider].enabled).toBe(false);
+    }
+
+    // Provider-specific metadata survives the override: it is merged, not
+    // replaced. `fetchOnClient` is independent from the default-enabled flag.
+    expect(providerConfig[ModelProvider.Ollama].fetchOnClient).toBe(true);
+  });
+
+  it('should keep upstream defaults when the CUST-011-C switch is off', async () => {
+    const providerConfig = await loadCapturedProviderConfig(false, {
+      onlyCompanyProviderEnabled: false,
+    });
 
     expect(providerConfig[ModelProvider.LobeHub]).toBeUndefined();
     expect(providerConfig[ModelProvider.OpenAI]).toBeUndefined();
@@ -328,6 +424,47 @@ describe('getServerGlobalConfig', () => {
     const config = await loadServerConfig(false, { filesConfigEnv: 'invalid' });
 
     expect(config.systemAgent?.fileEmbedding).toBeUndefined();
+  });
+
+  // CUST-011 §7.1: administrator defaults > SYSTEM_AGENT / DEFAULT_AGENT_CONFIG
+  // > code default, per slot. A tier the administrator left empty keeps the env.
+  it('should put administrator model defaults above SYSTEM_AGENT env', async () => {
+    const config = await loadServerConfig(false, {
+      companyServiceDefaults: {
+        defaultAgent: { config: { model: 'tellhow-chat', provider: 'tellhow' } },
+        systemAgent: { agentMeta: { model: 'tellhow-chat', provider: 'tellhow' } },
+        tiers: { main: { model: 'tellhow-chat', provider: 'tellhow' } },
+      },
+      systemAgentEnv: {
+        agentMeta: { model: 'env-main', provider: 'env-provider' },
+        translation: { model: 'env-flash', provider: 'env-provider' },
+      },
+    });
+
+    expect(config.systemAgent).toMatchObject({
+      // The administrator wins where both layers have a value.
+      agentMeta: { model: 'tellhow-chat', provider: 'tellhow' },
+      // An unset administrator tier still follows the deployment env.
+      translation: { model: 'env-flash', provider: 'env-provider' },
+    });
+    expect(config.defaultAgent).toEqual({
+      config: { model: 'tellhow-chat', provider: 'tellhow' },
+    });
+    // Only the tier the administrator filled is reported back to the client.
+    expect(config.companyDefaultTiers).toEqual(['main']);
+  });
+
+  it('should keep the deployment env when the administrator configured nothing', async () => {
+    const config = await loadServerConfig(false, {
+      systemAgentEnv: { agentMeta: { model: 'env-main', provider: 'env-provider' } },
+    });
+
+    expect(config.systemAgent?.agentMeta).toEqual({
+      model: 'env-main',
+      provider: 'env-provider',
+    });
+    // No administrator tier: the personal page keeps saying 「系统推荐」.
+    expect(config.companyDefaultTiers).toEqual([]);
   });
 
   it('should omit the OIDC issuer when APP_URL is not configured', async () => {

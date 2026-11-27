@@ -96,6 +96,18 @@ describe('personal TFS device initialization', () => {
     expect(mocks.execute).not.toHaveBeenCalled();
   });
 
+  it('explains a skipped checkout and the missing push credentials when no cwd is bound', async () => {
+    // Regression: the run had no working directory at all (agent follow with no
+    // folder), the checkout was never called, and `git push` failed later with
+    // no explanation. The early return has to name the missing folder AND the
+    // consequence, because this string is the only place the agent learns it.
+    const report = await initializeTfsDeviceCheckout({ ...params, cwd: undefined });
+
+    expect(report).toContain('no working folder');
+    expect(report).toContain('no TFS push credentials were injected');
+    expect(mocks.execute).not.toHaveBeenCalled();
+  });
+
   it('does not expose exceptions containing the credential-bearing device request', async () => {
     mocks.execute.mockRejectedValue(new Error(JSON.stringify(init)));
     const report = await initializeTfsDeviceCheckout(params);

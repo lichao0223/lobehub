@@ -1,4 +1,5 @@
 import type { OpenAIChatMessage } from '@lobechat/model-runtime';
+import type { UserServiceModelConfig } from '@lobechat/types';
 
 import type { getServerDB } from '@/database/server';
 import type { ProviderConfig } from '@/types/user/settings';
@@ -50,6 +51,8 @@ export interface MemoryExtractionExecutorContext {
   buildBaseMetadata: typeof buildBaseMetadata;
   countTokens: typeof countTokens;
   readonly db: ReturnType<typeof getServerDB>;
+  /** Administrator defaults already merged above `SYSTEM_AGENT` (CUST-011). */
+  readonly deploymentSystemAgent: Partial<UserServiceModelConfig>;
   readonly embeddingPreferredModels: string[] | undefined;
   readonly embeddingPreferredProviders: string[] | undefined;
   readonly gatekeeperPreferredModels: string[] | undefined;

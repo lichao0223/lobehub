@@ -42,7 +42,7 @@ import {
   MemoryExtractionAggregateError,
   serializeError,
 } from './errors';
-import { withoutRetiredLobeHubMemoryModels } from './runtime';
+import { withMemoryDeploymentDefaults, withoutRetiredLobeHubMemoryModels } from './runtime';
 import type { TopicExtractionJob } from './types';
 
 const isTopicExtracted = (metadata?: ChatTopicMetadata | null): boolean => {
@@ -181,9 +181,12 @@ export async function extractTopic(ctx: MemoryExtractionExecutorContext, job: To
           ctx.getAiProviderRuntimeState(job.userId, job.workspaceId),
         ]);
         const memoryServiceConfig = ctx.resolveUserMemoryServiceConfig(
-          await withoutRetiredLobeHubMemoryModels(
-            userState.settings?.systemAgent as Partial<UserServiceModelConfig> | undefined,
-            userState.email,
+          withMemoryDeploymentDefaults(
+            await withoutRetiredLobeHubMemoryModels(
+              userState.settings?.systemAgent as Partial<UserServiceModelConfig> | undefined,
+              userState.email,
+            ),
+            ctx.deploymentSystemAgent,
           ),
         );
         const keyVaults = await ctx.resolveRuntimeKeyVaults(

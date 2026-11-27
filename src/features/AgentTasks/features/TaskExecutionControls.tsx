@@ -23,6 +23,11 @@ interface TaskExecutionControlsProps {
   canPinPrivateDevices: boolean;
   disabled?: boolean;
   onChange: (execution?: TaskExecutionConfig) => void;
+  /**
+   * The task's project. Its own folders are the run's last-resort working
+   * directory, so "follow the agent" has to read them to describe the run.
+   */
+  projectId?: string;
   /** The task's current selection; empty means "inherit the agent". */
   value?: TaskExecutionConfig;
 }
@@ -62,7 +67,7 @@ const TaskExecutionControls = memo<TaskExecutionControlsProps>((props) => {
 
 const TaskExecutionControlsInner = memo<
   Omit<TaskExecutionControlsProps, 'assigneeAgentId'> & { assigneeAgentId: string }
->(({ assigneeAgentId, canPinPrivateDevices, disabled, onChange, value }) => {
+>(({ assigneeAgentId, canPinPrivateDevices, disabled, onChange, projectId, value }) => {
   const canExecuteSomewhere = useTaskExecutionAvailability(assigneeAgentId);
   const { changeDevice, changeDirectory, changeFollowing, changeRepos, following, target } =
     useTaskExecutionSelection({
@@ -74,9 +79,14 @@ const TaskExecutionControlsInner = memo<
 
   if (!canExecuteSomewhere) return null;
 
-  // While following, `inheritedDirectory` is the agent's own folder on its own
-  // machine — shown under the switch so "follow" reads as a concrete place.
+  // While following, `inheritedDirectory` is the folder the run will start in:
+  // the agent's own (or its machine's default), else the project's folder on
+  // that machine — the same chain the server resolves.
   const followDirectory = getWorkingDirEffectivePath(target.inheritedDirectory);
+  // The chip shows the folder's NAME; the full path rides along for its tooltip.
+  const followDirectoryName = followDirectory
+    ? (getWorkingDirectoryName(followDirectory) ?? followDirectory)
+    : undefined;
 
   return (
     <>
@@ -84,13 +94,12 @@ const TaskExecutionControlsInner = memo<
         agentId={assigneeAgentId}
         canPinPrivateDevices={canPinPrivateDevices}
         disabled={disabled}
+        followDirectory={followDirectoryName}
+        followDirectoryPath={followDirectory}
+        followDirectorySource={target.inheritedDirectorySource}
         following={following}
+        projectId={projectId}
         value={value?.boundDeviceId}
-        followDirectory={
-          followDirectory
-            ? (getWorkingDirectoryName(followDirectory) ?? followDirectory)
-            : undefined
-        }
         onChange={changeDevice}
         onFollowChange={changeFollowing}
       />

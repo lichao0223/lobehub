@@ -120,12 +120,19 @@ export class MemoryExtractionExecutor {
   private readonly privateConfig: MemoryExtractionConfig;
   private readonly modelConfig: MemoryExtractionModelConfig;
   private readonly runtimeCache = new Map<string, RuntimeBundle>();
+  /** `serverConfig.systemAgent`: administrator defaults already merged above `SYSTEM_AGENT`. */
+  private readonly deploymentSystemAgent: Partial<UserServiceModelConfig>;
   private readonly db = getServerDB();
   private readonly context: MemoryExtractionExecutorContext;
 
   private constructor(serverConfig: ServerConfig, privateConfig: MemoryExtractionConfig) {
     this.privateConfig = privateConfig;
     this.aiProviderConfig = (serverConfig.aiProvider || {}) as Record<string, ProviderConfig>;
+    // CUST-011: the administrator layer reaches the memory runtime through the
+    // global config, which already puts it above `SYSTEM_AGENT`. Storing it
+    // here keeps extraction from reading the settings row per job.
+    this.deploymentSystemAgent = (serverConfig.systemAgent ||
+      {}) as Partial<UserServiceModelConfig>;
     this.embeddingPreferredProviders = privateConfig.embeddingPreferredProviders;
     this.embeddingPreferredModels = privateConfig.embeddingPreferredModels;
     this.gatekeeperPreferredProviders = privateConfig.agentGateKeeperPreferredProviders;
@@ -157,6 +164,9 @@ export class MemoryExtractionExecutor {
       },
       get db() {
         return executor.db;
+      },
+      get deploymentSystemAgent() {
+        return executor.deploymentSystemAgent;
       },
       get embeddingPreferredModels() {
         return executor.embeddingPreferredModels;

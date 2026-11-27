@@ -3,6 +3,7 @@ import { BUILTIN_AGENTS } from '@lobechat/builtin-agents';
 import { DEFAULT_AGENT_CONFIG, DEFAULT_INBOX_AVATAR, DEFAULT_INBOX_TITLE } from '@lobechat/const';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getCompanyServiceDefaults } from '@/business/server/adminConsole/serviceDefaults';
 import { AgentModel } from '@/database/models/agent';
 import { AgentShareModel } from '@/database/models/agentShare';
 import { SessionModel } from '@/database/models/session';
@@ -13,6 +14,10 @@ import { initializeRedisWithPrefix, isRedisEnabled, RedisKeys } from '@/server/m
 import { assertCanPerformResourceAction } from '@/server/services/resourcePermission';
 
 import { AgentService } from './index';
+
+vi.mock('@/business/server/adminConsole/serviceDefaults', () => ({
+  getCompanyServiceDefaults: vi.fn(),
+}));
 
 vi.mock('@/server/services/resourcePermission', () => ({
   assertCanPerformResourceAction: vi.fn(),
@@ -78,6 +83,8 @@ describe('AgentService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // No administrator default unless a test states one.
+    (getCompanyServiceDefaults as any).mockResolvedValue({ systemAgent: {}, tiers: {} });
     // Setup default UserModel mock
     (UserModel as any).mockImplementation(function () {
       return mockUserModel;

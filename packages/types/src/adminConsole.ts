@@ -55,15 +55,19 @@ export interface CompanyModel {
   type: AiModelType;
 }
 
-/** Optional system-task defaults; they only affect newly created users. */
+/**
+ * Optional system-task defaults. They apply to every user who has not picked a
+ * model themselves (existing, newly registered and SSO-created alike) and to
+ * background tasks; a user's own choice always wins (CUST-011).
+ */
 export interface AdminConsoleAiDefaults {
-  /** Model id for new users' default chat model. */
+  /** Model id backing the main tier, plus a new user's first conversation. */
   chat?: string;
-  /** Model id for memory / knowledge embeddings. */
+  /** Model id backing memory embeddings. */
   embedding?: string;
-  /** Model id for title generation. */
+  /** Model id backing title generation and the other flash-tier tasks. */
   title?: string;
-  /** Model id for task verification. */
+  /** Model id backing acceptance; only a vision-capable model can serve it. */
   verify?: string;
 }
 

@@ -5,11 +5,13 @@ import {
 } from '@lobechat/types';
 
 import { getAgentStoreState } from '@/store/agent';
-import { agentByIdSelectors } from '@/store/agent/selectors';
+import { agentByIdSelectors, agentSelectors } from '@/store/agent/selectors';
 import { getAiInfraStoreState } from '@/store/aiInfra';
 import { aiModelSelectors } from '@/store/aiInfra/slices/aiModel/selectors';
 import { pendingHeteroPermissionModeMetadata } from '@/store/chat/heteroPermissionMode';
 import { pendingHeteroPlanModeMetadata } from '@/store/chat/heteroPlanMode';
+import { getUserStoreState } from '@/store/user';
+import { settingsSelectors } from '@/store/user/selectors';
 
 /**
  * Snapshot the given agent's current model/provider so a newly created topic
@@ -41,9 +43,18 @@ export const snapshotAgentModel = (
   // Non-hetero: the effective model IS the agent default when nothing is pinned,
   // so snapshotting the defaulted value is intended — it keeps the topic on the
   // model it started with even after the agent default later changes.
+  //
+  // A first send can beat the agent config hydration, and a row that never
+  // picked a model carries none. Both must fall back to the deployment chain
+  // (user pick > administrator default > `DEFAULT_AGENT_CONFIG`) rather than
+  // pinning the built-in provider into the topic for good — the pin outranks
+  // the agent default on every later run.
+  const agentConfig = agentSelectors.getAgentConfigById(agentId)(agentState);
+  const deploymentDefault = settingsSelectors.defaultAgentConfig(getUserStoreState());
+
   return {
-    model: agentByIdSelectors.getAgentModelById(agentId)(agentState),
-    provider: agentByIdSelectors.getAgentModelProviderById(agentId)(agentState),
+    model: agentConfig?.model || deploymentDefault.model,
+    provider: agentConfig?.provider || deploymentDefault.provider,
   };
 };
 

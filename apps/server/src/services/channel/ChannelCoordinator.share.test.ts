@@ -88,7 +88,10 @@ vi.mock('@/server/services/aiAgent', () => ({
   },
 }));
 vi.mock('@/server/services/aiAgent/shareGate/runMetrics', () => ({ recordShareRunResult }));
-vi.mock('@/server/globalConfig', () => ({ getServerDefaultAgentConfig: () => ({}) }));
+vi.mock('@/server/globalConfig', () => ({
+  getDeploymentDefaultAgentConfig: vi.fn(async () => ({})),
+  getServerDefaultAgentConfig: () => ({}),
+}));
 vi.mock('@/server/services/deviceGateway', () => ({ deviceGateway: {} }));
 vi.mock('@/server/services/deviceGateway/scopedDevices', () => ({ getScopedOnlineDevices }));
 vi.mock('@/server/services/queue/impls', () => ({ isQueueAgentRuntimeEnabled: () => false }));

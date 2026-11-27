@@ -1950,13 +1950,17 @@ export default {
   'serviceModel.advanced.summary.separator': ', ',
   'serviceModel.advanced.summary.total': '{{count}} tasks',
   'serviceModel.advanced.title': 'Advanced',
+  'serviceModel.adminDefault': 'Administrator default',
+  'serviceModel.adminDefaultNote':
+    'Unless you pick a model, this follows the administrator default (the system recommendation where none is set); once you pick one, your choice always wins.',
   'serviceModel.contextLimit.placeholder': 'Context limit',
   'serviceModel.customModel': 'Choose a model',
   'serviceModel.desc':
-    'Models LobeHub uses for background tasks. They follow the system recommendation by default and upgrade automatically when new models arrive.',
+    'Models LobeHub uses for background tasks. Unless you pick a model, they follow the deployment default an administrator sets; once you pick one, your choice always wins.',
   'serviceModel.off': 'Off',
   'serviceModel.systemRecommended': 'System recommended',
   'serviceModel.tierPicker': 'Model',
+  'serviceModel.tierDescSeparator': ' ',
   'serviceModel.title': 'Service Model',
   'serviceModel.tier.embedding.desc':
     'Embeds memories for semantic search. Not used for files or knowledge bases (set via the DEFAULT_FILES_CONFIG env var)',

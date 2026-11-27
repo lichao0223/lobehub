@@ -24,7 +24,10 @@ import { DEFAULT_RESOURCE_ACCESS_LEVELS } from '@/database/schemas';
 import { mergeAgentDefaultConfig } from '@/database/utils/agentConfig';
 import { normalizeInboxAgentAvatar, normalizeInboxAgentTitle } from '@/database/utils/inboxAgent';
 import { getRedisConfig } from '@/envs/redis';
-import { getServerDefaultAgentConfig } from '@/server/globalConfig';
+import {
+  getDeploymentDefaultAgentConfig,
+  getServerDefaultAgentConfig,
+} from '@/server/globalConfig';
 import {
   getJSONFromRedis,
   initializeRedisWithPrefix,
@@ -218,6 +221,10 @@ export class AgentService {
 
   async createInbox() {
     const sessionModel = new SessionModel(this.db, this.userId, this.workspaceId);
+    // The environment layer only: a row must not bake in a default that is
+    // meant to follow on read. The administrator default is applied by
+    // `mergeDefaultConfig()`, so changing it still reaches inboxes that were
+    // created earlier instead of being frozen at creation time.
     const defaultAgentConfig = getServerDefaultAgentConfig();
     await sessionModel.createInbox(defaultAgentConfig);
   }
@@ -241,7 +248,7 @@ export class AgentService {
       this.userModel.getUserSettingsDefaultAgentConfig(),
     ]);
 
-    const mergedConfig = this.mergeDefaultConfig(agent, defaultAgentConfig);
+    const mergedConfig = await this.mergeDefaultConfig(agent, defaultAgentConfig);
     if (!mergedConfig) return null;
 
     return this.applyBuiltinIdentity(mergedConfig, slug);
@@ -290,7 +297,10 @@ export class AgentService {
       this.userModel.getUserSettingsDefaultAgentConfig(),
     ]);
 
-    const config = this.mergeDefaultConfig(agent, defaultAgentConfig) as AgentConfigWithId | null;
+    const config = (await this.mergeDefaultConfig(
+      agent,
+      defaultAgentConfig,
+    )) as AgentConfigWithId | null;
     if (!config) return null;
 
     return this.applyBuiltinIdentity(config);
@@ -313,7 +323,7 @@ export class AgentService {
       this.getAgentWelcomeFromRedis(agentId),
     ]);
 
-    const config = this.mergeDefaultConfig(agent, defaultAgentConfig);
+    const config = await this.mergeDefaultConfig(agent, defaultAgentConfig);
     if (!config) return null;
 
     const normalizedConfig = this.applyBuiltinIdentity(config);
@@ -343,10 +353,10 @@ export class AgentService {
     provider?: string | null;
   }): Promise<{ model: string; provider: string }> {
     const defaultAgentConfig = await this.userModel.getUserSettingsDefaultAgentConfig();
-    const merged = this.mergeDefaultConfig(
+    const merged = (await this.mergeDefaultConfig(
       { model: agent.model, provider: agent.provider },
       defaultAgentConfig,
-    )!;
+    ))!;
 
     // `LobeAgentConfig` types both as optional even though `DEFAULT_AGENT_CONFIG`
     // always supplies them; the fallbacks are those same constants.
@@ -380,7 +390,8 @@ export class AgentService {
    *
    * Merge order (later values override earlier):
    * 1. DEFAULT_AGENT_CONFIG - hardcoded defaults
-   * 2. serverDefaultAgentConfig - from environment variable
+   * 2. serverDefaultAgentConfig - deployment default: administrator console
+   *    default above the environment variable
    * 3. userDefaultAgentConfig - from user settings (defaultAgent.config)
    * 4. agent - actual agent config from database
    *
@@ -391,14 +402,18 @@ export class AgentService {
    * the workspace looks "initialized" with their model. For workspace-scoped
    * reads we skip the user layer and fall back to the system default instead.
    */
-  private mergeDefaultConfig(
+  private async mergeDefaultConfig(
     agent: any,
     defaultAgentConfig: Awaited<ReturnType<UserModel['getUserSettingsDefaultAgentConfig']>>,
-  ): LobeAgentConfig | null {
+  ): Promise<LobeAgentConfig | null> {
     if (!agent) return null;
 
     return mergeAgentDefaultConfig(agent, {
-      serverDefault: getServerDefaultAgentConfig(),
+      // CUST-011 §7.1: the deployment layer is the administrator default above
+      // `DEFAULT_AGENT_CONFIG`, so an agent row that never picked a model (the
+      // inbox, a fresh session) resolves to the administrator's main model
+      // instead of the code default. The user layer and the row still win.
+      serverDefault: await getDeploymentDefaultAgentConfig(),
       userDefault: defaultAgentConfig,
       workspaceId: this.workspaceId,
     });

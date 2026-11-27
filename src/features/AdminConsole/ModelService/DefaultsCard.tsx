@@ -1,7 +1,7 @@
 'use client';
 
 import type { AdminConsoleAiDefaults, CompanyModel } from '@lobechat/types';
-import { Select, Tag, Text } from '@lobehub/ui';
+import { Flexbox, Select, Tag, Text } from '@lobehub/ui';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +9,13 @@ import { sx } from '@/styles/sx';
 
 import FieldRow from './FieldRow';
 import { styles } from './style';
+import {
+  acceptsDefaultModel,
+  defaultModelIssue,
+  type DefaultModelKey,
+  defaultModelMessageKey,
+  defaultModelTagKey,
+} from './utils';
 
 interface DefaultsCardProps {
   defaults: AdminConsoleAiDefaults;
@@ -16,24 +23,37 @@ interface DefaultsCardProps {
   onChange: (defaults: AdminConsoleAiDefaults) => void;
 }
 
-type DefaultKey = 'chat' | 'embedding' | 'title' | 'verify';
-
-const PURPOSE_TYPES: Record<DefaultKey, Array<CompanyModel['type']>> = {
-  chat: ['chat'],
-  embedding: ['embedding'],
-  title: ['chat'],
-  verify: ['chat'],
-};
+/**
+ * The four defaults, worded and ordered like the personal page's tiers so an
+ * administrator and a user describe the same thing with the same name.
+ */
+const FIELDS: {
+  descriptionKey: 'chatDesc' | 'embeddingDesc' | 'titleDesc' | 'verifyDesc';
+  key: DefaultModelKey;
+  labelKey: 'chat' | 'embedding' | 'title' | 'verify';
+}[] = [
+  { descriptionKey: 'chatDesc', key: 'chat', labelKey: 'chat' },
+  { descriptionKey: 'titleDesc', key: 'title', labelKey: 'title' },
+  { descriptionKey: 'verifyDesc', key: 'verify', labelKey: 'verify' },
+  { descriptionKey: 'embeddingDesc', key: 'embedding', labelKey: 'embedding' },
+];
 
 const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) => {
   const { t } = useTranslation('adminConsole');
 
   const optionsFor = useMemo(
-    () => (key: DefaultKey) => {
-      const accepted = PURPOSE_TYPES[key];
-      const rows = models.filter(
-        (model) => accepted.includes(model.type) && (key === 'chat' ? model.open : true),
-      );
+    () => (key: DefaultModelKey) => {
+      const rows = models.filter((model) => acceptsDefaultModel(model, key));
+      // A stored value that no longer qualifies stays in the list, marked, so
+      // the picker keeps showing what is actually saved and the warning below
+      // is attached to something the admin can see. A closed or removed model
+      // lands here too: it is exactly the case that used to save silently.
+      const storedId = defaults[key];
+      const storedIssue = defaultModelIssue(models, key, storedId);
+      const stale =
+        storedIssue && storedIssue !== 'missing'
+          ? models.find((model) => model.id === storedId)
+          : undefined;
 
       return [
         {
@@ -44,39 +64,25 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
           label: `${model.name} · ${model.id}`,
           value: model.id,
         })),
+        ...(stale && storedIssue
+          ? [
+              {
+                label: `${stale.name} · ${stale.id} · ${t(defaultModelTagKey(storedIssue))}`,
+                value: stale.id,
+              },
+            ]
+          : []),
       ];
     },
-    [models, t],
+    [defaults, models, t],
   );
 
-  const update = (key: DefaultKey, value: string) => {
+  const update = (key: DefaultModelKey, value: string) => {
     const next: AdminConsoleAiDefaults = { ...defaults };
     if (value) next[key] = value;
     else delete next[key];
     onChange(next);
   };
-  const rows = [
-    {
-      descriptionKey: 'modelService.defaults.chatDesc',
-      key: 'chat',
-      labelKey: 'modelService.defaults.chat',
-    },
-    {
-      descriptionKey: 'modelService.defaults.embeddingDesc',
-      key: 'embedding',
-      labelKey: 'modelService.defaults.embedding',
-    },
-    {
-      descriptionKey: 'modelService.defaults.titleDesc',
-      key: 'title',
-      labelKey: 'modelService.defaults.title',
-    },
-    {
-      descriptionKey: 'modelService.defaults.verifyDesc',
-      key: 'verify',
-      labelKey: 'modelService.defaults.verify',
-    },
-  ] as const;
 
   return (
     <div {...sx(styles.card)}>
@@ -91,27 +97,40 @@ const DefaultsCard = memo<DefaultsCardProps>(({ defaults, models, onChange }) =>
       </div>
 
       <div>
-        {rows.map((row, index) => (
-          <FieldRow
-            description={t(row.descriptionKey)}
-            key={row.key}
-            label={t(row.labelKey)}
-            last={index === rows.length - 1}
-          >
-            <Select
-              allowClear={false}
-              options={optionsFor(row.key)}
-              style={{ width: '100%' }}
-              value={defaults[row.key] ?? ''}
-              onChange={(value) => {
-                // The "inherit" option carries an empty string, but a cleared
-                // select can hand back `undefined`; `String(undefined)` would
-                // persist the literal text "undefined" as a model id.
-                update(row.key, typeof value === 'string' ? value : '');
-              }}
-            />
-          </FieldRow>
-        ))}
+        {FIELDS.map((row, index) => {
+          // Nothing is blocked here, but saving a model that cannot do the job
+          // must not pass without the admin seeing why.
+          const issue = defaultModelIssue(models, row.key, defaults[row.key]);
+
+          return (
+            <FieldRow
+              description={t(`modelService.defaults.${row.descriptionKey}`)}
+              key={row.key}
+              label={t(`modelService.defaults.${row.labelKey}`)}
+              last={index === FIELDS.length - 1}
+            >
+              <Flexbox gap={4} style={{ width: '100%' }}>
+                <Select
+                  allowClear={false}
+                  options={optionsFor(row.key)}
+                  style={{ width: '100%' }}
+                  value={defaults[row.key] ?? ''}
+                  onChange={(value) => {
+                    // The "inherit" option carries an empty string, but a cleared
+                    // select can hand back `undefined`; `String(undefined)` would
+                    // persist the literal text "undefined" as a model id.
+                    update(row.key, typeof value === 'string' ? value : '');
+                  }}
+                />
+                {issue && (
+                  <Text fontSize={12} lineHeight={1.6} type={'warning'}>
+                    {t(defaultModelMessageKey(issue))}
+                  </Text>
+                )}
+              </Flexbox>
+            </FieldRow>
+          );
+        })}
       </div>
     </div>
   );

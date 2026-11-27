@@ -220,21 +220,34 @@ export default {
   'modelService.capability.vision': 'Vision',
   'modelService.capability.functionCall': 'Tools',
   'modelService.capability.reasoning': 'Reasoning',
-  'modelService.defaults.sectionTitle': 'Defaults',
+  'modelService.defaults.sectionTitle': 'Default models',
   'modelService.defaults.desc':
-    'Optional. Affects new users and system tasks only; users can change everything.',
+    'Applies to every user who has not picked a model themselves, and to background tasks. Anyone who picks a model always keeps their own choice. Only models open to users can serve as a default.',
   'modelService.defaults.optional': 'Optional',
-  'modelService.defaults.chat': 'Default chat model for new users',
+  'modelService.defaults.chat': 'Main model',
   'modelService.defaults.chatDesc':
-    'Preselected on the first conversation; never written into user settings.',
-  'modelService.defaults.embedding': 'Memory embeddings',
+    'Quality-sensitive tasks such as writing and reasoning, plus the first conversation of a new user.',
+  'modelService.defaults.embedding': 'Memory embedding',
   'modelService.defaults.embeddingDesc':
-    'Used for memory and knowledge retrieval. Changing it invalidates stored vectors; reindex afterwards.',
-  'modelService.defaults.title': 'Title generation / history compression',
-  'modelService.defaults.titleDesc': 'A lightweight model for background tasks.',
-  'modelService.defaults.verify': 'Task verification',
-  'modelService.defaults.verifyDesc': 'The model used for verification tasks.',
-  'modelService.defaults.inherit': 'Not set (follow user settings)',
+    'Embeds memories for semantic search. Changing it invalidates stored vectors; reindex afterwards.',
+  'modelService.defaults.title': 'Flash model',
+  'modelService.defaults.titleDesc':
+    'Frequent tasks such as naming, translation, compression and memory.',
+  'modelService.defaults.verify': 'Acceptance model',
+  'modelService.defaults.verifyDesc':
+    'Task and goal acceptance reads screenshot evidence, so only vision models are listed.',
+  'modelService.defaults.inherit': 'Not set (deployment default)',
+  'modelService.defaults.unsupported': 'not usable',
+  'modelService.defaults.closedTag': 'not open to users',
+  'modelService.defaults.removedTag': 'removed upstream',
+  'modelService.defaults.invalid':
+    'The saved model can no longer serve this default. Pick one from the list.',
+  'modelService.defaults.closed':
+    'This model is not open to users, so it is not used as a default. Open the model or pick another one.',
+  'modelService.defaults.removed':
+    'This model was removed from the upstream catalog, so it is not used as a default. Pick another one.',
+  'modelService.defaults.verifyInvalid':
+    'The saved model cannot read screenshots. Acceptance needs a vision model — pick one from the list.',
   'modelService.sync.title': 'Fetch model catalog',
   'modelService.sync.desc':
     'Upstream returned {{count}} models. Review the diff against the local catalog; nothing is written until you apply.',

@@ -59,5 +59,56 @@ describe('AiInfraRepos', () => {
         ),
       );
     });
+
+    // CUST-011-C: `getAiProviderSpecificConfig()` ships
+    // `{ tellhow: enabled, ...everyoneElse: disabled }`. These three cases are
+    // the whole contract of that default: it seeds a new user's switches, the
+    // user's own row ORs over it, and the admin console still decides whether
+    // Tellhow exists at all.
+    describe('CUST-011-C defaults (default-off is not forbidden)', () => {
+      const forkProviderConfigs = {
+        deepseek: { enabled: false },
+        openai: { enabled: false },
+        tellhow: { enabled: true },
+      };
+
+      it('should leave only Tellhow enabled for a user who never touched a provider', async () => {
+        const forkRepo = new AiInfraRepos(serverDB, userId, forkProviderConfigs);
+        vi.spyOn(forkRepo.aiProviderModel, 'getAiProviderList').mockResolvedValue([]);
+
+        const result = await forkRepo.getAiProviderList();
+
+        expect(
+          result.filter((provider) => provider.enabled).map((provider) => provider.id),
+        ).toEqual(['tellhow']);
+      });
+
+      it('should keep a provider the user switched on even though its default is off', async () => {
+        const forkRepo = new AiInfraRepos(serverDB, userId, forkProviderConfigs);
+        vi.spyOn(forkRepo.aiProviderModel, 'getAiProviderList').mockResolvedValue([
+          { enabled: true, id: 'openai', name: 'OpenAI' } as AiProviderListItem,
+        ]);
+
+        const result = await forkRepo.getAiProviderList();
+
+        expect(result.find((provider) => provider.id === 'openai')).toMatchObject({
+          enabled: true,
+        });
+      });
+
+      it('should make Tellhow invisible when the administrator turned it off', async () => {
+        const forkRepo = new AiInfraRepos(serverDB, userId, {
+          ...forkProviderConfigs,
+          tellhow: { enabled: false },
+        });
+        vi.spyOn(forkRepo.aiProviderModel, 'getAiProviderList').mockResolvedValue([]);
+
+        const result = await forkRepo.getAiProviderList();
+
+        expect(result.find((provider) => provider.id === 'tellhow')).toMatchObject({
+          enabled: false,
+        });
+      });
+    });
   });
 });
