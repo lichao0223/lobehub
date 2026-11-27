@@ -12,6 +12,7 @@ import {
   Select,
   Spin,
   Text,
+  Tooltip,
 } from '@lobehub/ui';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -106,12 +107,18 @@ const Devices = memo(() => {
             <SearchBar
               allowClear
               placeholder={t('devices.searchPlaceholder')}
-              style={{ maxWidth: 320, minWidth: 220 }}
+              style={{ flex: '1 1 220px', maxWidth: 320, minWidth: 220 }}
               value={keyword}
               variant={'filled'}
               onInputChange={(value) => setKeyword(value)}
             />
-            <Flexbox horizontal align={'center'} gap={12} wrap={'wrap'}>
+            {/*
+             * Fixed geometry: every control is mounted in every scope, so
+             * switching 全部/个人/工作空间 cannot reflow the bar. The workspace-only
+             * visibility filter stays in place, disabled and explained, instead of
+             * appearing and pushing the whole toolbar onto another line.
+             */}
+            <Flexbox horizontal align={'center'} gap={12} style={{ flex: 'none' }}>
               <Segmented
                 size={'small'}
                 value={scope}
@@ -123,7 +130,7 @@ const Devices = memo(() => {
                 onChange={(value) => setScope(value as ScopeFilter)}
               />
               <Select
-                style={{ minWidth: 132 }}
+                style={{ width: 148 }}
                 value={online}
                 options={[
                   { label: t('devices.filter.online.all'), value: 'all' },
@@ -135,21 +142,28 @@ const Devices = memo(() => {
                   setOnline(typeof value === 'string' ? (value as OnlineFilter) : 'all');
                 }}
               />
-              {scope === 'workspace' && (
-                <Select
-                  style={{ minWidth: 132 }}
-                  value={visibility}
-                  options={[
-                    { label: t('devices.filter.visibility.all'), value: 'all' },
-                    { label: t('devices.visibility.private'), value: 'private' },
-                    { label: t('devices.visibility.public'), value: 'public' },
-                  ]}
-                  onChange={(value) => {
-                    setVisibility(typeof value === 'string' ? (value as VisibilityFilter) : 'all');
-                  }}
-                />
-              )}
-              <Text fontSize={12} type={'secondary'}>
+              <Tooltip
+                title={scope === 'workspace' ? undefined : t('devices.filter.visibility.hint')}
+              >
+                <div style={{ display: 'flex' }}>
+                  <Select
+                    disabled={scope !== 'workspace'}
+                    style={{ width: 148 }}
+                    value={visibility}
+                    options={[
+                      { label: t('devices.filter.visibility.all'), value: 'all' },
+                      { label: t('devices.visibility.private'), value: 'private' },
+                      { label: t('devices.visibility.public'), value: 'public' },
+                    ]}
+                    onChange={(value) => {
+                      setVisibility(
+                        typeof value === 'string' ? (value as VisibilityFilter) : 'all',
+                      );
+                    }}
+                  />
+                </div>
+              </Tooltip>
+              <Text fontSize={12} style={{ whiteSpace: 'nowrap' }} type={'secondary'}>
                 {t('devices.total', { count: total })}
               </Text>
             </Flexbox>
@@ -177,13 +191,27 @@ const Devices = memo(() => {
                 title={t('devices.empty.title')}
               />
             ) : items.length === 0 ? (
-              <Empty
-                description={t('devices.empty.description')}
-                title={t('devices.empty.title')}
-                action={
-                  hasFilters && <Button onClick={resetFilters}>{t('devices.empty.clear')}</Button>
-                }
-              />
+              scope === 'workspace' && (stats?.workspace ?? 0) === 0 ? (
+                /* Empty because the deployment has no workspace devices yet — not
+                 * because the filters are wrong. Point at the flow that creates them. */
+                <Empty
+                  description={t('devices.empty.workspaceDescription')}
+                  title={t('devices.empty.workspaceTitle')}
+                  action={
+                    <Button type={'primary'} onClick={() => navigate('/admin/workspaces')}>
+                      {t('devices.empty.goWorkspaces')}
+                    </Button>
+                  }
+                />
+              ) : (
+                <Empty
+                  description={t('devices.empty.description')}
+                  title={t('devices.empty.title')}
+                  action={
+                    hasFilters && <Button onClick={resetFilters}>{t('devices.empty.clear')}</Button>
+                  }
+                />
+              )
             ) : (
               <>
                 {pagePartial && (

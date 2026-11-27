@@ -10,6 +10,7 @@ import {
   Flexbox,
   Icon,
   Input,
+  Pagination,
   SearchBar,
   Select,
   Spin,
@@ -19,16 +20,18 @@ import {
 } from '@lobehub/ui';
 import { cssVar } from '@lobehub/ui/stylex/cssVar.stylex';
 import * as stylex from '@stylexjs/stylex';
-import { Building2, PlusIcon, TrashIcon, UserPlusIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, UserPlusIcon } from 'lucide-react';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import NavHeader from '@/features/NavHeader';
+import SettingContainer from '@/features/Setting/SettingContainer';
 import { adminConsoleService } from '@/services/adminConsole';
+import { useDensityTokens } from '@/styles/density';
 
 import { useAdminWorkspaceMembers, useAdminWorkspaces } from '../hooks/useAdminWorkspaces';
 
 const styles = stylex.create({
-  page: { height: '100%', overflow: 'auto', paddingBlock: 24, paddingInline: 32 },
   row: {
     alignItems: 'center',
     borderColor: cssVar.colorBorderSecondary,
@@ -201,6 +204,7 @@ MembersDrawer.displayName = 'AdminWorkspaceMembersDrawer';
 
 const Workspaces = memo(() => {
   const { t } = useTranslation('adminConsole');
+  const tokens = useDensityTokens();
   const [page, setPage] = useState(1);
   const [q, setQ] = useState('');
   const [selected, setSelected] = useState<AdminWorkspaceListItem | null>(null);
@@ -215,90 +219,95 @@ const Workspaces = memo(() => {
   };
 
   return (
-    <Flexbox gap={16} style={{ height: '100%' }}>
-      <Flexbox
-        horizontal
-        align={'center'}
-        justify={'space-between'}
-        style={{ paddingBlock: 16, paddingInline: 32 }}
+    <>
+      <NavHeader>
+        <Text weight={500}>{t('workspaces.title')}</Text>
+      </NavHeader>
+      <SettingContainer
+        maxWidth={1024}
+        paddingBlock={`${tokens.pagePaddingBlockStart}px 128px`}
+        paddingInline={tokens.pagePaddingInline}
       >
-        <Flexbox horizontal align={'center'} gap={8}>
-          <Icon icon={Building2} />
-          <Text fontSize={18} weight={600}>
-            {t('workspaces.title')}
-          </Text>
-        </Flexbox>
-        <Flexbox horizontal align={'center'} gap={8}>
-          <SearchBar
-            allowClear
-            placeholder={t('workspaces.searchPlaceholder')}
-            style={{ width: 260 }}
-            value={q}
-            variant={'filled'}
-            onInputChange={(value) => {
-              setQ(value);
-              setPage(1);
-            }}
-          />
-          <Button icon={<Icon icon={PlusIcon} />} type={'primary'} onClick={openCreate}>
-            {t('workspaces.create')}
-          </Button>
-        </Flexbox>
-      </Flexbox>
-
-      <Flexbox {...stylex.props(styles.page)} gap={8}>
-        {isLoading ? (
-          <Center style={{ padding: 48 }}>
-            <Spin />
-          </Center>
-        ) : !data?.items?.length ? (
-          <Empty description={t('workspaces.empty')} />
-        ) : (
-          data.items.map((workspace) => (
-            <div
-              key={workspace.id}
-              {...stylex.props(styles.row)}
-              role={'button'}
-              tabIndex={0}
-              onClick={() => setSelected(workspace)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') setSelected(workspace);
+        <Flexbox gap={16}>
+          <Flexbox horizontal align={'center'} gap={12} justify={'space-between'} wrap={'wrap'}>
+            <SearchBar
+              allowClear
+              placeholder={t('workspaces.searchPlaceholder')}
+              style={{ flex: '1 1 220px', maxWidth: 320, minWidth: 220 }}
+              value={q}
+              variant={'filled'}
+              onInputChange={(value) => {
+                setQ(value);
+                setPage(1);
               }}
-            >
-              <Flexbox>
-                <Text weight={500}>{workspace.name}</Text>
-                <Text type={'secondary'}>{workspace.slug}</Text>
-              </Flexbox>
-              <Flexbox horizontal align={'center'} gap={16}>
-                <Text type={'secondary'}>
-                  {t('workspaces.members', { count: workspace.memberCount })}
-                </Text>
-                <Text type={'secondary'}>
-                  {t('workspaces.devices', { count: workspace.deviceCount })}
-                </Text>
-                <Text type={'secondary'}>{workspace.ownerUsername ?? workspace.ownerEmail}</Text>
-              </Flexbox>
-            </div>
-          ))
-        )}
-
-        {data && data.total > data.pageSize && (
-          <Flexbox horizontal gap={8} justify={'center'}>
-            <Button disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>
-              {t('workspaces.prev')}
-            </Button>
-            <Button
-              disabled={page * data.pageSize >= data.total}
-              onClick={() => setPage((value) => value + 1)}
-            >
-              {t('workspaces.next')}
+            />
+            <Button icon={<Icon icon={PlusIcon} />} type={'primary'} onClick={openCreate}>
+              {t('workspaces.create')}
             </Button>
           </Flexbox>
-        )}
-      </Flexbox>
+
+          <Text fontSize={12} type={'secondary'}>
+            {t('workspaces.membersHint')}
+          </Text>
+
+          {isLoading ? (
+            <Center height={240}>
+              <Spin />
+            </Center>
+          ) : !data?.items?.length ? (
+            <Empty
+              description={t('workspaces.empty')}
+              title={t('workspaces.emptyTitle')}
+              action={
+                <Button type={'primary'} onClick={openCreate}>
+                  {t('workspaces.create')}
+                </Button>
+              }
+            />
+          ) : (
+            data.items.map((workspace) => (
+              <div
+                key={workspace.id}
+                {...stylex.props(styles.row)}
+                role={'button'}
+                tabIndex={0}
+                onClick={() => setSelected(workspace)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') setSelected(workspace);
+                }}
+              >
+                <Flexbox>
+                  <Text weight={500}>{workspace.name}</Text>
+                  <Text type={'secondary'}>{workspace.slug}</Text>
+                </Flexbox>
+                <Flexbox horizontal align={'center'} gap={16}>
+                  <Text type={'secondary'}>
+                    {t('workspaces.members', { count: workspace.memberCount })}
+                  </Text>
+                  <Text type={'secondary'}>
+                    {t('workspaces.devices', { count: workspace.deviceCount })}
+                  </Text>
+                  <Text type={'secondary'}>{workspace.ownerUsername ?? workspace.ownerEmail}</Text>
+                </Flexbox>
+              </div>
+            ))
+          )}
+
+          {!!data && data.total > data.pageSize && (
+            <Pagination
+              align={'end'}
+              current={page}
+              pageSize={data.pageSize}
+              showSizeChanger={false}
+              total={data.total}
+              onChange={(nextPage) => setPage(nextPage)}
+            />
+          )}
+        </Flexbox>
+      </SettingContainer>
 
       <MembersDrawer workspace={selected} onClose={() => setSelected(null)} />
-    </Flexbox>
+    </>
   );
 });
 
