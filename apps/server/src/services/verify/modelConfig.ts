@@ -59,14 +59,18 @@ export const REVIEW_PREDICT_MODEL_CONFIG: VerifyModelConfig = {
 };
 
 /**
- * The model every verify plan generation (requirement → named criteria) runs on.
+ * The model every verify plan generation (requirement → named criteria) falls
+ * back to when the deployment configures no `verify` service model.
  *
  * Deliberately NOT `resolveVerifyModelConfig`: that chain follows the verifier
  * agent's chat model, which may be a slow reasoning model that returns no
  * parsable structured output. A failed split is silent — the plan falls back
- * to one holistic "Task delivery acceptance" row — so the split runs on one
- * pinned model instead of whatever the user's verifier happens to use. The
- * values live in `@lobechat/business-const` so the cloud build can override them.
+ * to one holistic "Task delivery acceptance" row — so the split never inherits
+ * the verifier's model. It does follow the configured `verify` service model
+ * (CUST-011: user pick → administrator default → `SYSTEM_AGENT`), because a
+ * deployment whose only provider is the administrator's Tellhow catalog has no
+ * key for this pinned vendor and would fail every split. The values live in
+ * `@lobechat/business-const` so the cloud build can override them.
  */
 export const VERIFY_PLAN_MODEL_CONFIG: VerifyModelConfig = {
   model: DEFAULT_VERIFY_PLAN_MODEL,

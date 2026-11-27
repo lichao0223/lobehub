@@ -20,7 +20,8 @@ import type { VerifyCriterionItem } from '@/database/schemas/verify';
 import type { LobeChatDatabase } from '@/database/type';
 import { AiGenerationService } from '@/server/services/aiGeneration';
 
-import { VERIFY_PLAN_MODEL_CONFIG } from './modelConfig';
+import type { VerifyModelConfig } from './modelConfig';
+import { resolveVerifyServiceModel, VERIFY_PLAN_MODEL_CONFIG } from './modelConfig';
 import { resolveVerifyResponseLanguage } from './responseLanguage';
 import { RawGeneratedCriteriaSchema } from './schema';
 
@@ -169,6 +170,31 @@ export class VerifyPlanGeneratorService {
       : {};
   }
 
+  /**
+   * Model the plan split runs on.
+   *
+   * CUST-011: the plan split is a background LobeHub call, so it follows the
+   * same chain as the rest of background verification — the user's `verify`
+   * pick, then the administrator default, then `SYSTEM_AGENT`. A deployment
+   * that only serves the administrator's Tellhow catalog has no key for the
+   * pinned DeepSeek model, and the pinned-only chain made every split fail with
+   * `InvalidProviderAPIKey` (silently collapsing each checklist to the holistic
+   * row). The pinned `VERIFY_PLAN_MODEL_CONFIG` stays the floor, which is also
+   * what an upstream deployment without a verify service model keeps using.
+   */
+  private async resolvePlanModel(): Promise<VerifyModelConfig> {
+    try {
+      return (await resolveVerifyServiceModel(this.db, this.userId)) ?? VERIFY_PLAN_MODEL_CONFIG;
+    } catch (error) {
+      log(
+        'failed to resolve the verify service model, falling back to the pinned plan model: %O',
+        error,
+      );
+
+      return VERIFY_PLAN_MODEL_CONFIG;
+    }
+  }
+
   /** Draft criteria for the generic task verification configuration surface. */
   async generateCriteria(params: {
     context?: string;
@@ -176,6 +202,7 @@ export class VerifyPlanGeneratorService {
     maxCriteria?: number;
   }): Promise<CriterionDraft[]> {
     const maxCriteria = params.maxCriteria ?? DEFAULT_MAX_AI_CRITERIA;
+    const planModel = await this.resolvePlanModel();
     const raw = await new AiGenerationService(
       this.db,
       this.userId,
@@ -188,7 +215,7 @@ export class VerifyPlanGeneratorService {
           language: await resolveVerifyResponseLanguage(this.db, this.userId),
           maxCriteria,
         }),
-        ...VERIFY_PLAN_MODEL_CONFIG,
+        ...planModel,
         schema: GENERATED_CRITERIA_JSON_SCHEMA,
         thinking: { type: 'disabled' },
       },
@@ -343,7 +370,7 @@ export class VerifyPlanGeneratorService {
     const raw = await ai.generateObject(
       {
         ...chain,
-        ...VERIFY_PLAN_MODEL_CONFIG,
+        ...(await this.resolvePlanModel()),
         schema: GENERATED_CRITERIA_JSON_SCHEMA,
         thinking: { type: 'disabled' },
       },

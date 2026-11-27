@@ -18,6 +18,12 @@ export interface PersistLayerResult {
 
 export type RuntimeBundle = {
   embeddings: ModelRuntime;
+  /**
+   * `false` when the embedding slot has no usable provider: the run still
+   * extracts and persists memories, but skips vector retrieval instead of
+   * recording a retrieval failure for a capability the deployment lacks.
+   */
+  embeddingsAvailable: boolean;
   gatekeeper: ModelRuntime;
   layerExtractor: ModelRuntime;
 };

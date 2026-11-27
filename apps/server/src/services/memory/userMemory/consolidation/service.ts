@@ -27,6 +27,7 @@ import {
 } from '@/server/services/memory/userMemory/embedding';
 import {
   type ProviderKeyVaultMap,
+  resolveCompanyProviderCredential,
   resolveRuntimeAgentConfig,
 } from '@/server/services/memory/userMemory/extract';
 
@@ -149,7 +150,9 @@ export class MemoryConsolidationService {
       this.agentConfig,
       keyVaults,
       {
+        companyCredential: await resolveCompanyProviderCredential(this.db, [this.agentConfig]),
         fallback: { apiKey: this.agentConfig.apiKey, baseURL: this.agentConfig.baseURL },
+        label: 'memory consolidation',
         preferred: { providerIds: [providerId] },
         userId: this.userId,
       },

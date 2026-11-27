@@ -73,6 +73,17 @@ vi.mock('@/server/services/aiGeneration', () => ({
   }),
 }));
 
+// CUST-011: the split follows the configured `verify` service model and only
+// falls back to the pinned plan model. Stub the administrator layer so the
+// tests never reach the console settings table.
+const { getCompanyServiceDefaultModelMock } = vi.hoisted(() => ({
+  getCompanyServiceDefaultModelMock: vi.fn(async () => undefined as any),
+}));
+
+vi.mock('@/business/server/adminConsole/serviceDefaults', () => ({
+  getCompanyServiceDefaultModel: getCompanyServiceDefaultModelMock,
+}));
+
 const db = {} as any;
 const lastPlan = (): VerifyCheckItem[] => setPlanMock.mock.calls.at(-1)![1] as VerifyCheckItem[];
 
@@ -175,9 +186,32 @@ describe('generateDraftPlan — holistic fallback', () => {
 describe('verify plan generation model', () => {
   beforeEach(() => {
     generateObjectMock.mockReset();
+    getCompanyServiceDefaultModelMock.mockReset();
+    getCompanyServiceDefaultModelMock.mockResolvedValue(undefined);
   });
 
-  it('keeps generic task criteria generation on the verify-plan scenario and pinned model', async () => {
+  it('runs the split on the configured verify service model (CUST-011)', async () => {
+    generateObjectMock.mockResolvedValue({ criteria: [] });
+    getCompanyServiceDefaultModelMock.mockResolvedValue({
+      model: 'qwen3.6-35b',
+      provider: 'tellhow',
+    });
+
+    await new VerifyPlanGeneratorService(db, 'user-1').generateDraftPlan({
+      enableAiGeneration: true,
+      goal: 'Ship the feature',
+      holisticFallback: true,
+      operationId: 'op-1',
+    });
+
+    expect(getCompanyServiceDefaultModelMock).toHaveBeenCalledWith('verify');
+    expect(generateObjectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'qwen3.6-35b', provider: 'tellhow' }),
+      expect.any(Object),
+    );
+  });
+
+  it('keeps the generic task criteria generation on the verify-plan scenario and pinned floor', async () => {
     generateObjectMock.mockResolvedValue({ criteria: [] });
 
     await new VerifyPlanGeneratorService(db, 'user-1').generateCriteria({

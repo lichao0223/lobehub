@@ -26,9 +26,10 @@ import { KeyVaultsGateKeeper } from '@/server/modules/KeyVaultsEncrypt';
 import { getUserScopedAiProviderRuntimeState } from '@/server/services/aiProviderAccess';
 import {
   type ProviderKeyVaultMap,
+  resolveCompanyProviderCredential,
+  resolveRuntimeAgentConfig,
   type RuntimeResolveOptions,
 } from '@/server/services/memory/userMemory/extract';
-import { resolveRuntimeAgentConfig } from '@/server/services/memory/userMemory/extract';
 import { LayersEnum } from '@/types/userMemory';
 import { trimBasedOnBatchProbe } from '@/utils/chunkers';
 
@@ -147,10 +148,12 @@ export class UserPersonaService {
       agentConfig,
       keyVaults,
       {
+        companyCredential: await resolveCompanyProviderCredential(this.db, [agentConfig]),
         fallback: {
           apiKey: agentConfig.apiKey,
           baseURL: agentConfig.baseURL,
         },
+        label: 'persona writer',
         preferred: { providerIds: [providerId] },
         userId: payload.userId,
       } satisfies RuntimeResolveOptions,

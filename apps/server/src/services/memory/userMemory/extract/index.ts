@@ -105,7 +105,7 @@ export {
   normalizeMemoryExtractionPayload,
 } from './payload';
 export type { ProviderCredential, ProviderKeyVaultMap, RuntimeResolveOptions } from './runtime';
-export { resolveRuntimeAgentConfig } from './runtime';
+export { resolveCompanyProviderCredential, resolveRuntimeAgentConfig } from './runtime';
 export type { TopicExtractionJob, TopicPaginationJob, UserPaginationResult } from './types';
 export { MemoryExtractionWorkflowService } from './workflow';
 

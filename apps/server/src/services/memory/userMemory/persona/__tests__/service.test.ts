@@ -78,6 +78,7 @@ vi.mock('@lobechat/memory-user-memory', () => ({
 }));
 
 vi.mock('@/server/services/memory/userMemory/extract', () => ({
+  resolveCompanyProviderCredential: vi.fn().mockResolvedValue(undefined),
   resolveRuntimeAgentConfig: vi.fn().mockResolvedValue({}),
 }));
 

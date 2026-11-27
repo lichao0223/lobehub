@@ -1,6 +1,7 @@
 import { BRANDING_PROVIDER } from '@lobechat/business-const';
 import { isLobeHubModelAvailable } from '@lobechat/business-model-bank/model-config';
 import { resolveBusinessModelMapping } from '@lobechat/business-model-runtime';
+import type { LobeChatDatabase } from '@lobechat/database';
 import type { ModelRuntimeHooks } from '@lobechat/model-runtime';
 import { ModelRuntime } from '@lobechat/model-runtime';
 import type { AiProviderRuntimeState, UserServiceModelConfig } from '@lobechat/types';
@@ -8,6 +9,8 @@ import debug from 'debug';
 
 import {
   COMPANY_PROVIDER_ID,
+  createCompanyProviderNotConfiguredError,
+  getCompanyProviderRuntime,
   resolveCompanyProviderParams,
 } from '@/business/server/companyProvider';
 import { getBusinessModelRuntimeHooks } from '@/business/server/model-runtime';
@@ -61,11 +64,57 @@ const maskSecret = (value?: string) => {
 export type ProviderCredential = { apiKey?: string; baseURL?: string };
 
 export type RuntimeResolveOptions = {
+  /**
+   * Company-provider credential read asynchronously by a background caller, see
+   * {@link resolveCompanyProviderCredential}. Without it a background task only
+   * sees the synchronous process cache — which nothing in a fresh worker may
+   * have warmed yet, and which every bundled copy of the module keeps apart.
+   */
+  companyCredential?: ProviderCredential | null;
   fallback?: ProviderCredential;
+  /** Slot name used in logs (`embedding` / `gatekeeper` / `layer extractor`). */
+  label?: string;
   preferred?: {
     providerIds?: string[];
   };
   userId?: string;
+};
+
+/**
+ * Join a caller-resolved company credential with the synchronous fallbacks.
+ *
+ * Priority: the credential the background caller just read from the console →
+ * the 5 s process snapshot → the `TELLHOW_*` deployment env. A credential that
+ * only carries half of the pair is ignored so the next layer can supply both.
+ */
+const resolveCompanyProviderParamsForAgent = (credential?: ProviderCredential | null) =>
+  credential?.apiKey && credential.baseURL
+    ? { apiKey: credential.apiKey, baseURL: credential.baseURL }
+    : resolveCompanyProviderParams({});
+
+/**
+ * Console credential for the memory slots that follow the administrator
+ * default, or `undefined` when no slot needs it and `null` when the deployment
+ * has not configured the service.
+ *
+ * Background tasks (memory extraction, persona writer, consolidation) call this
+ * before resolving their runtimes: `getCompanyProviderRuntime` reads the
+ * console row asynchronously and refreshes the shared 5 s cache, so the run
+ * neither depends on a chat request having warmed the snapshot first nor on a
+ * deployment env that an administrator's console config is supposed to replace.
+ */
+export const resolveCompanyProviderCredential = async (
+  db: LobeChatDatabase,
+  agents: readonly MemoryAgentConfig[],
+): Promise<ProviderCredential | null | undefined> => {
+  const needsCompanyProvider = agents.some(
+    (agent) => normalizeProvider(agent.provider || '') === COMPANY_PROVIDER_ID,
+  );
+  if (!needsCompanyProvider) return undefined;
+
+  const runtime = await getCompanyProviderRuntime(db);
+
+  return runtime ? { apiKey: runtime.apiKey, baseURL: runtime.baseURL } : null;
 };
 
 export const resolveRuntimeAgentConfig = (
@@ -74,12 +123,14 @@ export const resolveRuntimeAgentConfig = (
   options?: RuntimeResolveOptions,
   hooks?: ModelRuntimeHooks,
 ) => {
+  const label = options?.label ?? 'agent';
+
   // CUST-011: a slot that follows the administrator default resolves to
   // tellhow, whose endpoint and key live on the server (admin console
   // settings), never in a user vault. Resolve them the same way a chat request
   // does instead of building a keyless runtime that fails on every call.
   if (normalizeProvider(agent.provider || '') === COMPANY_PROVIDER_ID) {
-    const params = resolveCompanyProviderParams({});
+    const params = resolveCompanyProviderParamsForAgent(options?.companyCredential);
     if (params) {
       return ModelRuntime.initializeWithProvider(
         COMPANY_PROVIDER_ID,
@@ -87,6 +138,15 @@ export const resolveRuntimeAgentConfig = (
         hooks,
       );
     }
+
+    // Falling through would log "missing API key in user vault" and build a
+    // keyless tellhow runtime, which fails later with an opaque
+    // InvalidProviderAPIKey. Name the slot and fail with the readable error the
+    // chat path already returns for a disabled / unconfigured service.
+    console.error(
+      `[memory-extraction] ${label} cannot resolve the company provider: the admin console has no credentials and TELLHOW_API_KEY / TELLHOW_PROXY_URL are unset`,
+    );
+    throw createCompanyProviderNotConfiguredError();
   }
 
   const normalizedPreferredProviders = (options?.preferred?.providerIds || [])
@@ -116,7 +176,7 @@ export const resolveRuntimeAgentConfig = (
     );
     if (!userApiKey) {
       console.warn(
-        `[memory-extraction] skipping provider ${provider} due to missing API key in user vault`,
+        `[memory-extraction] ${label} skipping provider ${provider} due to missing API key in user vault`,
       );
       continue;
     }
@@ -413,6 +473,45 @@ export async function resolveRuntimeKeyVaults(
   return keyVaults;
 }
 
+/**
+ * Stand-in for a slot whose provider could not be built at all (no key, no
+ * endpoint). Every call rejects with the original reason.
+ *
+ * Only the embedding slot uses it: the caller marks the bundle
+ * `embeddingsAvailable: false` and skips vector retrieval, while the persist
+ * path already tolerates a missing vector (`generateEmbeddings` returns nulls).
+ * An unconfigured embedding provider must not abort a run before the analysis
+ * model ever gets a request.
+ */
+const unavailableRuntime = (reason: unknown): ModelRuntime => {
+  const fail = async (): Promise<never> => {
+    throw reason;
+  };
+
+  return new ModelRuntime({
+    chat: fail,
+    embeddings: fail,
+    generateObject: fail,
+    models: fail,
+  });
+};
+
+/** Resolve the embedding slot, degrading to a rejecting runtime instead of aborting the run. */
+const resolveEmbeddingRuntime = (
+  resolve: () => ModelRuntime,
+): { embeddings: ModelRuntime; embeddingsAvailable: boolean } => {
+  try {
+    return { embeddings: resolve(), embeddingsAvailable: true };
+  } catch (error) {
+    console.warn(
+      '[memory-extraction] embedding runtime unavailable, memories will be stored without vectors',
+      error,
+    );
+
+    return { embeddings: unavailableRuntime(error), embeddingsAvailable: false };
+  }
+};
+
 export async function getRuntime(
   ctx: MemoryExtractionExecutorContext,
   userId: string,
@@ -434,11 +533,24 @@ export async function getRuntime(
   const cached = ctx.runtimeCache.get(cacheKey);
   if (cached) return cached;
 
+  // CUST-011: read the console config here, asynchronously, with this run's db
+  // handle. The synchronous snapshot in `resolveCompanyProviderParams` is only
+  // populated by whichever module copy happened to read it earlier, so a
+  // background job must not depend on it (T-104).
+  const db = await ctx.db;
+  const companyCredential = await resolveCompanyProviderCredential(db, [
+    memoryServiceConfig.agents.embedding,
+    memoryServiceConfig.agents.gatekeeper,
+    memoryServiceConfig.agents.layerExtractor,
+  ]);
+
   const embeddingOptions: RuntimeResolveOptions = {
+    companyCredential,
     fallback: {
       apiKey: memoryServiceConfig.agents.embedding.apiKey,
       baseURL: memoryServiceConfig.agents.embedding.baseURL,
     },
+    label: 'embedding',
     preferred: {
       providerIds: memoryServiceConfig.overrides.embedding.provider
         ? undefined
@@ -448,10 +560,12 @@ export async function getRuntime(
   };
 
   const gatekeeperOptions: RuntimeResolveOptions = {
+    companyCredential,
     fallback: {
       apiKey: memoryServiceConfig.agents.gatekeeper.apiKey,
       baseURL: memoryServiceConfig.agents.gatekeeper.baseURL,
     },
+    label: 'gatekeeper',
     preferred: {
       providerIds: memoryServiceConfig.overrides.gatekeeper.provider
         ? undefined
@@ -461,10 +575,12 @@ export async function getRuntime(
   };
 
   const layerExtractorOptions: RuntimeResolveOptions = {
+    companyCredential,
     fallback: {
       apiKey: memoryServiceConfig.agents.layerExtractor.apiKey,
       baseURL: memoryServiceConfig.agents.layerExtractor.baseURL,
     },
+    label: 'layer extractor',
     preferred: {
       providerIds: memoryServiceConfig.overrides.layerExtractor.provider
         ? undefined
@@ -474,14 +590,18 @@ export async function getRuntime(
   };
 
   const hooks = getBusinessModelRuntimeHooks(userId, 'lobehub');
-
-  const runtimes: RuntimeBundle = {
-    embeddings: await resolveRuntimeAgentConfig(
+  const embedding = resolveEmbeddingRuntime(() =>
+    resolveRuntimeAgentConfig(
       memoryServiceConfig.agents.embedding,
       keyVaults,
       embeddingOptions,
       hooks,
     ),
+  );
+
+  const runtimes: RuntimeBundle = {
+    embeddings: embedding.embeddings,
+    embeddingsAvailable: embedding.embeddingsAvailable,
     gatekeeper: await resolveRuntimeAgentConfig(
       memoryServiceConfig.agents.gatekeeper,
       keyVaults,

@@ -347,6 +347,13 @@ P2 交付时它是「只存不用」：`getCompanyProviderRuntime()` 把 `defaul
 
 **已落地（T-91）**：管理员层只有 `packages/business-server/src/adminConsole/serviceDefaults.ts` 一个出口（`resolveCompanyServiceDefaults` 给整块、`getCompanyServiceDefaultModel` 给单槽位），都走 `getCompanyProviderRuntime` 的 5 s 缓存。`resolveSystemAgentModelConfig` 按 `override > 用户自选 > 管理员默认 > SYSTEM_AGENT > 代码默认` 解析，且只在用户没选全时才读管理员层；`resolveVerifyServiceModel` 在用户与 `SYSTEM_AGENT` 之间插入管理员 `verify`；记忆抽取把 `serverConfig.systemAgent`（管理员已压在 env 之上）合并到用户设置之下再走原有 `MEMORY_*` / 内置默认。记忆抽取跟随管理员默认时 provider 是 `tellhow`，`resolveRuntimeAgentConfig` 用 `resolveCompanyProviderParams` 取服务端密钥，不能用用户 keyVaults。
 
+**已落地（T-104，后台运行时取凭据）**：后台任务不能依赖「5 s 进程快照」，理由有两条：新起的进程里可能没有任何一次聊天请求预热过它；Next 的服务端 chunk 各带一份 `companyProvider` 模块副本，各自持有自己的缓存。因此：
+
+1. `resolveRuntimeAgentConfig` 新增 `companyCredential` 入参，优先级为「调用方异步读到的控制台凭据 → 进程快照 → `TELLHOW_*` 环境变量」；取不到时不再回落用户 keyVaults，而是抛可读的「服务不可用」，并在日志里点名槽位（`embedding` / `gatekeeper` / `layer extractor`）。
+2. 记忆抽取（`getRuntime`）、个人化写入（persona writer）、记忆归并（consolidation）在解析运行时之前用**自己的 db 句柄**调 `resolveCompanyProviderCredential()`（即 `getCompanyProviderRuntime`，顺带刷新共享缓存）。
+3. 向量槽位（`userMemoryEmbedding`）取不到可用 provider 时降级而不是中断整轮：`RuntimeBundle.embeddingsAvailable = false`，本轮记忆照常抽取并落库，只是不写向量、检索阶段直接跳过（不把「部署没有向量模型」记成 retrieval error）；写库时的向量化本来就容忍空向量。
+4. 验收计划拆分（`verify-plan-generator`）改走 `resolveVerifyServiceModel`：用户 `verify` 自选 → 管理员 `verify` 默认 → `SYSTEM_AGENT`，兜底仍是 `VERIFY_PLAN_MODEL_CONFIG`。只有 Tellhow 目录的部署因此不会因为 pinned 的 DeepSeek 无密钥而把每份清单静默塌成单行 holistic。
+
 **不可用模型回退**（不产生指向不可用模型的默认值）
 
 `validateDefaults` 只校验「id 在目录里」，不校验 `open`；目录同步又只写 `removedAt` 不删行。因此解析时逐项判定：

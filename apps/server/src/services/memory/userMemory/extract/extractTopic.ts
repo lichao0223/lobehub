@@ -270,14 +270,20 @@ export async function extractTopic(ctx: MemoryExtractionExecutorContext, job: To
         };
 
         try {
-          searchResult = await ctx.listRelevantUserMemories(
-            extractionJob,
-            runtimes.embeddings,
-            memoryServiceConfig.modelConfig.embeddingsModel,
-            job.userId,
-            embeddingConversations,
-            embeddingContextLimit,
-          );
+          // No embedding provider (deployment has none configured): skip vector
+          // retrieval rather than record a failure the deployment cannot fix.
+          // Memories are still extracted and persisted, just without the
+          // retrieved-context block.
+          if (runtimes.embeddingsAvailable) {
+            searchResult = await ctx.listRelevantUserMemories(
+              extractionJob,
+              runtimes.embeddings,
+              memoryServiceConfig.modelConfig.embeddingsModel,
+              job.userId,
+              embeddingConversations,
+              embeddingContextLimit,
+            );
+          }
         } catch (error) {
           retrievalErrors.push(
             makeTaskErrorItem('retrieval', error, {

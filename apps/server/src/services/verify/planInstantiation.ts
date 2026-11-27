@@ -166,8 +166,10 @@ const instantiatePlan = async (
     // Undecomposed acceptance (goal-dispatched Task, one-sentence requirement):
     // spend one generation call splitting the requirement into named criteria,
     // so the checklist reads as distinguishable items instead of one generic
-    // "Task delivery acceptance" row. The split runs on the pinned plan model
-    // (VERIFY_PLAN_MODEL_CONFIG), not the verifier agent's chat model.
+    // "Task delivery acceptance" row. The split runs on the configured verify
+    // service model (CUST-011: user pick → administrator default → SYSTEM_AGENT)
+    // and falls back to the pinned plan model (VERIFY_PLAN_MODEL_CONFIG); it
+    // never inherits the verifier agent's chat model.
     await planGenerator.generateDraftPlan({
       // Ground the generated criteria in the acceptance text, not just the title.
       context: requirement,

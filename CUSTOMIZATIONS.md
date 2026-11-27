@@ -415,6 +415,22 @@ npx tsrs --noEmit -p tsconfig.type-check.json --checkers 4                 # 全
 - **用户侧呈现**：`serverConfig.companyDefaultTiers` 只列出管理员真的设过的档位；个人设置 → 模型只在这些档位把兜底项写成「管理员默认」（否则仍是「系统推荐」）。部署里只要有任意一个管理员默认档，四档标题下就补一句「未自选时用管理员默认（该档没设时沿用系统推荐），自选后以自己的为准」；一个都没有（纯上游部署）时不显示这句话。管理端四个默认值与个人四档同名同序（主模型 / Flash 模型 / 验收模型 / 记忆向量化模型），不再说「只影响新用户」；验收模型下拉按 `capabilities.includes('vision')` 过滤；四项都只列 `open` 且未 `removedAt` 的模型，已存的不合规值仍留在下拉里标为「未对用户开放 / 上游已移除 / 不可用」并给出提示，不静默保存（CUST-011-H）。
 - **备选口径（本次不实施，待用户确认可切换）**：强制覆盖所有用户自选（含 pin 与档位选择）。启用时的建议形态是 `config.ai.defaults.mode: 'follow' | 'force'`（默认 `follow` 即本次口径），`force` 也只做解析覆盖、不改用户行，否则切回 `follow` 时用户原选择已丢失。
 
+### CUST-011-I：后台记忆 / 验收运行时取公司凭据（T-104）
+
+来源：T-101 第 4 轮验收（CUST-011-G）。管理员把 Flash 档设为 Tellhow 模型后，记忆抽取在后台运行时**一个模型请求都没发出**就以 `InvalidProviderAPIKey` 结束；日志只有「skipping provider … due to missing API key in user vault」，记录代理里没有任何记忆请求。同一实例里验收代理的判定调用正常。
+
+- **根因（三条，缺一不可）**：
+  1. `resolveRuntimeAgentConfig` 的 tellhow 分支只读 `resolveCompanyProviderParams({})` 的**同步快照**。后台任务没有聊天请求预热过它，而且 Next 服务端 chunk 各自带一份 `companyProvider` 模块副本、各持自己的缓存 —— 于是快照为空，代码继续走「用户 keyVaults」循环并最终构建出**无密钥的 provider 运行时**，构造函数直接抛 `InvalidProviderAPIKey`（`{error: undefined, errorType}`），连 HTTP 都没发。
+  2. 记忆抽取的向量槽位（`userMemoryEmbedding`）没有管理员默认值（控制台目录里没有 embedding 模型），回落到 `openai/gpt-5.6-luna` 后同样是无密钥构造并抛出。它排在 gatekeeper /layer extractor 之前解析，所以整轮在第一个分析请求之前就死了 —— 这才是「记录代理没有任何请求」的直接原因。
+  3. `verify-plan-generator` 只认 pinned 的 `VERIFY_PLAN_MODEL_CONFIG`（`deepseek/deepseek-flash`），只服务 Tellhow 目录的部署没有该厂商密钥，于是每次拆分都失败并静默塌成单行 holistic。
+- **修法**：
+  - `resolveRuntimeAgentConfig` 新增 `companyCredential` 入参，优先级 `调用方异步读到的控制台凭据 > 进程快照 > TELLHOW_* 环境变量`；配不到时抛可读的「服务不可用」并在日志里**点名槽位**（`embedding` / `gatekeeper` / `layer extractor`），不再假装是用户 keyVaults 缺钥匙。
+  - 记忆抽取（`getRuntime`）、persona writer、记忆归并都在解析前用**自己的 db 句柄**调 `resolveCompanyProviderCredential()`（`getCompanyProviderRuntime`，顺带刷新共享 5 s 缓存）。
+  - 向量槽位解析失败时降级为「本轮不写向量」而不是中断整轮：`RuntimeBundle.embeddingsAvailable = false`，抽取照常落库、检索阶段直接跳过（不再把「部署没有向量模型」记成 retrieval error 让整轮以 `MemoryExtractionAggregateError` 收尾）；写库时的 `generateEmbeddings` 本来就容忍空向量。分析槽位仍必须可用。
+  - 验收计划拆分改走 `resolveVerifyServiceModel`（用户 `verify` 自选 → 管理员 `verify` 默认 → `SYSTEM_AGENT`），兜底回 `VERIFY_PLAN_MODEL_CONFIG`；仍不继承 verifier agent 的聊天模型。
+- **测试**：`apps/server/src/services/memory/userMemory/__tests__/extract.companyRuntime.test.ts` —— 快照为空时仍从控制台拿到地址与密钥；显式凭据优先于快照；向量槽位不可用时整轮继续且该槽位调用以原始原因拒绝；公司 provider 完全未配置时抛可读错误并点名槽位；没有槽位跟随默认值时根本不读控制台。`apps/server/src/services/verify/__tests__/holisticPlan.test.ts` —— 拆分优先用管理员 `verify` 默认，未配置时回 pinned。
+- **维护提醒**：任何新的后台 LLM 调用点，只要可能落到 `tellhow`，要么走 `initModelRuntimeFromDB`（它会 `ensureCompanyProviderReady` 预热），要么像记忆链路一样显式传 `companyCredential`。**不要**在后台路径假设 `getCompanyProviderRuntimeSnapshot()` 有值。
+
 ### CUST-011-H：默认值选择器只列可生效模型（T-102）
 
 来源：T-94 验收观察 —— 默认值选择器列出全部目录模型（如 `glm-latest`、`GPT-5.6 Sol`），保存成功后该档被 `resolveCompanyServiceDefaults` 静默忽略：用户侧无变化，界面也没有提示。
@@ -463,7 +479,7 @@ CUST-008（管理员控制台）负责「配置能不能写、密钥怎么存、
 2. 客户端 `#project` 仍把 `serverConfig.systemAgent` / `serverConfig.defaultAgent` 合并进 `defaultSettings`，`currentSettings = merge(defaultSettings, settings)` 不变 ——「未自选 = 跟随默认」靠这条链路成立。
 3. 自选判定必须读 `user_settings` 存储行，不得读合并后的 `currentSettings`（否则跟随会被误判成自选，管理员默认值永远不生效）。
 4. 写盘侧 diff 基准仍是 `defaultSettings`；「选回跟随」依赖 `replaceServiceModelSettings` 删除槽位键，上游若改成合并写，要补一条删键路径。
-5. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）必须走统一解析函数，不能被上游改成各写一份默认值。
+5. 后台任务读取点（`resolveSystemAgentModelConfig`、`resolveVerifyServiceModel`、记忆抽取 runtime）必须走统一解析函数，不能被上游改成各写一份默认值。记忆 /persona/ 归并链路的公司凭据必须由 `resolveCompanyProviderCredential(db, agents)` 异步取（CUST-011-I），上游若重写 `resolveRuntimeAgentConfig`，要保留 `companyCredential` 入参，否则后台任务会重新依赖同步快照。
 6. `companyProvider` 的 `defaults` 仍随 5 s 进程内缓存返回，并在保存配置后失效。
 7. 管理端默认值文案 `modelService.defaults.*` 与语义同步；en-US 源文案写 `packages/locales/src/default/`，zh-CN 手写。个人页「管理员默认」的来源标记依赖 `serverConfig.companyDefaultTiers`（`packages/types/src/serverConfig.ts` 的可选字段），上游改 `GlobalServerConfig` 或 `SERVICE_MODEL_TIER_SLOTS` 时不要丢；验收模型的视觉过滤只看 `capabilities.includes('vision')`，目录同步若换了能力字段名要同步改 `acceptsDefaultModel`。
 8. 会话侧默认模型依赖「服务端部署默认层 + 客户端回落」两段，任一段被上游改写都要重跑 `agent/index.deploymentDefaults.test.ts`、`agentConfigResolver.deploymentDefaults.test.ts`、`snapshotAgentModel.test.ts`：`AgentService.mergeDefaultConfig` 的 serverDefault 必须是 `getDeploymentDefaultAgentConfig()`（不是只读环境变量的 `getServerDefaultAgentConfig()`），客户端解析器与话题快照必须回落到 `settingsSelectors.defaultAgentConfig`；`createInbox()` 保持只写环境变量层，不要把管理员默认值烘进 agent 行。

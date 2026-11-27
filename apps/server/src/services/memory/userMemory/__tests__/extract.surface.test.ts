@@ -76,6 +76,7 @@ describe('extract module surface', () => {
       'makeTaskErrorItem',
       'memoryExtractionPayloadSchema',
       'normalizeMemoryExtractionPayload',
+      'resolveCompanyProviderCredential',
       'resolveRuntimeAgentConfig',
     ]);
   });
