@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     TopicModel,
+    createTerminalSession: vi.fn(),
     executeToolCall: vi.fn(),
     getDisplayInfoByIds: vi.fn(async () => []),
     getLocalFilePreview: vi.fn(),
@@ -56,6 +57,7 @@ vi.mock('../deviceBoundAgents', () => ({
 vi.mock('@/server/services/deviceGateway', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   deviceGateway: {
+    createTerminalSession: mocks.createTerminalSession,
     executeToolCall: mocks.executeToolCall,
     getLocalFilePreview: mocks.getLocalFilePreview,
     listProjectDirectory: mocks.listProjectDirectory,
@@ -84,6 +86,7 @@ const caller = () => adminConsoleRouter.createCaller({ userId: ids.admin } as ne
 
 beforeEach(async () => {
   mocks.TopicModel.instances = [];
+  mocks.createTerminalSession.mockReset();
   mocks.executeToolCall.mockReset();
   mocks.getDisplayInfoByIds.mockReset().mockResolvedValue([]);
   mocks.getLocalFilePreview.mockReset();
@@ -261,6 +264,28 @@ describe('admin device detail — degradation', () => {
     await expect(
       caller().statPath({ deviceId: 'alice-laptop', ownerId: ids.alice, path: '/tmp' }),
     ).resolves.toBeNull();
+  });
+
+  it('opens a terminal as the device owner, not as the admin', async () => {
+    mocks.createTerminalSession.mockResolvedValue({ id: 'session-1' });
+
+    await expect(
+      caller().createTerminalSession({
+        cols: 120,
+        deviceId: 'alice-laptop',
+        ownerId: ids.alice,
+        rows: 30,
+      }),
+    ).resolves.toMatchObject({ id: 'session-1' });
+
+    expect(mocks.createTerminalSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cols: 120,
+        deviceId: 'alice-laptop',
+        rows: 30,
+        userId: ids.alice,
+      }),
+    );
   });
 
   it('surfaces a terminal failure as BAD_GATEWAY with the device’s reason', async () => {

@@ -311,6 +311,29 @@ export const adminDeviceDetailProcedures = {
 
   // ── Interactive terminal (owner principal, same relay semantics) ──────────
 
+  createTerminalSession: adminProcedure
+    .input(
+      deviceTargetInput.extend({
+        cols: z.number().int().min(1).max(1000),
+        cwd: z.string().optional(),
+        rows: z.number().int().min(1).max(1000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { principal } = await resolveAdminDevice(ctx, input, { live: true });
+
+      return relayTerminal(() =>
+        deviceGateway.createTerminalSession({
+          cols: input.cols,
+          cwd: input.cwd,
+          deviceId: principal.deviceId,
+          rows: input.rows,
+          userId: principal.userId,
+          workspaceId: principal.workspaceId,
+        }),
+      );
+    }),
+
   readTerminal: adminProcedure
     .input(
       deviceTargetInput.extend({
