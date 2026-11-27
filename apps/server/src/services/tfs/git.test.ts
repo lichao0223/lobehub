@@ -82,6 +82,17 @@ describe('TFS Git authorization and result boundary', () => {
     expect(mocks.call).not.toHaveBeenCalled();
   });
 
+  it('points a device-bound conversation at the plain git push instead of the sandbox', async () => {
+    // The folder is on a machine; the cloud sandbox holds no checkout, so this
+    // path only ever produced "fatal: not a git repository" while the device
+    // run had already injected the credentials a plain `git push` needs.
+    mocks.topic.mockResolvedValue({
+      metadata: { boundDeviceId: 'device-1', workingDirectory: '/root/th-vscode' },
+    });
+    await expect(runTfsGit(deps, input)).rejects.toThrow('plain `git push`');
+    expect(mocks.call).not.toHaveBeenCalled();
+  });
+
   it.each([
     { initialization: undefined },
     { initialization: { ...initialization, authorizationError: 'unavailable' } },

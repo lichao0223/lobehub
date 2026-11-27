@@ -35,6 +35,7 @@ import { redisService } from '@/server/services/redis';
 import { afterUnscoped } from '@/server/utils/scheduleAfterResponse';
 
 import { applyEvalGateToToolSet } from '../evalGate';
+import { loadProjectDirectoryCandidates } from '../projectDirectoryCandidates';
 import { pruneRegeneratedBranch } from '../pruneRegeneratedBranch';
 import { resolveDeviceWorkingDirectoryConfig } from '../resolveDeviceWorkingDirectory';
 import { applyShareGateToToolSet } from '../shareGate';
@@ -293,12 +294,24 @@ const resolveWorkspaceInit = async (
     // bound directory the workspace scan used.
     const topic = await deps.topicModel.findById(topicId);
     const topicWorkingDirectory = topic?.metadata?.workingDirectory;
+    // Last resort: the project's own directory on this machine. A project that
+    // registered `<device>:/repo` as a runner expects its runs to start there;
+    // without it the run had no cwd and the TFS checkout (which is also where
+    // push credentials come from) was skipped without a trace.
+    const projectDirectories = await loadProjectDirectoryCandidates({
+      db: deps.db,
+      deviceRowId: device.id,
+      projectId: topic?.projectId,
+      userId: deps.userId,
+      workspaceId: deps.workspaceId,
+    });
     const boundCwdConfig = resolveDeviceWorkingDirectoryConfig({
       deviceDefaultCwd: device.defaultCwd,
       deviceId: activeDeviceId,
       devicePlatform: device.platform,
       // A directory that is one of the topic's repos is not a path on this
       // machine — skip it (see the resolver) and scan what the device has.
+      projectDirectories,
       repos: topic?.metadata?.repos,
       topicDeviceId: topic?.metadata?.boundDeviceId,
       topicWorkingDirectory,

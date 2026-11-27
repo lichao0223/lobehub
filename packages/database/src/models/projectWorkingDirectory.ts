@@ -2,7 +2,7 @@ import nodePath from 'node:path';
 
 import type { EnvironmentConfiguration } from '@lobechat/types';
 import { getWorkingDirSourcePath } from '@lobechat/types';
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 
 import {
   agents,
@@ -117,6 +117,8 @@ export class ProjectWorkingDirectoryModel {
         permission: projectWorkingDirectories.permission,
         /** Its place among the project's execution environments; see `executionOrder`. */
         sortOrder: projectWorkingDirectories.sortOrder,
+        /** The project's preferred folder; the cwd fallback and the list agree on it. */
+        isPrimary: projectWorkingDirectories.isPrimary,
         // Whether a run can start here: the same linked, enabled and writable
         // binding `resolve` requires, so a UI start affordance can match it.
         runnable: sql<boolean>`coalesce(${environments.id} is not null and ${environmentInstances.enabled} and ${environments.enabled} and ${projectEnvironments.enabled} and ${projectWorkingDirectories.permission} = 'readWrite', false)`,
@@ -154,6 +156,47 @@ export class ProjectWorkingDirectoryModel {
         ),
       )
       .orderBy(asc(projectWorkingDirectories.sortOrder), asc(projectWorkingDirectories.createdAt));
+  }
+
+  /**
+   * The project's directories on ONE device, in the order a device-bound run
+   * should fall back to them: the primary binding first, then the stored place.
+   *
+   * `deviceRowId` is `devices.id` — the row PK that `project_working_directories
+   * .device_id` references — NOT the gateway device id (`devices.device_id`).
+   * Only a writable binding is returned: a read-only folder is listed for
+   * inspection, but a run cannot start there, so it is not a cwd candidate.
+   */
+  async listForDevice(projectId: string, deviceRowId: string) {
+    await this.project(projectId);
+    return this.db
+      .select({
+        isPrimary: projectWorkingDirectories.isPrimary,
+        // Same effective path the directory list shows: a bound environment
+        // instance owns the materialized location.
+        path: sql<string>`coalesce(${environmentInstances.workingDirectory}, ${projectWorkingDirectories.path})`,
+        sortOrder: projectWorkingDirectories.sortOrder,
+      })
+      .from(projectWorkingDirectories)
+      .leftJoin(
+        environmentInstances,
+        and(
+          eq(environmentInstances.deviceId, projectWorkingDirectories.deviceId),
+          eq(environmentInstances.workingDirectory, projectWorkingDirectories.path),
+        ),
+      )
+      .where(
+        and(
+          eq(projectWorkingDirectories.projectId, projectId),
+          eq(projectWorkingDirectories.deviceId, deviceRowId),
+          eq(projectWorkingDirectories.permission, 'readWrite'),
+        ),
+      )
+      .orderBy(
+        desc(projectWorkingDirectories.isPrimary),
+        asc(projectWorkingDirectories.sortOrder),
+        asc(projectWorkingDirectories.createdAt),
+      );
   }
 
   async resolve(id: string, projectId?: string) {

@@ -5,6 +5,7 @@ import { Block, cx, Flexbox, Icon, Popover, Switch, Text, Tooltip } from '@lobeh
 import { CheckIcon, ChevronDownIcon, FolderIcon } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router';
 
 import { formatLockedControlTooltip } from '@/features/ChatInput/utils/lockedControlTooltip';
 import {
@@ -36,11 +37,17 @@ interface TaskDeviceChipProps {
    * folder, not a black box.
    */
   followDirectory?: string;
+  /** The full path behind {@link followDirectory}, for the tooltip. */
+  followDirectoryPath?: string;
+  /** Whether that folder is the agent's own or the project's on that machine. */
+  followDirectorySource?: 'agent' | 'project';
   /** The task inherits the agent's device AND directory; nothing is picked here. */
   following: boolean;
   /** Pinned device, or `undefined` to run on the assignee agent's own target. */
   onChange: (deviceId: string | undefined) => void;
   onFollowChange: (following: boolean) => void;
+  /** The task's project, for the "add a project folder" escape hatch. */
+  projectId?: string;
   value?: string;
 }
 
@@ -74,9 +81,12 @@ const TaskDeviceChip = memo<TaskDeviceChipProps>(
     className,
     disabled,
     followDirectory,
+    followDirectoryPath,
+    followDirectorySource,
     following,
     onChange,
     onFollowChange,
+    projectId,
     value,
   }) => {
     const { t } = useTranslation(['chat', 'device']);
@@ -95,7 +105,7 @@ const TaskDeviceChip = memo<TaskDeviceChipProps>(
       isPending,
       pinnedDeviceId,
       retryDevices,
-    } = useTaskRunTarget(agentId, value, { canPinPrivateDevices });
+    } = useTaskRunTarget(agentId, value, { canPinPrivateDevices, projectId });
 
     // An author-fixed target still leaves the directory choosable, so the switch
     // only locks when neither axis is. A task already off the agent keeps the
@@ -194,12 +204,32 @@ const TaskDeviceChip = memo<TaskDeviceChipProps>(
             <Flexbox horizontal align={'center'} className={styles.followSummary} gap={4}>
               <ExecutionTargetIcon target={inheritedTarget} />
               <span className={styles.hintValue}>{inheritedLabel}</span>
-              {followDirectory && (
+              {followDirectory ? (
                 <>
                   <span>·</span>
                   <Icon icon={FolderIcon} size={12} />
-                  <span className={styles.hintValue}>{followDirectory}</span>
+                  <span className={styles.hintValue} title={followDirectoryPath}>
+                    {followDirectory}
+                  </span>
+                  {followDirectorySource === 'project' && (
+                    <span className={styles.hintValue}>{t('taskExecution.projectDirectory')}</span>
+                  )}
                 </>
+              ) : (
+                // Following an agent that names no folder used to show only the
+                // machine, which read as "the directory is set". Say what is
+                // actually missing and where it can be set.
+                <Flexbox horizontal align={'center'} gap={8} wrap={'wrap'}>
+                  <span className={styles.hintValue}>{t('taskExecution.noWorkingDirectory')}</span>
+                  <Link to={`/agent/${agentId}/profile`}>
+                    {t('taskExecution.setAgentDirectory')}
+                  </Link>
+                  {projectId && (
+                    <Link to={`/project/${projectId}/settings/environments`}>
+                      {t('taskExecution.addProjectDirectory')}
+                    </Link>
+                  )}
+                </Flexbox>
               )}
             </Flexbox>
           )}
