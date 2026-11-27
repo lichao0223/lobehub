@@ -9,14 +9,22 @@ const DEVICE_OTHER = { deviceId: 'device-other' };
 const AGENT_DIRECTORY = { path: '/repos/lobehub', repoType: 'git' as const };
 
 const mocks = vi.hoisted(() => ({
+  options: undefined as undefined | { canPinPrivateDevices?: boolean; projectId?: string },
   target: {} as Record<string, unknown>,
 }));
 
 vi.mock('./useTaskRunTarget', () => ({
-  useTaskRunTarget: (_agentId: string, pinnedDeviceId?: string) => ({
-    ...mocks.target,
-    deviceId: pinnedDeviceId ?? mocks.target.inheritedDeviceId,
-  }),
+  useTaskRunTarget: (
+    _agentId: string,
+    pinnedDeviceId?: string,
+    options?: { canPinPrivateDevices?: boolean; projectId?: string },
+  ) => {
+    mocks.options = options;
+    return {
+      ...mocks.target,
+      deviceId: pinnedDeviceId ?? mocks.target.inheritedDeviceId,
+    };
+  },
 }));
 
 const deviceAgent = () => {
@@ -31,7 +39,7 @@ const cloudAgent = () => {
   mocks.target = { devices: [DEVICE_OTHER] };
 };
 
-const renderSelection = (value?: TaskExecutionConfig) => {
+const renderSelection = (value?: TaskExecutionConfig, projectId?: string) => {
   const onChange = vi.fn();
   const hook = renderHook(
     ({ current }: { current?: TaskExecutionConfig }) =>
@@ -39,6 +47,7 @@ const renderSelection = (value?: TaskExecutionConfig) => {
         agentId: 'agent-1',
         canPinPrivateDevices: true,
         onChange,
+        projectId,
         value: current,
       }),
     { initialProps: { current: value } },
@@ -63,6 +72,16 @@ describe('useTaskExecutionSelection', () => {
       false,
     );
     expect(renderSelection({ repos: ['lobehub/lobehub'] }).result.current.following).toBe(false);
+  });
+
+  // The project's folder on the run's device is the server's last rung of the cwd
+  // chain (`resolveDeviceWorkingDirectoryResolution`). Resolution needs the
+  // project to look it up, so dropping it here made "follow the agent" report no
+  // folder even though the run started in the project's one.
+  it("hands the task's project to the run-target resolution", () => {
+    renderSelection(undefined, 'prj-1');
+
+    expect(mocks.options?.projectId).toBe('prj-1');
   });
 
   it('starts from the agent machine and folder when the task stops following', () => {

@@ -74,6 +74,7 @@ const TaskExecutionControlsInner = memo<
       agentId: assigneeAgentId,
       canPinPrivateDevices,
       onChange,
+      projectId,
       value,
     });
 

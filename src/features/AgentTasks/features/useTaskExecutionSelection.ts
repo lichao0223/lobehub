@@ -39,6 +39,13 @@ interface UseTaskExecutionSelectionParams {
   /** The caller is the task's creator (or is creating it); see `devicePoolForTask`. */
   canPinPrivateDevices: boolean;
   onChange: (execution?: TaskExecutionConfig) => void;
+  /**
+   * The task's project, so an agent naming no folder still resolves the project's
+   * directory on the run's device — the server's last rung of the cwd chain.
+   * Dropping it made "follow the agent" report no folder while the run started in
+   * the project's one.
+   */
+  projectId?: string;
   value?: TaskExecutionConfig;
 }
 
@@ -55,9 +62,13 @@ export const useTaskExecutionSelection = ({
   agentId,
   canPinPrivateDevices,
   onChange,
+  projectId,
   value,
 }: UseTaskExecutionSelectionParams) => {
-  const target = useTaskRunTarget(agentId, value?.boundDeviceId, { canPinPrivateDevices });
+  const target = useTaskRunTarget(agentId, value?.boundDeviceId, {
+    canPinPrivateDevices,
+    projectId,
+  });
   const { deviceId, devices, inheritedDeviceId, inheritedDirectory } = target;
 
   // "Not following" with nothing picked yet — a cloud agent before any repo, or
