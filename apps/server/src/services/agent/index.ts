@@ -15,6 +15,10 @@ import debug from 'debug';
 import { type PartialDeep } from 'type-fest';
 
 import { AGENT_SHARE_ALLOWED_PROVIDERS } from '@/business/agent-share';
+import {
+  getPersonalAgentDefaults,
+  type PersonalAgentDefaults,
+} from '@/business/server/agentDefaults';
 import { AgentModel } from '@/database/models/agent';
 import { AgentShareModel } from '@/database/models/agentShare';
 import { ResourcePermissionModel } from '@/database/models/resourcePermission';
@@ -39,6 +43,13 @@ import { assertCanPerformResourceAction } from '@/server/services/resourcePermis
 import { merge } from '@/utils/merge';
 
 import { type UpdateAgentResult } from './type';
+
+interface DefaultAgentConfigLayers {
+  accountDefault?: PersonalAgentDefaults;
+  /** CUST-011: deployment default — administrator console above the environment variable. */
+  serverDefault?: PartialDeep<LobeAgentConfig>;
+  userDefault?: Awaited<ReturnType<UserModel['getUserSettingsDefaultAgentConfig']>>;
+}
 
 const log = debug('lobe-agent:service');
 
@@ -245,10 +256,10 @@ export class AgentService {
     // Fetch agent and defaultAgentConfig in parallel
     const [agent, defaultAgentConfig] = await Promise.all([
       this.agentModel.getBuiltinAgent(slug),
-      this.userModel.getUserSettingsDefaultAgentConfig(),
+      this.loadDefaultAgentConfig(),
     ]);
 
-    const mergedConfig = await this.mergeDefaultConfig(agent, defaultAgentConfig);
+    const mergedConfig = this.mergeDefaultConfig(agent, defaultAgentConfig);
     if (!mergedConfig) return null;
 
     return this.applyBuiltinIdentity(mergedConfig, slug);
@@ -294,13 +305,10 @@ export class AgentService {
   async getAgentConfig(idOrSlug: string): Promise<AgentConfigWithId | null> {
     const [agent, defaultAgentConfig] = await Promise.all([
       this.agentModel.getAgentConfig(idOrSlug),
-      this.userModel.getUserSettingsDefaultAgentConfig(),
+      this.loadDefaultAgentConfig(),
     ]);
 
-    const config = (await this.mergeDefaultConfig(
-      agent,
-      defaultAgentConfig,
-    )) as AgentConfigWithId | null;
+    const config = this.mergeDefaultConfig(agent, defaultAgentConfig) as AgentConfigWithId | null;
     if (!config) return null;
 
     return this.applyBuiltinIdentity(config);
@@ -319,11 +327,11 @@ export class AgentService {
   async getAgentConfigById(agentId: string) {
     const [agent, defaultAgentConfig, welcomeData] = await Promise.all([
       this.agentModel.getAgentConfigById(agentId),
-      this.userModel.getUserSettingsDefaultAgentConfig(),
+      this.loadDefaultAgentConfig(),
       this.getAgentWelcomeFromRedis(agentId),
     ]);
 
-    const config = await this.mergeDefaultConfig(agent, defaultAgentConfig);
+    const config = this.mergeDefaultConfig(agent, defaultAgentConfig);
     if (!config) return null;
 
     const normalizedConfig = this.applyBuiltinIdentity(config);
@@ -352,11 +360,11 @@ export class AgentService {
     model?: string | null;
     provider?: string | null;
   }): Promise<{ model: string; provider: string }> {
-    const defaultAgentConfig = await this.userModel.getUserSettingsDefaultAgentConfig();
-    const merged = (await this.mergeDefaultConfig(
+    const defaultAgentConfig = await this.loadDefaultAgentConfig();
+    const merged = this.mergeDefaultConfig(
       { model: agent.model, provider: agent.provider },
       defaultAgentConfig,
-    ))!;
+    )!;
 
     // `LobeAgentConfig` types both as optional even though `DEFAULT_AGENT_CONFIG`
     // always supplies them; the fallbacks are those same constants.
@@ -392,8 +400,9 @@ export class AgentService {
    * 1. DEFAULT_AGENT_CONFIG - hardcoded defaults
    * 2. serverDefaultAgentConfig - deployment default: administrator console
    *    default above the environment variable
-   * 3. userDefaultAgentConfig - from user settings (defaultAgent.config)
-   * 4. agent - actual agent config from database
+   * 3. accountDefault - account-level defaults from the business layer (personal scope only)
+   * 4. userDefaultAgentConfig - from user settings (defaultAgent.config)
+   * 5. agent - actual agent config from database
    *
    * Workspace exception: a workspace is a shared resource, so its agents must
    * NOT inherit any individual member's *personal* default model. Otherwise a
@@ -402,21 +411,38 @@ export class AgentService {
    * the workspace looks "initialized" with their model. For workspace-scoped
    * reads we skip the user layer and fall back to the system default instead.
    */
-  private async mergeDefaultConfig(
+  private mergeDefaultConfig(
     agent: any,
-    defaultAgentConfig: Awaited<ReturnType<UserModel['getUserSettingsDefaultAgentConfig']>>,
-  ): Promise<LobeAgentConfig | null> {
+    defaults: DefaultAgentConfigLayers,
+  ): LobeAgentConfig | null {
     if (!agent) return null;
 
     return mergeAgentDefaultConfig(agent, {
+      accountDefault: defaults.accountDefault,
       // CUST-011 §7.1: the deployment layer is the administrator default above
       // `DEFAULT_AGENT_CONFIG`, so an agent row that never picked a model (the
       // inbox, a fresh session) resolves to the administrator's main model
-      // instead of the code default. The user layer and the row still win.
-      serverDefault: await getDeploymentDefaultAgentConfig(),
-      userDefault: defaultAgentConfig,
+      // instead of the code default. The account / user layers and the row
+      // still win, and `loadDefaultAgentConfig()` always supplies it.
+      serverDefault: defaults.serverDefault ?? getServerDefaultAgentConfig(),
+      userDefault: defaults.userDefault,
       workspaceId: this.workspaceId,
     });
+  }
+
+  /** The personal-scope default layers: account defaults and the user's own default Agent settings. */
+  private async loadDefaultAgentConfig(): Promise<DefaultAgentConfigLayers> {
+    // The deployment layer applies to every scope, including workspaces, so it
+    // is resolved before the workspace short-circuit below.
+    const serverDefault = await getDeploymentDefaultAgentConfig();
+
+    if (this.workspaceId) return { serverDefault };
+
+    const [userDefault, accountDefault] = await Promise.all([
+      this.userModel.getUserSettingsDefaultAgentConfig(),
+      getPersonalAgentDefaults(this.userId),
+    ]);
+    return { accountDefault, serverDefault, userDefault };
   }
 
   /**

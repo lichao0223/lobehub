@@ -1,3 +1,4 @@
+import type { McpElicitationCall } from '@lobechat/mcp-elicitation/types';
 import type {
   CodexCollaborationMode,
   DeviceMetricSample,
@@ -174,6 +175,7 @@ export interface AuthExpiredMessage {
 export interface GatewayMcpStdioParams {
   args: string[];
   command: string;
+  elicitation?: McpElicitationCall;
   env?: Record<string, string>;
   name: string;
   type: 'stdio';
@@ -187,6 +189,7 @@ export interface GatewayMcpStdioParams {
  */
 export interface GatewayMcpHttpParams {
   auth?: { accessToken?: string; token?: string; type: 'none' | 'bearer' | 'oauth2' };
+  elicitation?: McpElicitationCall;
   headers?: Record<string, string>;
   name: string;
   type: 'http';
@@ -362,8 +365,6 @@ export interface AgentRunRequestMessage {
    * `sendPrompt(imageList)` path. Optional — omitted for older servers.
    */
   imageList?: Array<{ id?: string; url: string }>;
-  /** Temporary personal TFS Git config for this run. Older clients ignore it. */
-  tfsGitConfig?: Array<[string, string]>;
   /**
    * Same meaning as {@link workspaceId}. The HTTP dispatch payload uses this
    * name so it is not confused with the device-pool routing `workspaceId`.
@@ -393,6 +394,8 @@ export interface AgentRunRequestMessage {
    * that don't build a device-specific context.
    */
   systemContext?: string;
+  /** Temporary personal TFS Git config for this run. Older clients ignore it. */
+  tfsGitConfig?: Array<[string, string]>;
   topicId: string;
   type: 'agent_run_request';
   /**

@@ -42,6 +42,7 @@ export async function register() {
     });
   }
 
+
   // Replay the conversations the deploy script queued right before it stopped
   // the old container. `scripts/deploy-custom-image.sh` records the runs it is
   // about to interrupt; a normal restart (no deploy) finds an empty queue and
@@ -64,6 +65,24 @@ export async function register() {
       console.error('[Instrumentation] Failed to resume deploy-interrupted conversations:', err);
     });
   }
+
+  // Local queues lose timers on process restart. Recover only due MCP rows and
+  // saved-answer dispatches from the existing durable operation/intervention store.
+  if (
+    process.env.NEXT_RUNTIME === 'nodejs' &&
+    process.env.DATABASE_URL &&
+    !process.env.VERCEL_ENV &&
+    process.env.AGENT_RUNTIME_MODE !== 'queue'
+  ) {
+    void (async () => {
+      const [{ getServerDB }, { startMcpRecoveryWorker }] = await Promise.all([
+        import('@lobechat/database'),
+        import('@/server/services/mcp/elicitation/recoveryWorker'),
+      ]);
+      startMcpRecoveryWorker(await getServerDB());
+    })().catch((error) => console.error('[Instrumentation] Failed to start MCP recovery', error));
+  }
+
 
   // Note: messenger system bot connections (Discord/Telegram) are managed
   // entirely from dc-center's System Bots admin — save / enable / forceReconnect

@@ -69,6 +69,7 @@ export * from './knowledgeBase';
 export * from './linear';
 export * from './llm';
 export * from './managedDevice';
+export * from './mcpElicitation';
 export * from './meeting';
 export * from './message';
 export * from './meta';

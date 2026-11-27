@@ -1061,6 +1061,8 @@ export default {
   'input.agentRunFeeUnfunded.free.title': 'You’ve used your trial credits',
   'input.agentRunFeeUnfunded.free.upgrade': 'Upgrade plan',
   'input.agentRunFeeUnfunded.title': 'Not enough credits to pay the agent run fee',
+  'input.agentRunFeeUnfunded.titleSwitchToAuto':
+    'Usage is used up. Switch to Auto Model to continue',
   'input.agentSlugMoved':
     'This link now opens a different agent. Switching to it — try again once it opens. Your draft is kept.',
   'input.agentSlugUnconfirmed':
@@ -1338,6 +1340,7 @@ export default {
     'Time To First Token (TTFT). This refers to the time interval from when you send a message to when the client receives the first Token.',
   'messages.tokenDetails.title': 'Generation Details',
   'messages.tokenDetails.total': 'Total Consumption',
+  'messages.tokenDetails.unit': 'tokens',
   'minimap.emptyPreview': '(No text content)',
   'minimap.jumpToMessage': 'Jump to message {{index}}',
   'minimap.nextMessage': 'Next message',
