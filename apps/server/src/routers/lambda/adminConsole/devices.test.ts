@@ -285,14 +285,21 @@ describe('listDevices filters', () => {
 });
 
 describe('getDevice', () => {
-  it('returns live channels for an online device and never leaks private paths', async () => {
+  it('returns live channels plus the owner-visible directories, never raw metadata', async () => {
     const device = await admin().getDevice({ deviceId: 'alice-laptop' });
 
     expect(device).toMatchObject({ channelCount: 2, online: 'online' });
     expect(device.channels).toHaveLength(2);
     expect(device.channels[0]).toMatchObject({ channel: 'desktop' });
     expect(device.channels[0].connectedAt).toBeInstanceOf(Date);
-    expect(JSON.stringify(device)).not.toContain('/Users/alice');
+    // Detail mirrors the owner's own device page, so its directories are part
+    // of the answer; the deprecated `recentCwds` and the raw metadata blob are not.
+    expect(device).toMatchObject({
+      defaultCwd: '/Users/alice/secret-project',
+      workingDirs: [{ path: '/Users/alice/work' }],
+    });
+    expect(JSON.stringify(device)).not.toContain('old-project');
+    expect(device).not.toHaveProperty('metadata');
   });
 
   it('addresses workspace rows explicitly and reports NOT_FOUND otherwise', async () => {

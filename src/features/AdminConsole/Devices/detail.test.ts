@@ -18,6 +18,7 @@ const device: AdminDeviceDetail = {
   channelCount: 1,
   channels: [{ channel: 'desktop', connectedAt: new Date('2026-11-01T10:00:00Z') }],
   cliVersion: '0.9.0',
+  defaultCwd: '/Users/ada/research',
   deviceId: 'dev_abc123',
   firstSeenAt: new Date('2026-09-01T08:00:00Z'),
   friendlyName: "Ada's MacBook",
@@ -39,6 +40,7 @@ const device: AdminDeviceDetail = {
   sharedFromDeviceId: 'dev_personal_9',
   visibility: 'public',
   workspace: { name: 'Research', workspaceId: 'ws_1' },
+  workingDirs: [{ path: '/Users/ada/research' }],
 };
 
 describe('projectDeviceDetail', () => {

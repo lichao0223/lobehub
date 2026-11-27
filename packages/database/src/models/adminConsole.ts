@@ -77,10 +77,13 @@ const toSummary = (row: {
 /**
  * Columns shared by the admin device list and detail reads.
  *
- * This is the privacy boundary at the SQL layer: `defaultCwd`, `workingDirs`,
- * `recentCwds` and the raw `metadata` column are never selected, so no later
- * mapping can accidentally forward another user's filesystem paths. Detail
- * reads project the two whitelisted metadata keys explicitly.
+ * This is the privacy boundary at the SQL layer, and it is asymmetric on
+ * purpose: the LIST never selects a filesystem path (`defaultCwd`,
+ * `workingDirs`, deprecated `recentCwds`) or the raw `metadata` column, so
+ * paging the whole deployment cannot sweep every owner's paths into one
+ * response. The DETAIL read adds exactly `defaultCwd` + `workingDirs` because
+ * the console detail page mirrors the owner's own device page; `recentCwds`
+ * stays unread (deprecated), and metadata is projected key by key.
  */
 const adminDeviceSelection = {
   architecture: devices.architecture,
@@ -705,6 +708,11 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
     const rows = await this.db
       .select({
         ...adminDeviceSelection,
+        // Detail mirrors the owner's own device page: the directories work may
+        // run in are part of what an administrator must be able to verify.
+        // `recentCwds` stays out — the column is deprecated.
+        defaultCwd: devices.defaultCwd,
+        workingDirs: devices.workingDirs,
         // Only the two whitelisted metadata keys leave the database.
         appVersion: sql<string | null>`${devices.metadata} ->> 'appVersion'`,
         cliVersion: sql<string | null>`${devices.metadata} ->> 'cliVersion'`,
@@ -735,9 +743,11 @@ export class AdminConsoleModel extends AdminConsoleSettingsModel {
       appVersion: row.appVersion ?? undefined,
       channels: [],
       cliVersion: row.cliVersion ?? undefined,
+      defaultCwd: row.defaultCwd ?? null,
       hasFixedAgentBinding: scope.workspaceId
         ? await this.hasFixedAgentBinding(scope.workspaceId, deviceId)
         : false,
+      workingDirs: row.workingDirs ?? [],
     };
   };
 

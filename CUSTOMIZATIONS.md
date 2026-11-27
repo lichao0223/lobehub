@@ -294,7 +294,9 @@ node_modules/.bin/tsrs --noEmit -p tsconfig.type-check.json         # 全仓类�
 
 ## CUST-010：管理控制台设备总览（只读，跨用户）
 
-设计与偏差见 [ADMIN\_CONSOLE\_DESIGN.md §17](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)。核心语义：这是**机器台账**（谁有一台什么设备、在不在线），不是个人设置设备页的复制品 ——**不做 owner 过滤**，管理员能看到全库所有行（含他人个人设备、所有工作区设备含 `private`）；但**看不到设备在哪个目录干活**。
+设计与偏差见 [ADMIN\_CONSOLE\_DESIGN.md §17](ADMIN_CONSOLE_DESIGN.md#17-cust-010管理控制台设备总览)。核心语义：这是**机器台账 + 详情复刻**。列表仍是机器台账（谁有一台什么设备、在不在线），**不做 owner 过滤**，管理员能看到全库所有行（含他人个人设备、所有工作区设备含 `private`）；**列表不返回任何文件系统路径**。
+
+详情页（`/admin/devices/:deviceId`，2026-11-27 起）改为对齐个人端 `/settings/devices/:id`：整页、Tabs「概览 / 文件目录 / Agent 运行时」，读操作一律**以设备持有人为主体**在服务端解析（客户端传入的 `ownerId` 只用于定位行，不构成越权依据），因此管理员能看到该设备的工作目录、运行中的话题、绑定的 Agent、目录与文件预览、Agent 运行时与终端。这推翻了原先「管理员看不到设备在哪个目录干活」的边界；`devices.metadata` 仍逐键投影，`recent_cwds` 仍不读。
 
 ### 功能与入口
 
@@ -550,13 +552,13 @@ T-100 修复（2026-11-26，分支 `feat/cust011-f-session-default-model`，提�
 - CUST-011 文档登记（2026-11-26，分支 `feat/admin-model-defaults`）：只改 `ADMIN_CONSOLE_DESIGN.md`（§5.5 重写、新增 §7.1、§10 检查点、§14 修订说明）与本文档（功能总表 + CUST-011 章节），未动代码。`git diff --check` 通过；无代码改动，未跑测试与类型检查。
 
 - 上游同步（2026-11-27）：合并 `upstream/canary 9727e280d1`（29 个提交 / 420 个文件，含 MCP elicitation 持久化、legacy MCP 插件→connector 迁移、设备 Android/iOS 平台分类、设置分组重排「Coding Plans under Runtime」、模型切换精选模型等）。备份分支 `backup/canary-pre-upstream-20261127`（合并前 `63e2e554c3`）。Git 冲突 5 处，语义适配 2 处：
-  1. `apps/server/src/services/agent/index.ts`：上游把 `mergeDefaultConfig` 改成同步函数并引入 `DefaultAgentConfigLayers`（account / user 两层）。按上游结构保留，把 CUST-011 的管理员默认层放进 `DefaultAgentConfigLayers.serverDefault`，由 `loadDefaultAgentConfig()` 统一 `await getDeploymentDefaultAgentConfig()`（workspace 作用域也先取部署层再短路个人层）；`mergeDefaultConfig` 内 `serverDefault: defaults.serverDefault ?? getServerDefaultAgentConfig()`。调用点改回同步（4 处），`createInbox()` 仍只写环境变量层。
+  1. `apps/server/src/services/agent/index.ts`：上游把 `mergeDefaultConfig` 改成同步函数并引入 `DefaultAgentConfigLayers`（account /user 两层）。按上游结构保留，把 CUST-011 的管理员默认层放进 `DefaultAgentConfigLayers.serverDefault`，由 `loadDefaultAgentConfig()` 统一 `await getDeploymentDefaultAgentConfig()`（workspace 作用域也先取部署层再短路个人层）；`mergeDefaultConfig` 内 `serverDefault: defaults.serverDefault ?? getServerDefaultAgentConfig()`。调用点改回同步（4 处），`createInbox()` 仍只写环境变量层。
   2. `apps/server/src/services/agent/index.test.ts`：双方新增 import / `beforeEach` 复位，取并集（`getCompanyServiceDefaults` + `getPersonalAgentDefaults`）。
   3. `src/features/WorkspaceSetting/hooks/useCategory.test.tsx`：保留 CUST-009 三条 Labs 可见性用例，Coding Plans 用例改上游标题；断言体沿用上游（Resource 组顺序）。
   4. `apps/server/src/routers/lambda/index.ts`：`tfs: tfsRouter` 与上游新增 `mcpElicitation: mcpElicitationRouter` 并存（注册在 router 顶部）。
   5. `src/instrumentation.ts`：部署中断恢复块（CUST-002）与上游新增 MCP elicitation recovery worker 启动块并存，各自独立 try/catch。
-  语义适配：① `src/features/Settings/hooks/useCategory.test.tsx` 跟随上游分组顺序（Resource 在 Connection 之前）；② `src/features/AdminConsole/Devices/platform.tsx` 补 `android` / `ios` 图标与文案（上游 CLI 新增平台分类），并新增 `platform.test.tsx`；移动端 build 元数据仍不进 CUST-010 隐私白名单。
-  其它核对：`_journal.json` 上游新增 0227–0230，fork `9000/9001` 仍在队尾，`db:fork:reconcile --check` 通过（上游 0–230 / fork 9000、9001）；`device-gateway-client` 的 fork 字段 `tfsGitConfig` 经 lint 排序后保留；Dockerfile NTLM curl 块、`release-cli.yml` 的 Fork 条件、`/admin` 路由与 proxy matcher、TFS sandbox / SSO / deployResume 接点均未丢。
-  上游新增工作区包 `@lobechat/mcp-elicitation` 等，执行 `pnpm install` 后类型检查通过。质量门：`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0（首次失败仅因新包未安装）；改动范围 oxlint 0 error（19 warning 全在未改动的上游文件）；相关测试 657 项通过（agent 61、admin console / 模型 / 设置 / 设备 224、business-server 42、数据库 18、Labs 与频道 45、TFS+SSO+deployResume 184 等）。未执行：真实页面验收、Docker 镜像构建、目标服务器升级。
+     语义适配：① `src/features/Settings/hooks/useCategory.test.tsx` 跟随上游分组顺序（Resource 在 Connection 之前）；② `src/features/AdminConsole/Devices/platform.tsx` 补 `android` / `ios` 图标与文案（上游 CLI 新增平台分类），并新增 `platform.test.tsx`；移动端 build 元数据仍不进 CUST-010 隐私白名单。
+     其它核对：`_journal.json` 上游新增 0227–0230，fork `9000/9001` 仍在队尾，`db:fork:reconcile --check` 通过（上游 0–230 /fork 9000、9001）；`device-gateway-client` 的 fork 字段 `tfsGitConfig` 经 lint 排序后保留；Dockerfile NTLM curl 块、`release-cli.yml` 的 Fork 条件、`/admin` 路由与 proxy matcher、TFS sandbox / SSO /deployResume 接点均未丢。
+     上游新增工作区包 `@lobechat/mcp-elicitation` 等，执行 `pnpm install` 后类型检查通过。质量门：`tsrs --noEmit -p tsconfig.type-check.json` 退出码 0（首次失败仅因新包未安装）；改动范围 oxlint 0 error（19 warning 全在未改动的上游文件）；相关测试 657 项通过（agent 61、admin console / 模型 / 设置 / 设备 224、business-server 42、数据库 18、Labs 与频道 45、TFS+SSO+deployResume 184 等）。未执行：真实页面验收、Docker 镜像构建、目标服务器升级。
 
-- 上游同步（2026-11-27，第二次）：合并 `upstream/canary 414a96048f`（5 个提交 / 63 个文件：Lobot 内嵌登录页、agent 文件中途发现、任务分组样式、首页与订阅文案）。备份分支 `backup/canary-pre-upstream-20261127b`（合并前 `10e4eacaa3`）。Git 冲突 1 处：`apps/server/src/services/toolExecution/serverRuntimes/localSystem.ts` —— 上游在设备调用结果后追加 `collectAgentFileScan()`（agent 文件扫描回填 `state`），Fork 在同一位置把 TFS 项目初始化的 checkout 报告前置进 `content`。两者互不覆盖（前者只改 `state`、后者只改 `content`），合并为「先扫描后前置报告」；无迁移变化（仍 0–230 + fork 9000/9001，`db:fork:reconcile --check` 通过）。质量门：`tsrs` 0 错误；改动范围 oxlint 0 error（3 warning 均为上游新增文件）；`localSystem` 四组测试 66 项、agent 默认层 / TFS / deployResume 152 项全部通过。未执行：真实页面验收、镜像构建与服务器升级。
+- 上游同步（2026-11-27，第二次）：合并 `upstream/canary 414a96048f`（5 个提交 / 63 个文件：Lobot 内嵌登录页、agent 文件中途发现、任务分组样式、首页与订阅文案）。备份分支 `backup/canary-pre-upstream-20261127b`（合并前 `10e4eacaa3`）。Git 冲突 1 处：`apps/server/src/services/toolExecution/serverRuntimes/localSystem.ts` —— 上游在设备调用结果后追加 `collectAgentFileScan()`（agent 文件扫描回填 `state`），Fork 在同一位置把 TFS 项目初始化的 checkout 报告前置进 `content`。两者互不覆盖（前者只改 `state`、后者只改 `content`），合并为「先扫描后前置报告」；无迁移变化（仍 0–230 + fork 9000/9001，`db:fork:reconcile --check` 通过）。质量门：`tsrs` 0 错误；改动范围 oxlint 0 error（3 warning 均为上游新增文件）；`localSystem` 四组测试 66 项、agent 默认层 / TFS /deployResume 152 项全部通过。未执行：真实页面验收、镜像构建与服务器升级。

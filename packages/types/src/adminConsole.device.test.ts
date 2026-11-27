@@ -9,11 +9,16 @@ import type {
 import { ADMIN_DEVICE_DETAIL_METADATA_KEYS, ADMIN_DEVICE_MAX_PAGE_SIZE } from './adminConsole';
 
 /**
- * CUST-010 privacy contract, kept executable.
+ * CUST-010 device privacy contract, kept executable.
  *
- * The admin device overview must never hand an administrator another user's
- * filesystem paths or the raw `devices.metadata` blob. The contract lives in
- * the types; these assertions fail the moment a field is added back.
+ * The boundary is asymmetric by design:
+ * - the LIST (`AdminDeviceSummary`) must never carry another user's filesystem
+ *   paths or the raw `devices.metadata` blob;
+ * - the DETAIL (`AdminDeviceDetail`) mirrors the owner's own device page, so it
+ *   DOES carry `defaultCwd` / `workingDirs` — the decision that lets an
+ *   administrator verify a machine end to end (see CUSTOMIZATIONS.md).
+ *
+ * `recentCwds` stays out of both: the column is deprecated and no longer read.
  */
 describe('admin device privacy contract', () => {
   it('projects only the whitelisted metadata keys', () => {
@@ -25,18 +30,30 @@ describe('admin device privacy contract', () => {
     expect(ADMIN_DEVICE_MAX_PAGE_SIZE).toBe(100);
   });
 
-  it('keeps filesystem paths out of the summary and detail types', () => {
+  it('keeps filesystem paths out of the admin list', () => {
+    expectTypeOf<
+      'defaultCwd' extends keyof AdminDeviceSummary ? true : false
+    >().toEqualTypeOf<false>();
+    expectTypeOf<
+      'workingDirs' extends keyof AdminDeviceSummary ? true : false
+    >().toEqualTypeOf<false>();
+  });
+
+  it('exposes the owner-visible directories on the detail only', () => {
     expectTypeOf<
       'defaultCwd' extends keyof AdminDeviceDetail ? true : false
-    >().toEqualTypeOf<false>();
+    >().toEqualTypeOf<true>();
     expectTypeOf<
       'workingDirs' extends keyof AdminDeviceDetail ? true : false
-    >().toEqualTypeOf<false>();
+    >().toEqualTypeOf<true>();
+  });
+
+  it('never exposes the deprecated recentCwds column', () => {
     expectTypeOf<
       'recentCwds' extends keyof AdminDeviceDetail ? true : false
     >().toEqualTypeOf<false>();
     expectTypeOf<
-      'defaultCwd' extends keyof AdminDeviceSummary ? true : false
+      'recentCwds' extends keyof AdminDeviceSummary ? true : false
     >().toEqualTypeOf<false>();
   });
 
